@@ -13,26 +13,31 @@ export default function ResetPasswordPage() {
   const [tokenChecked, setTokenChecked] = useState(false)
 
   useEffect(() => {
-    const hash = window.location.hash
-    const hashParams = new URLSearchParams(hash.substring(1))
-    const access_token = hashParams.get('access_token')
+    // Add short delay to give Next.js routing time to settle
+    const timer = setTimeout(() => {
+      const hash = window.location.hash
+      const hashParams = new URLSearchParams(hash.substring(1))
+      const access_token = hashParams.get('access_token')
 
-    if (access_token) {
-      supabase.auth.exchangeCodeForSession(access_token)
-        .then(({ error }) => {
-          if (error) {
-            setError("Session error: " + error.message)
-          }
-          setTokenChecked(true)
-        })
-        .catch((err) => {
-          setError("Token exchange failed: " + String(err))
-          setTokenChecked(true)
-        })
-    } else {
-      setError("Reset token not found in URL.")
-      setTokenChecked(true)
-    }
+      if (access_token) {
+        supabase.auth.exchangeCodeForSession(access_token)
+          .then(({ error }) => {
+            if (error) {
+              setError("Session error: " + error.message)
+            }
+            setTokenChecked(true)
+          })
+          .catch((err) => {
+            setError("Token exchange failed: " + String(err))
+            setTokenChecked(true)
+          })
+      } else {
+        setError("Reset token not found in URL.")
+        setTokenChecked(true)
+      }
+    }, 300) // Delay of 300ms
+
+    return () => clearTimeout(timer)
   }, [])
 
   const handleReset = async (e: React.FormEvent) => {
