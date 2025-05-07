@@ -1,9 +1,6 @@
-console.log("✅ ResetPasswordPage mounted");
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,14 +10,11 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
-  // Step 1: Parse and apply token from URL
   useEffect(() => {
-    console.log("🚀 useEffect triggered with hash:", window.location.hash);
-    const params = new URLSearchParams(window.location.hash.substring(1))
-    const access_token = params.get('access_token')
-  
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const access_token = hashParams.get('access_token')
+
     if (access_token) {
       supabase.auth.exchangeCodeForSession(access_token)
         .then(({ error }) => {
@@ -29,9 +23,8 @@ export default function ResetPasswordPage() {
     } else {
       setError("Reset token not found.")
     }
-  }, [])  
+  }, [])
 
-  // Step 2: Update password
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -43,30 +36,30 @@ export default function ResetPasswordPage() {
       setError(error.message)
     } else {
       setSuccess(true)
-      setTimeout(() => router.push('/login'), 2000)
     }
 
     setLoading(false)
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 rounded-lg shadow-md border">
-      <h2 className="text-xl font-semibold mb-4">Reset Your Password</h2>
-      <form onSubmit={handleReset} className="space-y-4">
-        <Input
-          type="password"
-          placeholder="Enter new password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <Button type="submit" disabled={loading || password.length < 6}>
-          {loading ? 'Resetting...' : 'Set New Password'}
-        </Button>
-      </form>
-
-      {success && <p className="text-green-600 mt-4">Password updated! Redirecting...</p>}
-      {error && <p className="text-red-600 mt-4">{error}</p>}
+    <div>
+      <h1>Reset Password</h1>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {success ? (
+        <p>Password updated successfully</p>
+      ) : (
+        <form onSubmit={handleReset}>
+          <Input
+            type="password"
+            placeholder="New Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Updating...' : 'Reset Password'}
+          </Button>
+        </form>
+      )}
     </div>
   )
 }
