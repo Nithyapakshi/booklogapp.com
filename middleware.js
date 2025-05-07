@@ -1,10 +1,15 @@
-// Export a middleware function that just passes the request through
 export function middleware(request) {
-  // This middleware does nothing and allows all requests to pass through
+  const url = request.nextUrl
+
+  // ✅ Skip middleware for password reset to preserve access_token in URL
+  if (url.pathname.startsWith('/reset-password')) {
+    return
+  }
+
+  // ✅ Add any other global middleware logic here, if needed
   return
 }
 
-// Configure middleware to run on no paths (effectively disabling it)
 export const config = {
-  matcher: [],
+  matcher: ['/((?!_next|favicon.ico).*)'],  // Applies to all routes except _next, favicon
 }
