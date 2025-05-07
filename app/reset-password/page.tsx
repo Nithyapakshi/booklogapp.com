@@ -16,6 +16,7 @@ export default function ResetPasswordPage() {
     // Add short delay to give Next.js routing time to settle
     const timer = setTimeout(() => {
       const hash = window.location.hash
+      console.log("🔍 URL hash on page load:", hash)
       const hashParams = new URLSearchParams(hash.substring(1))
       const access_token = hashParams.get('access_token')
 
