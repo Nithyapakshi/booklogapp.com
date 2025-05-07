@@ -1,3 +1,5 @@
+console.log("✅ ResetPasswordPage mounted");
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -15,7 +17,8 @@ export default function ResetPasswordPage() {
 
   // Step 1: Parse and apply token from URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
+    console.log("🚀 useEffect triggered with hash:", window.location.hash);
+    const params = new URLSearchParams(window.location.hash.substring(1))
     const access_token = params.get('access_token')
   
     if (access_token) {
