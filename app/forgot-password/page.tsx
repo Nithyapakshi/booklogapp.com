@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://staging.booklogapp.com/reset-password',
+        redirectTo: 'https://staging.booklogapp.com/reset-password#',
       })
 
     if (error) {
