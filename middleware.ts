@@ -5,16 +5,15 @@ export function middleware(request: NextRequest) {
 
   console.log("🌐 Incoming request to:", pathname)
 
-  // ✅ Skip middleware for reset-password route
+  // ✅ Skip exact reset-password path
   if (pathname === '/reset-password') {
     console.log("✅ Skipping middleware for /reset-password")
     return NextResponse.next()
   }
 
-  // ✅ Default allow
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!_next).*)'], // Exclude _next and allow all other routes to pass through middleware
+  matcher: ['/((?!_next).*)'], // only exclude internal Next.js paths
 }
