@@ -25,7 +25,6 @@ async function getBookCoverUrl(title: string, author: string): Promise<string | 
 
     const normalizedAuthorParts = author.toLowerCase().split(" ")
 
-    // Strict match: language EN, has cover, and all words in GPT author name are in candidate author
     const strictMatch = data.items.find((item: any) => {
       const info = item.volumeInfo
       const authors = info.authors?.map((a: string) => a.toLowerCase()) || []
@@ -40,7 +39,6 @@ async function getBookCoverUrl(title: string, author: string): Promise<string | 
 
     if (strictMatch) return strictMatch.volumeInfo.imageLinks.thumbnail
 
-    // Fallback: any English book with thumbnail
     const fallback = data.items.find(
       (item: any) => item.volumeInfo.language === "en" && item.volumeInfo.imageLinks?.thumbnail
     )
@@ -55,6 +53,14 @@ async function getBookCoverUrl(title: string, author: string): Promise<string | 
 export async function getAIBookRecommendations(query: string) {
   try {
     console.log("📚 Starting AI book recommendation for query:", query)
+
+    if (!query || query.trim().length < 10) {
+      throw new Error("Your query is too short. Please describe what you're looking for.")
+    }
+
+    if (query.length > 300) {
+      throw new Error("Your query is too long. Please shorten it to under 300 characters.")
+    }
 
     if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_PROJECT_ID) {
       throw new Error("OpenAI API key or Project ID is missing.")
@@ -104,8 +110,14 @@ export async function getAIBookRecommendations(query: string) {
 
     const response = await apiResponse.json()
     const responseText = response.choices[0]?.message?.content || ""
+
     const jsonMatch = responseText.match(/\[[\s\S]*\]/)
-    const jsonText = jsonMatch ? jsonMatch[0] : responseText
+    if (!jsonMatch) {
+      console.error("AI response did not contain valid JSON array:", responseText)
+      throw new Error("Invalid AI response format")
+    }
+
+    const jsonText = jsonMatch[0]
     const recommendations = JSON.parse(jsonText)
 
     const booksWithCovers = await Promise.all(
@@ -120,7 +132,7 @@ export async function getAIBookRecommendations(query: string) {
           title: book.title,
           author: book.author,
           description: book.description,
-          genre: book.genre || "", 
+          genre: book.genre || "",
           cover: coverUrl,
           fallbackColor: generateBookColor(book.title),
           initials,
@@ -128,7 +140,6 @@ export async function getAIBookRecommendations(query: string) {
       })
     )
 
-    // Deduplicate by cover or fallback
     const seen = new Set()
     const uniqueBooks = []
 
@@ -141,7 +152,7 @@ export async function getAIBookRecommendations(query: string) {
 
     console.log(`✅ Returning ${uniqueBooks.length} final AI recommendations`)
     return uniqueBooks
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error generating AI recommendations:", error)
     throw error
   }
