@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
   const [tokenChecked, setTokenChecked] = useState(false)
 
   useEffect(() => {
+    console.log("🔍 Hash fragment:", window.location.hash)
     const timer = setTimeout(async () => {
       const { data, error } = await supabase.auth.getSession()
   
