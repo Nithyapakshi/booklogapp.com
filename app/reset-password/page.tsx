@@ -1,7 +1,5 @@
 'use client'
 
-console.log("🚨 reset-password page mounted (top-level)")
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
@@ -15,20 +13,27 @@ export default function ResetPasswordPage() {
   const [tokenChecked, setTokenChecked] = useState(false)
 
   useEffect(() => {
-    console.log("🔍 Hash fragment:", window.location.hash)
-    const timer = setTimeout(async () => {
-      const { data, error } = await supabase.auth.getSession()
-  
-      if (error) {
-        setError("Failed to get session: " + error.message)
-      } else if (!data.session) {
-        setError("No valid session found. Your reset link may have expired.")
-      }
-  
+    const hash = window.location.hash
+    const accessToken = new URLSearchParams(hash.slice(1)).get('access_token')
+
+    if (!accessToken) {
+      setError("No token found in URL")
       setTokenChecked(true)
-    }, 300)
-  
-    return () => clearTimeout(timer)
+      return
+    }
+
+    // Inject the session manually using the token from the URL
+    supabase.auth
+      .setSession({
+        access_token: accessToken,
+        refresh_token: '', // Not required for reset password flow
+      })
+      .then(({ data, error }) => {
+        if (error || !data.session) {
+          setError("Invalid or expired token")
+        }
+        setTokenChecked(true)
+      })
   }, [])
 
   const handleReset = async (e: React.FormEvent) => {
