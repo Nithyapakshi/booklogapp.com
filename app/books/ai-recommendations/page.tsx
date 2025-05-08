@@ -84,6 +84,16 @@ export default function AiRecommendationsPage() {
     e.preventDefault()
     if (!prompt || prompt.trim() === "") return
 
+    const rawPrompt = prompt.trim()
+    if (rawPrompt.length < 10) {
+      setError("Your query is too short. Please describe what you're looking for.")
+      return
+    }
+    if (rawPrompt.length > 300) {
+      setError("Your query is too long. Please shorten it to under 300 characters.")
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setUsedCache(false)
