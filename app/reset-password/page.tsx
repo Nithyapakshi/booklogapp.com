@@ -1,5 +1,7 @@
 'use client'
 
+console.log("🚨 reset-password page mounted (top-level)")
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
