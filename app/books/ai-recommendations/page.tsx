@@ -89,9 +89,9 @@ export default function AiRecommendationsPage() {
       setError("Your query is too short. Please describe what you're looking for.")
       return
     }
-    if (rawPrompt.length > 300) {
-      setError("Your query is too long. Please shorten it to under 300 characters.")
-      return
+
+    if (rawPrompt.length > 500) {
+      setError("Your query is quite long. We’ll still try, but consider shortening it for better results.")
     }
 
     setIsLoading(true)
@@ -102,8 +102,8 @@ export default function AiRecommendationsPage() {
       const exclusionList = userBooks.map((b) => `- ${b.title} by ${b.author}`).join("\n")
       const fullPrompt =
         exclusionList.length > 0
-          ? `Please recommend books based on this preference: "${prompt.trim()}". But exclude books I’ve already read:\n${exclusionList}`
-          : prompt.trim()
+          ? `Please recommend books based on this preference: "${rawPrompt}". But exclude books I’ve already read:\n${exclusionList}`
+          : rawPrompt
 
       const cachedResults = getCachedRecommendations(fullPrompt)
       if (cachedResults && cachedResults.length > 0) {
