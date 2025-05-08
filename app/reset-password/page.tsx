@@ -13,31 +13,18 @@ export default function ResetPasswordPage() {
   const [tokenChecked, setTokenChecked] = useState(false)
 
   useEffect(() => {
-    // Add short delay to give Next.js routing time to settle
-    const timer = setTimeout(() => {
-      const hash = window.location.hash
-      console.log("🔍 URL hash on page load:", hash)
-      const hashParams = new URLSearchParams(hash.substring(1))
-      const access_token = hashParams.get('access_token')
-
-      if (access_token) {
-        supabase.auth.exchangeCodeForSession(access_token)
-          .then(({ error }) => {
-            if (error) {
-              setError("Session error: " + error.message)
-            }
-            setTokenChecked(true)
-          })
-          .catch((err) => {
-            setError("Token exchange failed: " + String(err))
-            setTokenChecked(true)
-          })
-      } else {
-        setError("Reset token not found in URL.")
-        setTokenChecked(true)
+    const timer = setTimeout(async () => {
+      const { data, error } = await supabase.auth.getSession()
+  
+      if (error) {
+        setError("Failed to get session: " + error.message)
+      } else if (!data.session) {
+        setError("No valid session found. Your reset link may have expired.")
       }
-    }, 300) // Delay of 300ms
-
+  
+      setTokenChecked(true)
+    }, 300)
+  
     return () => clearTimeout(timer)
   }, [])
 
