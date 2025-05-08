@@ -90,10 +90,6 @@ export default function AiRecommendationsPage() {
       return
     }
 
-    if (rawPrompt.length > 500) {
-      setError("Your query is quite long. We’ll still try, but consider shortening it for better results.")
-    }
-
     setIsLoading(true)
     setError(null)
     setUsedCache(false)
@@ -104,6 +100,12 @@ export default function AiRecommendationsPage() {
         exclusionList.length > 0
           ? `Please recommend books based on this preference: "${rawPrompt}". But exclude books I’ve already read:\n${exclusionList}`
           : rawPrompt
+
+      if (fullPrompt.length > 3000) {
+        setError("Your query is too long for our system to process. Try removing some books from your collection or shortening your input.")
+        setIsLoading(false)
+        return
+      }
 
       const cachedResults = getCachedRecommendations(fullPrompt)
       if (cachedResults && cachedResults.length > 0) {
@@ -269,7 +271,7 @@ export default function AiRecommendationsPage() {
                   <div className="p-4 flex-1">
                     <h3 className="font-bold text-lg">{book.title}</h3>
                     <p className="text-sm text-gray-600 mb-2">by {book.author}</p>
-                    <p className="text-sm text-purple-600 italic mb-1">{book.genre || "Unknown Genre"}</p> 
+                    <p className="text-sm text-purple-600 italic mb-1">{book.genre || "Unknown Genre"}</p>
                     <p className="text-sm text-gray-700 line-clamp-3">{book.description}</p>
                   </div>
                 </div>
