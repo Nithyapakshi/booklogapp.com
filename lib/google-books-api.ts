@@ -43,7 +43,7 @@ function cleanText(text: string): string {
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   try {
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`,
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${process.env.GOOGLE_BOOKS_API_KEY}`,
     )
 
     if (!response.ok) {
@@ -75,7 +75,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
 // Function to get a book by ID
 export async function getBookById(id: string): Promise<BookSearchResult | null> {
   try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes/${id}`)
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes/${id}?key=${process.env.GOOGLE_BOOKS_API_KEY}`)
 
     if (!response.ok) {
       throw new Error(`Google Books API error: ${response.status}`)
