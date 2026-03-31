@@ -7,7 +7,7 @@ import { BookOpen } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState("")
@@ -45,7 +45,7 @@ export default function SignupPage() {
 
         // Store user metadata
         try {
-          const supabase = createClientComponentClient()
+          const supabase = createClientSupabaseClient()
           await supabase.auth.updateUser({
             data: {
               first_name: firstName,
