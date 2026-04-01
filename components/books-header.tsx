@@ -4,18 +4,30 @@ import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getUserFirstName } from "@/lib/user-utils"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { useState, useEffect } from "react"
 
 export function BooksHeader() {
   const { user } = useAuth()
+  const [firstName, setFirstName] = useState("")
 
-  // Get the user's first name
-  const firstName = getUserFirstName(user)
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user) return
+      const supabase = createClientSupabaseClient()
+      const { data } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single()
+      if (data?.name) setFirstName(data.name)
+    }
+    fetchProfile()
+  }, [user])
 
   return (
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">My Books</h1>
-
       <div className="flex items-center gap-3">
         <span className="text-lg font-medium">{firstName}</span>
         <Link href="/settings">
