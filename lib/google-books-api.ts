@@ -1,4 +1,4 @@
-∑export interface BookSearchResult {
+export interface BookSearchResult {
   id: string
   title: string
   author: string
