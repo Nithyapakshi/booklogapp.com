@@ -9,7 +9,7 @@ import { useState, useEffect } from "react"
 
 export function BooksHeader() {
   const { user } = useAuth()
-  const [firstName, setFirstName] = useState("")
+  const [firstName, setFirstName] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchProfile() {
@@ -29,7 +29,7 @@ export function BooksHeader() {
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">My Books</h1>
       <div className="flex items-center gap-3">
-        <span className="text-lg font-medium">{firstName}</span>
+        {firstName && <span className="text-lg font-medium">{firstName}</span>}
         <Link href="/settings">
           <Button
             variant="ghost"
