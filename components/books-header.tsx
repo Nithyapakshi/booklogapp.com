@@ -8,7 +8,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
 
 export function BooksHeader() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth() 
   const [firstName, setFirstName] = useState<string | null>(null)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function BooksHeader() {
       if (data?.name) setFirstName(data.name)
     }
     fetchProfile()
-  }, [user])
+  }, [user, isLoading])
 
   return (
     <div className="flex justify-between items-center mb-8">
