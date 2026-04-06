@@ -38,7 +38,7 @@ export async function getAIBookRecommendations(query: string) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
     const message = await client.messages.create({
-      model: "claude-opus-4-6",
+      model: "claude-opus-4-5-20251101",
       max_tokens: 2000,
       system: "You are a literary expert who creates detailed book recommendations with comprehensive summaries.",
       messages: [
