@@ -1,6 +1,6 @@
 "use server"
 
-import OpenAI from "openai"
+import Anthropic from "@anthropic-ai/sdk"
 
 // Function to get a book cover image URL from the Google Books API
 async function getBookCoverUrl(title: string, author: string): Promise<string> {
@@ -31,49 +31,34 @@ async function getBookCoverUrl(title: string, author: string): Promise<string> {
 
 export async function getAIBookRecommendations(query: string) {
   try {
-    // Check if we have an OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OpenAI API key is missing. Please add it to your environment variables.")
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
     }
 
-    // Initialize the OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    // Create a prompt for book recommendations
-    const prompt = `
-      Based on the following preferences, recommend 3 books with these details for each:
-      - Title
-      - Author
-      - Brief description (1-2 sentences)
-      - Published year (if known)
-      - Genre
-
-      User preferences: ${query}
-
-      Format the response as a JSON array with objects containing title, author, description, publishedYear, and genre fields.
-      Do not include any explanations or text outside of the JSON array.
-    `
-
-    // Call the OpenAI API
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const message = await client.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 2000,
+      system: "You are a literary expert who creates detailed book recommendations with comprehensive summaries.",
       messages: [
         {
-          role: "system",
-          content: "You are a helpful assistant that recommends books based on user preferences.",
-        },
-        {
           role: "user",
-          content: prompt,
+          content: `Based on the following preferences, recommend 5 books with these details:
+- Title
+- Author
+- Description (400–500 characters)
+- Genre
+
+User preferences: ${query}
+
+Format the response as a JSON array with title, author, description, and genre.
+Do not include any text outside the JSON array.`,
         },
       ],
-      temperature: 0.7,
     })
 
-    // Extract the response text
-    const responseText = response.choices[0]?.message?.content || ""
+    const responseText = message.content[0]?.type === "text" ? message.content[0].text : ""
 
     // Parse the JSON response
     try {
@@ -99,7 +84,7 @@ export async function getAIBookRecommendations(query: string) {
 
       return booksWithCovers
     } catch (parseError) {
-      console.error("Failed to parse OpenAI response:", parseError)
+      console.error("Failed to parse AI response:", parseError)
       console.log("Raw response:", responseText)
       throw new Error("Failed to parse AI recommendations")
     }
