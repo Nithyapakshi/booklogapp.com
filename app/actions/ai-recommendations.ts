@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk"
 async function getBookCoverUrl(title: string, author: string): Promise<string> {
   try {
     const query = encodeURIComponent(`${title} ${author}`)
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`)
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
 
     if (!response.ok) {
       throw new Error(`Google Books API error: ${response.status}`)
