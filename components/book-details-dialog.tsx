@@ -33,6 +33,7 @@ const statusLabels = {
 export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDetailsDialogProps) {
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [showFullDescription, setShowFullDescription] = useState(false)
   const { addBook } = useBooks()
 
   const handleAddBook = () => {
@@ -140,8 +141,16 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                 {book?.description && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Description</label>
-                    <div className="p-3 border rounded-md text-sm text-gray-700 max-h-40 overflow-y-auto">
-                      {book.description}
+                    <div className="text-sm text-gray-600 leading-relaxed">
+                      <p className={showFullDescription ? "" : "line-clamp-3"}>{book.description}</p>
+                      {book.description && book.description.length > 200 && (
+                        <button
+                          onClick={() => setShowFullDescription(!showFullDescription)}
+                          className="text-blue-500 text-xs mt-1 hover:underline"
+                        >
+                          {showFullDescription ? "Show less" : "Show more"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
