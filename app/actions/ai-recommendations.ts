@@ -89,7 +89,7 @@ Do not include any text outside the JSON array.`,
       throw new Error("Failed to parse AI recommendations")
     }
   } catch (error) {
-    console.error("Error getting AI recommendations:", error)
+    console.error("Error getting AI recommendations:", error instanceof Error ? error.message : String(error), error)
     throw error
   }
 }
