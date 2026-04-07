@@ -96,7 +96,15 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                 {book?.description && (
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Description</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">{book.description}</p>
+                    <p className={showFullDescription ? "text-sm text-gray-600 leading-relaxed" : "text-sm text-gray-600 leading-relaxed line-clamp-3"}>{book.description}</p>
+                    {book.description && book.description.length > 200 && (
+                      <button
+                        onClick={() => setShowFullDescription(!showFullDescription)}
+                        className="text-blue-500 text-xs mt-1 hover:underline"
+                      >
+                        {showFullDescription ? "Show less" : "Show more"}
+                      </button>
+                    )}
                   </div>
                 )}
 
