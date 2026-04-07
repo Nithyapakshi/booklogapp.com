@@ -95,7 +95,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                 {book?.description && (
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Description</h3>
-                    <p className="text-sm text-gray-700">{book.description}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{book.description}</p>
                   </div>
                 )}
 
