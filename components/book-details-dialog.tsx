@@ -48,7 +48,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
           <DialogDescription>
