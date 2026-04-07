@@ -47,7 +47,7 @@ export async function getAIBookRecommendations(query: string) {
           content: `Based on the following preferences, recommend 5 books with these details:
 - Title
 - Author
-- Description (one well-written paragraph of 3-4 sentences that captures the essence of the book)
+- Description (2-3 sentences max, well-written, capturing the essence of the book)
 - Genre
 
 User preferences: ${query}
