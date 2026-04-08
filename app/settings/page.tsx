@@ -32,10 +32,10 @@ export default function SettingsPage() {
 
           <div className="flex items-center gap-4 mb-6">
             <div className="h-16 w-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl">
-              {firstName.charAt(0).toUpperCase()}
+              {fullName ? fullName.charAt(0).toUpperCase() : email.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-lg font-medium">{firstName}</p>
+              <p className="text-lg font-medium">{fullName || email}</p>
               <p className="text-gray-600">{email}</p>
             </div>
           </div>
