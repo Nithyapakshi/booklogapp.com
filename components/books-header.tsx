@@ -7,8 +7,13 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
 
 export function BooksHeader() {
-  const { user, isLoading } = useAuth()
+  const { user } = useAuth()
   const [displayName, setDisplayName] = useState<string>("")
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     async function fetchProfile() {
@@ -31,7 +36,9 @@ export function BooksHeader() {
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">My Books</h1>
       <div className="flex items-center gap-3">
-        {displayName && <span className="text-lg font-medium">{displayName}</span>}
+        {mounted && displayName && (
+          <span className="text-lg font-medium">{displayName}</span>
+        )}
         <Link href="/settings">
           <Button
             variant="ghost"
