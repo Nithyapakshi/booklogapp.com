@@ -17,10 +17,10 @@ export function BooksHeader() {
       const supabase = createClientSupabaseClient()
       const { data } = await supabase
         .from("profiles")
-        .select("name")
+        .select("name, username, email")
         .eq("user_id", user.id)
         .single()
-      if (data?.name) setFirstName(data.name)
+      if (data?.name) setFirstName(data.name); else if (data?.username) setFirstName(data.username)
     }
     fetchProfile()
   }, [user, isLoading])
