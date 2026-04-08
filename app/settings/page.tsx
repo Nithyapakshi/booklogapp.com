@@ -8,24 +8,26 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 export default function SettingsPage() {
   const { user } = useAuth()
-  const [fullName, setFullName] = useState<string>("")
+  const [profileName, setProfileName] = useState<string>("")
   const email = user?.email || ""
 
   useEffect(() => {
     async function fetchProfile() {
       if (!user) return
       const supabase = createClientSupabaseClient()
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select("name, username, email")
+        .select("name, username")
         .eq("user_id", user.id)
         .single()
-      if (data?.name) setFullName(data.name); else if (data?.username) setFullName(data.username)
+      console.log("Profile fetch:", data, error)
+      if (data?.name) setProfileName(data.name)
+      else if (data?.username) setProfileName(data.username)
     }
     fetchProfile()
   }, [user])
 
-  const displayName = fullName || email
+  const displayName = profileName || email.split("@")[0]
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
@@ -43,7 +45,7 @@ export default function SettingsPage() {
               {initial}
             </div>
             <div>
-              <p className="text-lg font-medium">{fullName}</p>
+              <p className="text-lg font-medium">{displayName}</p>
               <p className="text-gray-600">{email}</p>
             </div>
           </div>

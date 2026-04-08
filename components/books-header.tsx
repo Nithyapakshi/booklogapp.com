@@ -1,5 +1,4 @@
 "use client"
-
 import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { Settings } from "lucide-react"
@@ -8,28 +7,31 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
 
 export function BooksHeader() {
-  const { user, isLoading } = useAuth() 
-  const [firstName, setFirstName] = useState<string | null>(null)
+  const { user, isLoading } = useAuth()
+  const [displayName, setDisplayName] = useState<string>("")
 
   useEffect(() => {
     async function fetchProfile() {
       if (!user) return
       const supabase = createClientSupabaseClient()
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select("name, username, email")
+        .select("name, username")
         .eq("user_id", user.id)
         .single()
-      if (data?.name) setFirstName(data.name); else if (data?.username) setFirstName(data.username)
+      console.log("Header profile fetch:", data, error)
+      if (data?.name) setDisplayName(data.name)
+      else if (data?.username) setDisplayName(data.username)
+      else setDisplayName(user.email?.split("@")[0] || "")
     }
     fetchProfile()
-  }, [user, isLoading])
+  }, [user])
 
   return (
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">My Books</h1>
       <div className="flex items-center gap-3">
-        {firstName && <span className="text-lg font-medium">{firstName}</span>}
+        {displayName && <span className="text-lg font-medium">{displayName}</span>}
         <Link href="/settings">
           <Button
             variant="ghost"
