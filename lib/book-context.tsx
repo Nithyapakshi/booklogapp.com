@@ -137,6 +137,15 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       // If book exists and is in a different category, move it
       if (bookExists && existingStatus && existingStatus !== status) {
         const updatedBooks = { ...prev }
+
+        // Special case: Completed -> Recommended: keep copy in Completed
+        if (existingStatus === "completed" && status === "recommended") {
+          const completedBook = { ...newBook, status: "completed" as BookStatus }
+          updatedBooks["recommended"] = [...updatedBooks["recommended"], { ...newBook, status: "recommended" as BookStatus }]
+          // Keep the completed copy as-is (don't remove)
+          return updatedBooks
+        }
+
         // Remove from old category
         updatedBooks[existingStatus] = updatedBooks[existingStatus].filter((b) => b.id !== newBook.id)
         // Add to new category
@@ -149,10 +158,17 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       }
       // If book doesn't exist, add it to the selected category
       else {
-        return {
-          ...prev,
-          [status]: [...prev[status], newBook],
+        const updatedBooks = { ...prev, [status]: [...prev[status], newBook] }
+
+        // Special case: adding directly to Recommended -> also add to Completed
+        if (status === "recommended") {
+          const alreadyCompleted = prev["completed"].some((b) => b.id === newBook.id)
+          if (!alreadyCompleted) {
+            updatedBooks["completed"] = [...prev["completed"], { ...newBook, status: "completed" as BookStatus }]
+          }
         }
+
+        return updatedBooks
       }
     })
   }
