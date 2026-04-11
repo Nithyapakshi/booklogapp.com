@@ -109,66 +109,70 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   }, [books])
 
   const addBook = (book: any, status: BookStatus) => {
-    // Create a new book object with the required fields
-    const newBook: Book = {
-      id: book.id || Math.random().toString(36).substring(2, 9),
-      title: book.title,
-      author: book.author,
-      cover: book.cover || "",
-      status,
-      description: book.description,
-      publishedYear: book.publishedYear,
-    }
+    const bookId = book.id || Math.random().toString(36).substring(2, 9)
 
     setBooks((prev) => {
-      // Check if the book already exists in any category
-      let bookExists = false
+      // Find if book exists anywhere and where
       let existingStatus: BookStatus | null = null
-
-      Object.keys(prev).forEach((statusKey) => {
-        const currentStatus = statusKey as BookStatus
-        const existingBook = prev[currentStatus].find((b) => b.id === newBook.id)
-        if (existingBook) {
-          bookExists = true
-          existingStatus = currentStatus
+      for (const s of Object.keys(prev) as BookStatus[]) {
+        if (prev[s].find((b) => b.id === bookId)) {
+          existingStatus = s
+          break
         }
-      })
+      }
 
-      // If book exists and is in a different category, move it
-      if (bookExists && existingStatus && existingStatus !== status) {
-        const updatedBooks = { ...prev }
+      const makeBook = (s: BookStatus, auto = false): Book => ({
+        id: bookId,
+        title: book.title,
+        author: book.author,
+        cover: book.cover || "",
+        status: s,
+        description: book.description,
+        publishedYear: book.publishedYear,
+        ...(auto ? { autoCompleted: true } : {}),
+      } as Book)
 
-        // Special case: Completed -> Recommended: keep copy in Completed
+      const updated = { ...prev }
+
+      // Already in the target status — do nothing
+      if (existingStatus === status) return prev
+
+      if (existingStatus) {
+        // Book exists somewhere — handle move
+
         if (existingStatus === "completed" && status === "recommended") {
-          const completedBook = { ...newBook, status: "completed" as BookStatus }
-          updatedBooks["recommended"] = [...updatedBooks["recommended"], { ...newBook, status: "recommended" as BookStatus }]
-          // Keep the completed copy as-is (don't remove)
-          return updatedBooks
+          // Completed -> Recommended: keep copy in Completed, add to Recommended
+          updated["recommended"] = [...updated["recommended"], makeBook("recommended")]
+          return updated
         }
 
-        // Remove from old category
-        updatedBooks[existingStatus] = updatedBooks[existingStatus].filter((b) => b.id !== newBook.id)
-        // Add to new category
-        updatedBooks[status] = [...updatedBooks[status], newBook]
-        return updatedBooks
-      }
-      // If book exists in the same category, don't add it again
-      else if (bookExists && existingStatus === status) {
-        return prev
-      }
-      // If book doesn't exist, add it to the selected category
-      else {
-        const updatedBooks = { ...prev, [status]: [...prev[status], newBook] }
+        if (existingStatus === "recommended") {
+          // Leaving Recommended: remove from Recommended
+          updated["recommended"] = updated["recommended"].filter((b) => b.id !== bookId)
+          // Also remove auto-created Completed copy
+          updated["completed"] = updated["completed"].filter(
+            (b) => !(b.id === bookId && (b as any).autoCompleted)
+          )
+          // Add to new status
+          updated[status] = [...updated[status], makeBook(status)]
+          return updated
+        }
 
-        // Special case: adding directly to Recommended -> also add to Completed
+        // Normal move: remove from old, add to new
+        updated[existingStatus] = updated[existingStatus].filter((b) => b.id !== bookId)
+        updated[status] = [...updated[status], makeBook(status)]
+        return updated
+
+      } else {
+        // New book — add to target status
+        updated[status] = [...updated[status], makeBook(status)]
+
+        // If added directly to Recommended, also auto-add to Completed
         if (status === "recommended") {
-          const alreadyCompleted = prev["completed"].some((b) => b.id === newBook.id)
-          if (!alreadyCompleted) {
-            updatedBooks["completed"] = [...prev["completed"], { ...newBook, status: "completed" as BookStatus }]
-          }
+          updated["completed"] = [...updated["completed"], makeBook("completed", true)]
         }
 
-        return updatedBooks
+        return updated
       }
     })
   }
