@@ -18,7 +18,7 @@ export default function SettingsPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("name, username")
-        .eq("email", user.email)
+        .eq("user_id", user.id)
         .single()
       console.log("Profile fetch:", data, error)
       if (data?.name) setProfileName(data.name)

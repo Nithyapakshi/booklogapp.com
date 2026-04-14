@@ -22,7 +22,7 @@ export function BooksHeader() {
       const { data, error } = await supabase
         .from("profiles")
         .select("name, username")
-        .eq("email", user.email)
+        .eq("user_id", user.id)
         .single()
       console.log("Header profile fetch:", data, error)
       if (data?.name) setDisplayName(data.name)

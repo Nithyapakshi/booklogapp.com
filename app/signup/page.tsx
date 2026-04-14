@@ -52,6 +52,7 @@ export default function SignupPage() {
               last_name: lastName,
             },
           })
+          await supabase.from("profiles").update({ name: firstName }).eq("user_id", data.user.id)
         } catch (err) {
           console.error("Failed to update user metadata:", err)
         }
