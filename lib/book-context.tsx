@@ -1,224 +1,233 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import type { Book } from "@/types"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 export type BookStatus = "reading" | "queued" | "completed" | "recommended" | "onHold"
 
-// Map tab names to status values
 export function mapTabToStatus(tab: string): BookStatus {
   switch (tab) {
-    case "Reading":
-      return "reading"
-    case "Queued":
-      return "queued"
-    case "Completed":
-      return "completed"
-    case "My recommendation":
-      return "recommended"
-    case "On Hold":
-      return "onHold"
-    default:
-      return "queued"
+    case "Reading": return "reading"
+    case "Queued": return "queued"
+    case "Completed": return "completed"
+    case "My recommendation": return "recommended"
+    case "On Hold": return "onHold"
+    default: return "queued"
   }
 }
 
-// Initial books for demonstration
-const initialBooks: Record<BookStatus, Book[]> = {
-  reading: [
-    {
-      id: "welcome-to-hyunam",
-      title: "Welcome to the Hyunam-dong Bookshop",
-      author: "Hwang Bo-reum",
-      cover: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg",
-      status: "reading",
-      description:
-        "A heartwarming story about a small bookshop in Seoul that becomes a sanctuary for people seeking solace and connection.",
-      publishedYear: 2023,
-    },
-  ],
-  queued: [],
-  completed: [
-    {
-      id: "great-gatsby",
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      cover: "https://m.media-amazon.com/images/I/71FTb9X6wsL._AC_UF1000,1000_QL80_.jpg",
-      status: "completed",
-      publishedYear: 1925,
-    },
-    {
-      id: "1984",
-      title: "1984",
-      author: "George Orwell",
-      cover: "https://m.media-amazon.com/images/I/71kxa1-0mfL._AC_UF1000,1000_QL80_.jpg",
-      status: "completed",
-      publishedYear: 1949,
-    },
-  ],
-  recommended: [
-    {
-      id: "to-kill-mockingbird",
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
-      cover: "https://m.media-amazon.com/images/I/71FxgtFKcQL._AC_UF1000,1000_QL80_.jpg",
-      status: "recommended",
-      publishedYear: 1960,
-    },
-    {
-      id: "pride-prejudice",
-      title: "Pride and Prejudice",
-      author: "Jane Austen",
-      cover: "https://m.media-amazon.com/images/I/71Q1tPupKjL._AC_UF1000,1000_QL80_.jpg",
-      status: "recommended",
-      publishedYear: 1813,
-    },
-  ],
-  onHold: [],
-}
-
-// Define the context type
 type BookContextType = {
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => void
   removeBook: (id: string) => void
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
+  loading: boolean
 }
 
-// Create the context
+const emptyBooks: Record<BookStatus, Book[]> = {
+  reading: [], queued: [], completed: [], recommended: [], onHold: [],
+}
+
 const BookContext = createContext<BookContextType | undefined>(undefined)
 
-// Create a provider component
 export function BookProvider({ children }: { children: React.ReactNode }) {
-  // Initialize state with books from localStorage if available
-  const [books, setBooks] = useState<Record<BookStatus, Book[]>>(() => {
-    if (typeof window !== "undefined") {
-      const savedBooks = localStorage.getItem("booklog-books")
-      return savedBooks ? JSON.parse(savedBooks) : initialBooks
-    }
-    return initialBooks
-  })
+  const [books, setBooks] = useState<Record<BookStatus, Book[]>>(emptyBooks)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Save books to localStorage whenever they change
+  // Get current user
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("booklog-books", JSON.stringify(books))
-    }
-  }, [books])
-
-  const addBook = (book: any, status: BookStatus) => {
-    const bookId = book.id || Math.random().toString(36).substring(2, 9)
-
-    setBooks((prev) => {
-      // Find if book exists anywhere and where
-      let existingStatus: BookStatus | null = null
-      for (const s of Object.keys(prev) as BookStatus[]) {
-        if (prev[s].find((b) => b.id === bookId)) {
-          existingStatus = s
-          break
-        }
-      }
-
-      const makeBook = (s: BookStatus, auto = false): Book => ({
-        id: bookId,
-        title: book.title,
-        author: book.author,
-        cover: book.cover || "",
-        status: s,
-        description: book.description,
-        publishedYear: book.publishedYear,
-        ...(auto ? { autoCompleted: true } : {}),
-      } as Book)
-
-      const updated = { ...prev }
-
-      // Already in the target status — do nothing
-      if (existingStatus === status) return prev
-
-      if (existingStatus) {
-        // Book exists somewhere — handle move
-
-        if (existingStatus === "completed" && status === "recommended") {
-          // Completed -> Recommended: keep copy in Completed, add to Recommended
-          updated["recommended"] = [...updated["recommended"], makeBook("recommended")]
-          return updated
-        }
-
-        if (existingStatus === "recommended") {
-          // Leaving Recommended: remove from Recommended
-          updated["recommended"] = updated["recommended"].filter((b) => b.id !== bookId)
-          // Also remove auto-created Completed copy
-          updated["completed"] = updated["completed"].filter(
-            (b) => !(b.id === bookId && (b as any).autoCompleted)
-          )
-          // Add to new status
-          updated[status] = [...updated[status], makeBook(status)]
-          return updated
-        }
-
-        // Normal move: remove from old, add to new
-        updated[existingStatus] = updated[existingStatus].filter((b) => b.id !== bookId)
-        updated[status] = [...updated[status], makeBook(status)]
-        return updated
-
-      } else {
-        // New book — add to target status
-        updated[status] = [...updated[status], makeBook(status)]
-
-        // If added directly to Recommended, also auto-add to Completed
-        if (status === "recommended") {
-          updated["completed"] = [...updated["completed"], makeBook("completed", true)]
-        }
-
-        return updated
-      }
+    const supabase = createClientSupabaseClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null)
     })
-  }
+  }, [])
 
-  const removeBook = (id: string) => {
-    setBooks((prev) => {
-      const newBooks = { ...prev }
+  // Load books from Supabase when userId is available
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
 
-      // Find and remove the book from the appropriate status array
-      Object.keys(newBooks).forEach((status) => {
-        const statusKey = status as BookStatus
-        newBooks[statusKey] = newBooks[statusKey].filter((book) => book.id !== id)
+    const supabase = createClientSupabaseClient()
+
+    async function loadBooks() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("user_id", userId)
+
+      if (error) {
+        console.error("Error loading books:", error)
+        setLoading(false)
+        return
+      }
+
+      const grouped: Record<BookStatus, Book[]> = {
+        reading: [], queued: [], completed: [], recommended: [], onHold: [],
+      }
+
+      for (const row of data) {
+        const status = row.status as BookStatus
+        if (grouped[status]) {
+          grouped[status].push({
+            id: row.id,
+            title: row.title,
+            author: row.author,
+            cover: row.cover_url ?? "",
+            status: row.status,
+            description: row.description ?? undefined,
+            publishedYear: row.published_year ?? undefined,
+            ...(row.auto_completed ? { autoCompleted: true } : {}),
+          } as Book)
+        }
+      }
+
+      setBooks(grouped)
+      setLoading(false)
+    }
+
+    loadBooks()
+  }, [userId])
+
+  const addBook = useCallback(async (book: any, status: BookStatus) => {
+    if (!userId) return
+    const supabase = createClientSupabaseClient()
+    const bookId = book.id || Math.random().toString(36).substring(2, 9)
+    console.log('addBook called', bookId, status, userId)
+
+    const makeRow = (s: BookStatus, auto = false) => ({
+      id: bookId,
+      user_id: userId,
+      title: book.title,
+      author: book.author,
+      cover_url: book.cover || "",
+      status: s,
+      description: book.description ?? null,
+      published_year: book.publishedYear ?? null,
+      auto_completed: auto,
+    })
+
+    // Find existing status in local state
+    let existingStatus: BookStatus | null = null
+    for (const s of Object.keys(books) as BookStatus[]) {
+      if (books[s].find((b) => b.id === bookId)) {
+        existingStatus = s
+        break
+      }
+    }
+
+    if (existingStatus === status) return
+
+    if (existingStatus) {
+      if (existingStatus === "completed" && status === "recommended") {
+        // Keep in completed, insert new row for recommended
+        const { error } = await supabase.from("books").insert(makeRow("recommended"))
+        if (error) { console.error("Error adding to recommended:", error); return }
+        setBooks((prev) => ({
+          ...prev,
+          recommended: [...prev.recommended, { ...book, id: bookId, status: "recommended" }],
+        }))
+        return
+      }
+
+      if (existingStatus === "recommended") {
+        // Delete recommended row, delete auto-completed row, insert new status row
+        await supabase.from("books")
+          .delete()
+          .eq("user_id", userId)
+          .eq("id", bookId)
+          .eq("status", "recommended")
+
+        const autoCompletedBook = books.completed.find((b) => b.id === bookId && (b as any).autoCompleted)
+        if (autoCompletedBook) {
+          await supabase.from("books")
+            .delete()
+            .eq("user_id", userId)
+            .eq("id", bookId)
+            .eq("status", "completed")
+            .eq("auto_completed", true)
+        }
+
+        await supabase.from("books").insert(makeRow(status))
+        setBooks((prev) => {
+          const updated = { ...prev }
+          updated.recommended = updated.recommended.filter((b) => b.id !== bookId)
+          updated.completed = updated.completed.filter((b) => !(b.id === bookId && (b as any).autoCompleted))
+          updated[status] = [...updated[status], { ...book, id: bookId, status }]
+          return updated
+        })
+        return
+      }
+
+      // Normal move: delete old row, insert new row
+      await supabase.from("books")
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", bookId)
+        .eq("status", existingStatus)
+
+      await supabase.from("books").insert(makeRow(status))
+      setBooks((prev) => {
+        const updated = { ...prev }
+        updated[existingStatus!] = updated[existingStatus!].filter((b) => b.id !== bookId)
+        updated[status] = [...updated[status], { ...book, id: bookId, status }]
+        return updated
       })
 
-      return newBooks
+    } else {
+      // New book — insert
+      const { error } = await supabase.from("books").insert(makeRow(status))
+      if (error) { console.error("Error inserting book:", error); console.log('insert error:', error); return }
+
+      setBooks((prev) => ({
+        ...prev,
+        [status]: [...prev[status], { ...book, id: bookId, status }],
+      }))
+
+      // If added to recommended, also auto-add to completed
+      if (status === "recommended") {
+        const { error: err2 } = await supabase.from("books").insert(makeRow("completed", true))
+        if (!err2) {
+          setBooks((prev) => ({
+            ...prev,
+            completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true }],
+          }))
+        }
+      }
+    }
+  }, [userId, books])
+
+  const removeBook = useCallback(async (id: string) => {
+    if (!userId) return
+    const supabase = createClientSupabaseClient()
+    await supabase.from("books").delete().eq("id", id).eq("user_id", userId)
+    setBooks((prev) => {
+      const updated = { ...prev }
+      for (const s of Object.keys(updated) as BookStatus[]) {
+        updated[s] = updated[s].filter((b) => b.id !== id)
+      }
+      return updated
     })
-  }
+  }, [userId])
 
-  const getBooksByStatus = (status: BookStatus) => {
-    return books[status] || []
-  }
-
-  const getBookCountByStatus = (status: BookStatus) => {
-    return books[status]?.length || 0
-  }
+  const getBooksByStatus = (status: BookStatus) => books[status] || []
+  const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider
-      value={{
-        books,
-        addBook,
-        removeBook,
-        getBooksByStatus,
-        getBookCountByStatus,
-      }}
-    >
+    <BookContext.Provider value={{ books, addBook, removeBook, getBooksByStatus, getBookCountByStatus, loading }}>
       {children}
     </BookContext.Provider>
   )
 }
 
-// Create a hook to use the book context
 export function useBooks() {
   const context = useContext(BookContext)
-  if (context === undefined) {
-    throw new Error("useBooks must be used within a BookProvider")
-  }
+  if (context === undefined) throw new Error("useBooks must be used within a BookProvider")
   return context
 }

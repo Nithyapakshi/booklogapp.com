@@ -19,7 +19,7 @@ export const createClientSupabaseClient = () => {
   clientSupabaseInstance = createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: true,
-      storageKey: "supabase-auth-token",
+      storageKey: "sb-eebnkqmdpayvrbjubqdg-auth-token",
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
