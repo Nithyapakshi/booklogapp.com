@@ -7,13 +7,24 @@ import type { Book } from "@/types"
 import { AiRecommendationCard } from "@/components/ai-recommendation-card"
 import { BooksHeader } from "@/components/books-header"
 import { LayoutGrid, List } from "lucide-react"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
 
 function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string) => void }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [rating, setRating] = useState<number>(book.selfRating || 0)
+  useEffect(() => {
+    setRating(book.selfRating || 0)
+  }, [book.selfRating])
   const { addBook } = useBooksContext()
+
+  const handleStarClick = async (star: number) => {
+    setRating(star)
+    const supabase = createClientSupabaseClient()
+    await supabase.from("books").update({ self_rating: star }).eq("id", book.id)
+  }
 
   const moveBook = (status: BookStatus) => {
     if (book.status === status) return
@@ -38,6 +49,19 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           <p className="font-semibold text-sm truncate">{book.title}</p>
           <p className="text-xs text-gray-500 truncate">{book.author}</p>
         </div>
+        {(book.status === "completed" || book.status === "recommended") && (
+          <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span
+                key={star}
+                className={`cursor-pointer text-lg ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                onClick={() => handleStarClick(star)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        )}
         <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded capitalize flex-shrink-0">
           {book.status}
         </span>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import type { Book } from "@/types"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 interface BookCardProps {
   book: Book
@@ -18,6 +19,13 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [rating, setRating] = useState<number>(book.selfRating || 0)
+
+  const handleStarClick = async (star: number) => {
+    setRating(star)
+    const supabase = createClientSupabaseClient()
+    await supabase.from("books").update({ self_rating: star }).eq("row_id", book.rowId)
+  }
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { addBook } = useBooks()
@@ -121,6 +129,20 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
             <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded capitalize">
               {book.status}
             </span>
+
+            {(book.status === "completed" || book.status === "recommended") && (
+              <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    className={`cursor-pointer text-xs ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                    onClick={() => handleStarClick(star)}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="relative book-dropdown-menu">
               <Button ref={buttonRef} variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={toggleDropdown}>

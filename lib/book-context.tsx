@@ -83,6 +83,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             status: row.status,
             description: row.description ?? undefined,
             publishedYear: row.published_year ?? undefined,
+            rowId: row.row_id ?? undefined,
+            selfRating: row.self_rating ?? undefined,
             ...(row.auto_completed ? { autoCompleted: true } : {}),
           } as Book)
         }
