@@ -160,8 +160,8 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           ref={dropdownRef}
           className="fixed bg-white rounded-md shadow-lg border border-gray-200 py-1 z-[9999] w-40 book-dropdown-menu"
           style={{
-            top: `${buttonRef.current.getBoundingClientRect().bottom + window.scrollY}px`,
-            left: `${buttonRef.current.getBoundingClientRect().left + window.scrollX - 120}px`,
+            top: `${buttonRef.current.getBoundingClientRect().bottom + 200 > window.innerHeight ? buttonRef.current.getBoundingClientRect().top - 200 : buttonRef.current.getBoundingClientRect().bottom + 4}px`,
+            left: `${buttonRef.current.getBoundingClientRect().right - 160}px`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
