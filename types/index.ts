@@ -8,6 +8,7 @@ export interface Book {
   publishedYear?: number
   rowId?: string
   selfRating?: number
+  notes?: string
 }
 
 export interface BookSearchResult {

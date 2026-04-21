@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useBooks } from "@/lib/book-context"
@@ -14,6 +14,7 @@ interface BookDetailsDialogProps {
     publishedYear?: string | number
     description?: string
     cover?: string
+    notes?: string
   } | null
   open: boolean
   onClose: () => void
@@ -34,7 +35,13 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
-  const { addBook } = useBooks()
+  const { addBook, updateNote } = useBooks()
+  const [noteText, setNoteText] = useState(book?.notes ?? "")
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setNoteText(book?.notes ?? "")
+  }, [book?.notes])
 
   const handleAddBook = () => {
     if (book) {
@@ -162,6 +169,27 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                     </div>
                   </div>
                 )}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    placeholder="Add your personal notes..."
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-white text-sm resize-none h-24"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={async () => {
+                      if (book) {
+                        await updateNote(book.id, noteText)
+                        setSaved(true)
+                        setTimeout(() => setSaved(false), 2000)
+                      }
+                    }}>
+                      Save Note
+                    </Button>
+                    {saved && <span className="text-xs text-green-600">✓ Saved</span>}
+                  </div>
+                </div>
               </div>
             )}
           </div>
