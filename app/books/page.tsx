@@ -4,20 +4,21 @@ import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
 import type { Book } from "@/types"
-import { AiRecommendationCard } from "@/components/ai-recommendation-card"
-import { BooksHeader } from "@/components/books-header"
+import { Sidebar } from "@/components/sidebar"
 import { LayoutGrid, List } from "lucide-react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
+import { AiRecommendationCard } from "@/components/ai-recommendation-card"
+
+const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
+const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
 function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string) => void }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
-  useEffect(() => {
-    setRating(book.selfRating || 0)
-  }, [book.selfRating])
+  useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
   const { addBook } = useBooksContext()
 
   const handleStarClick = async (star: number) => {
@@ -46,8 +47,8 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{book.title}</p>
-          <p className="text-xs text-gray-500 truncate">{book.author}</p>
+          <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
+          <p className="text-xs text-gray-500 truncate" style={sans}>{book.author}</p>
         </div>
         {(book.status === "completed" || book.status === "recommended") && (
           <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -62,7 +63,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             ))}
           </div>
         )}
-        <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded capitalize flex-shrink-0">
+        <span className="inline-block bg-amber-50 text-amber-800 text-xs px-2 py-0.5 rounded capitalize flex-shrink-0" style={sans}>
           {book.status}
         </span>
         <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -73,12 +74,12 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             •••
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-1 w-44 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
-              {book.status !== "reading" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
-              {book.status !== "queued" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
-              {book.status !== "completed" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
+            <div className="absolute right-0 mt-1 w-44 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50" style={sans}>
+              {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
+              {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
+              {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
               {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>Move to Recommendations</div>}
-              {book.status !== "onHold" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
+              {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
               <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={() => { removeBook(book.id); setDropdownOpen(false) }}>Remove</div>
             </div>
           )}
@@ -90,15 +91,13 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
 }
 
 export default function BooksPage() {
-  const [activeTab, setActiveTab] = useState("Reading")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [activeTab, setActiveTab]   = useState("Reading")
+  const [sidebarTab, setSidebarTab] = useState("my-books")
+  const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
 
   useEffect(() => {
     const savedTab = localStorage.getItem("booklog-active-tab")
-    if (savedTab) {
-      setActiveTab(savedTab)
-      localStorage.removeItem("booklog-active-tab")
-    }
+    if (savedTab) { setActiveTab(savedTab); localStorage.removeItem("booklog-active-tab") }
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
   }, [])
@@ -107,16 +106,18 @@ export default function BooksPage() {
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
 
   useEffect(() => {
-    const status = mapTabToStatus(activeTab)
-    setFilteredBooks(getBooksByStatus(status))
-  }, [activeTab, getBooksByStatus])
+    if (sidebarTab === "recommended") {
+      setFilteredBooks(getBooksByStatus("recommended"))
+    } else {
+      setFilteredBooks(getBooksByStatus(mapTabToStatus(activeTab)))
+    }
+  }, [activeTab, sidebarTab, getBooksByStatus])
 
   const tabs = [
-    { name: "Reading", count: getBookCountByStatus("reading") },
-    { name: "Queued", count: getBookCountByStatus("queued") },
+    { name: "Reading",   count: getBookCountByStatus("reading")   },
+    { name: "Queued",    count: getBookCountByStatus("queued")    },
     { name: "Completed", count: getBookCountByStatus("completed") },
-    { name: "My recommendation", count: getBookCountByStatus("recommended") },
-    { name: "On Hold", count: getBookCountByStatus("onHold") },
+    { name: "On Hold",   count: getBookCountByStatus("onHold")   },
   ]
 
   const toggleView = (mode: "grid" | "list") => {
@@ -124,70 +125,99 @@ export default function BooksPage() {
     localStorage.setItem("booklog-view-mode", mode)
   }
 
-  return (
-    <div className="container mx-auto py-10">
-      <BooksHeader />
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-3/4">
-          <div className="mb-4">
-            <BookSearch />
-          </div>
-          <div className="mb-2 flex items-center justify-between">
-            <ul className="flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <li
-                  key={tab.name}
-                  className={`cursor-pointer px-4 py-2 rounded-md ${
-                    activeTab === tab.name ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                  onClick={() => setActiveTab(tab.name)}
-                >
-                  {tab.name} ({tab.count})
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-1 ml-4">
-              <button
-                onClick={() => toggleView("grid")}
-                className={`p-2 rounded ${viewMode === "grid" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`}
-                title="Grid view"
-              >
-                <LayoutGrid size={16} />
-              </button>
-              <button
-                onClick={() => toggleView("list")}
-                className={`p-2 rounded ${viewMode === "list" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600 hover:bg-gray-300"}`}
-                title="List view"
-              >
-                <List size={16} />
-              </button>
-            </div>
-          </div>
+  const handleSidebarTab = (tab: string) => {
+    setSidebarTab(tab)
+    if (tab === "my-books") setActiveTab("Reading")
+  }
 
-          {viewMode === "grid" ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-              {filteredBooks.map((book) => (
-                <BookCard key={book.id} book={book} removeBook={removeBook} />
-              ))}
-              {filteredBooks.length === 0 && (
-                <div className="col-span-full text-gray-500 text-center py-8">No books in this category.</div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 mt-4">
-              {filteredBooks.map((book) => (
-                <BookListRow key={book.id} book={book} removeBook={removeBook} />
-              ))}
-              {filteredBooks.length === 0 && (
-                <div className="text-gray-500 text-center py-8">No books in this category.</div>
-              )}
+  const pageTitle =
+    sidebarTab === "recommended" ? "My Recommendations" :
+    sidebarTab === "discover"    ? "Discover"           :
+    "My Books"
+
+  const viewToggle = (
+    <div className="flex items-center gap-1">
+      <button onClick={() => toggleView("grid")} className={`p-2 rounded ${viewMode === "grid" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} title="Grid view"><LayoutGrid size={15} /></button>
+      <button onClick={() => toggleView("list")} className={`p-2 rounded ${viewMode === "list" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} title="List view"><List size={15} /></button>
+    </div>
+  )
+
+  const gridView = (books: Book[]) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+      {books.map((book) => <BookCard key={book.id} book={book} removeBook={removeBook} />)}
+      {books.length === 0 && <div className="col-span-full text-gray-400 text-center py-12" style={sans}>No books here yet.</div>}
+    </div>
+  )
+
+  const listView = (books: Book[]) => (
+    <div className="flex flex-col gap-2 mt-4">
+      {books.map((book) => <BookListRow key={book.id} book={book} removeBook={removeBook} />)}
+      {books.length === 0 && <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>}
+    </div>
+  )
+
+  return (
+    <div className="flex min-h-screen" style={{ background: "#faf7f2" }}>
+      <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
+
+      <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "#f7f4ef" }}>
+        <div className="px-8 py-8 w-full">
+
+          {/* Page title */}
+          <h1 className="text-2xl font-bold mb-6" style={{ ...serif, color: "#2d2416" }}>
+            {pageTitle}
+          </h1>
+
+          {/* MY BOOKS */}
+          {sidebarTab === "my-books" && (
+            <>
+              <div className="mb-5">
+                <BookSearch />
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <ul className="flex flex-wrap gap-2">
+                  {tabs.map((tab) => (
+                    <li
+                      key={tab.name}
+                      onClick={() => setActiveTab(tab.name)}
+                      className="cursor-pointer px-4 py-2 rounded-full text-sm transition-colors"
+                      style={{
+                        ...sans,
+                        background: activeTab === tab.name ? "#c17f3e" : "#ede6dc",
+                        color:      activeTab === tab.name ? "white"   : "#6b5c4e",
+                        fontWeight: activeTab === tab.name ? "600"     : "500",
+                      }}
+                    >
+                      {tab.name} ({tab.count})
+                    </li>
+                  ))}
+                </ul>
+                {viewToggle}
+              </div>
+              {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
+            </>
+          )}
+
+          {/* MY RECOMMENDATIONS */}
+          {sidebarTab === "recommended" && (
+            <>
+              <div className="mb-5">
+                <BookSearch />
+              </div>
+              <div className="flex justify-end mb-3">{viewToggle}</div>
+              {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
+            </>
+          )}
+
+          {/* DISCOVER */}
+          {sidebarTab === "discover" && (
+            <div className="max-w-sm">
+              <AiRecommendationCard />
             </div>
           )}
+
         </div>
-        <div className="lg:w-1/4">
-          <AiRecommendationCard />
-        </div>
-      </div>
+      </main>
     </div>
   )
 }
