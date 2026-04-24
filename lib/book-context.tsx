@@ -214,7 +214,30 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClientSupabaseClient()
 
     if (status === "recommended") {
-      // Only delete the recommended row — keep the completed copy
+      const recBook = books.recommended.find((b) => b.id === id)
+      const hasCompleted = books.completed.some((b) => b.id === id)
+
+      if (!hasCompleted && recBook) {
+        // No completed copy exists — create one before removing from recommendations
+        await supabase.from("books").upsert({
+          id,
+          user_id: userId,
+          title: recBook.title,
+          author: recBook.author,
+          cover_url: recBook.cover || "",
+          status: "completed",
+          description: recBook.description ?? null,
+          published_year: recBook.publishedYear ?? null,
+          self_rating: recBook.selfRating ?? null,
+          auto_completed: true,
+        }, { onConflict: "id" })
+        setBooks((prev) => ({
+          ...prev,
+          completed: [...prev.completed, { ...recBook, status: "completed", autoCompleted: true }],
+        }))
+      }
+
+      // Delete only the recommended row
       await supabase.from("books").delete().eq("id", id).eq("user_id", userId).eq("status", "recommended")
       setBooks((prev) => ({
         ...prev,
@@ -231,7 +254,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         return updated
       })
     }
-  }, [userId])
+  }, [userId, books])
 
   const updateNote = useCallback(async (bookId: string, note: string) => {
     if (!userId) return
