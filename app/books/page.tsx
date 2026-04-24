@@ -204,7 +204,9 @@ export default function BooksPage() {
                 <BookSearch />
               </div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm" style={{ ...sans, color: "#6b5c4e" }}>{recommendedCount} {recommendedCount === 1 ? "book" : "books"}</span>
+                <span className="px-4 py-2 rounded-full text-sm" style={{ ...sans, background: "#c17f3e", color: "white", fontWeight: "600" }}>
+                  My Recommendations ({recommendedCount})
+                </span>
                 {viewToggle}
               </div>
               {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
