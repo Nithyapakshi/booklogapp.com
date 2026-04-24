@@ -6,7 +6,6 @@ import BookSearch from "@/components/book-search"
 import type { Book } from "@/types"
 import { Sidebar } from "@/components/sidebar"
 import { LayoutGrid, List } from "lucide-react"
-import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
 import { AiRecommendationCard } from "@/components/ai-recommendation-card"
@@ -19,12 +18,11 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
-  const { addBook } = useBooksContext()
+  const { addBook, updateRating } = useBooksContext()
 
   const handleStarClick = async (star: number) => {
     setRating(star)
-    const supabase = createClientSupabaseClient()
-    await supabase.from("books").update({ self_rating: star }).eq("id", book.id)
+    await updateRating(book.id, star)
   }
 
   const moveBook = (status: BookStatus) => {

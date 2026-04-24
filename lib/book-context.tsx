@@ -26,6 +26,7 @@ type BookContextType = {
   getBookCountByStatus: (status: BookStatus) => number
   loading: boolean
   updateNote: (bookId: string, note: string) => Promise<void>
+  updateRating: (bookId: string, rating: number) => Promise<void>
 }
 
 const emptyBooks: Record<BookStatus, Book[]> = {
@@ -115,6 +116,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       description: book.description ?? null,
       published_year: book.publishedYear ?? null,
       auto_completed: auto,
+      self_rating: book.selfRating ?? null,
     })
 
     // Find existing status in local state
@@ -233,11 +235,25 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     })
   }, [userId])
 
+  const updateRating = useCallback(async (bookId: string, rating: number) => {
+    if (!userId) return
+    const supabase = createClientSupabaseClient()
+    // Update all rows for this book (covers both completed and recommended copies)
+    await supabase.from("books").update({ self_rating: rating }).eq("id", bookId).eq("user_id", userId)
+    setBooks((prev) => {
+      const updated = { ...prev }
+      for (const s of Object.keys(updated) as BookStatus[]) {
+        updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, selfRating: rating } : b)
+      }
+      return updated
+    })
+  }, [userId])
+
   const getBooksByStatus = (status: BookStatus) => books[status] || []
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote }}>
+    <BookContext.Provider value={{ books, addBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote, updateRating }}>
       {children}
     </BookContext.Provider>
   )

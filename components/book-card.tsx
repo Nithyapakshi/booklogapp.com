@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import type { Book } from "@/types"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
-import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 interface BookCardProps {
   book: Book
@@ -21,14 +20,14 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
 
-  const handleStarClick = async (star: number) => {
-    setRating(star)
-    const supabase = createClientSupabaseClient()
-    await supabase.from("books").update({ self_rating: star }).eq("row_id", book.rowId)
-  }
+  const { addBook, updateRating } = useBooks()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const { addBook } = useBooks()
+
+  const handleStarClick = async (star: number) => {
+    setRating(star)
+    await updateRating(book.id, star)
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
