@@ -21,7 +21,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 type BookContextType = {
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => void
-  removeBook: (id: string, status: BookStatus) => void
+  removeBook: (id: string, status: BookStatus, rowId?: string) => void
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
   loading: boolean
@@ -209,17 +209,22 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId, books])
 
-  const removeBook = useCallback(async (id: string, status: BookStatus) => {
+  const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
     if (!userId) return
     const supabase = createClientSupabaseClient()
 
     if (status === "recommended") {
+      // Delete exactly this row by its primary key (row_id), leaving any completed copy untouched
+      const deleteQuery = rowId
+        ? supabase.from("books").delete().eq("row_id", rowId)
+        : supabase.from("books").delete().eq("id", id).eq("user_id", userId).eq("status", "recommended")
+      await deleteQuery
+
+      // If no completed copy exists for this book, create one
       const recBook = books.recommended.find((b) => b.id === id)
       const hasCompleted = books.completed.some((b) => b.id === id)
-
       if (!hasCompleted && recBook) {
-        // No completed copy exists — create one before removing from recommendations
-        await supabase.from("books").upsert({
+        const { data } = await supabase.from("books").insert({
           id,
           user_id: userId,
           title: recBook.title,
@@ -230,15 +235,13 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           published_year: recBook.publishedYear ?? null,
           self_rating: recBook.selfRating ?? null,
           auto_completed: true,
-        }, { onConflict: "id" })
+        }).select()
         setBooks((prev) => ({
           ...prev,
-          completed: [...prev.completed, { ...recBook, status: "completed", autoCompleted: true }],
+          completed: [...prev.completed, { ...recBook, status: "completed", autoCompleted: true, rowId: data?.[0]?.row_id }],
         }))
       }
 
-      // Delete only the recommended row
-      await supabase.from("books").delete().eq("id", id).eq("user_id", userId).eq("status", "recommended")
       setBooks((prev) => ({
         ...prev,
         recommended: prev.recommended.filter((b) => b.id !== id),

@@ -13,7 +13,7 @@ import { AiRecommendationCard } from "@/components/ai-recommendation-card"
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
-function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string, status: BookStatus) => void }) {
+function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string, status: BookStatus, rowId?: string) => void }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
@@ -78,7 +78,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
               {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>Move to Recommendations</div>}
               {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
-              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={() => { removeBook(book.id, book.status); setDropdownOpen(false) }}>Remove</div>
+              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={() => { removeBook(book.id, book.status, book.rowId); setDropdownOpen(false) }}>Remove</div>
             </div>
           )}
         </div>
