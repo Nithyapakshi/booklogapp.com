@@ -130,7 +130,7 @@ export default function BooksPage() {
 
   const recommendedCount = getBookCountByStatus("recommended")
   const pageTitle =
-    sidebarTab === "recommended" ? `My Recommendations (${recommendedCount})` :
+    sidebarTab === "recommended" ? "My Recommendations" :
     sidebarTab === "discover"    ? "Discover"           :
     "My Books"
 
@@ -203,7 +203,10 @@ export default function BooksPage() {
               <div className="mb-5">
                 <BookSearch />
               </div>
-              <div className="flex justify-end mb-3">{viewToggle}</div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm" style={{ ...sans, color: "#6b5c4e" }}>{recommendedCount} {recommendedCount === 1 ? "book" : "books"}</span>
+                {viewToggle}
+              </div>
               {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
             </>
           )}
