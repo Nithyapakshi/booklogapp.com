@@ -128,8 +128,9 @@ export default function BooksPage() {
     if (tab === "my-books") setActiveTab("Reading")
   }
 
+  const recommendedCount = getBookCountByStatus("recommended")
   const pageTitle =
-    sidebarTab === "recommended" ? "My Recommendations" :
+    sidebarTab === "recommended" ? `My Recommendations (${recommendedCount})` :
     sidebarTab === "discover"    ? "Discover"           :
     "My Books"
 
