@@ -21,7 +21,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 type BookContextType = {
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => void
-  removeBook: (id: string) => void
+  removeBook: (id: string, status: BookStatus) => void
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
   loading: boolean
@@ -209,17 +209,28 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId, books])
 
-  const removeBook = useCallback(async (id: string) => {
+  const removeBook = useCallback(async (id: string, status: BookStatus) => {
     if (!userId) return
     const supabase = createClientSupabaseClient()
-    await supabase.from("books").delete().eq("id", id).eq("user_id", userId)
-    setBooks((prev) => {
-      const updated = { ...prev }
-      for (const s of Object.keys(updated) as BookStatus[]) {
-        updated[s] = updated[s].filter((b) => b.id !== id)
-      }
-      return updated
-    })
+
+    if (status === "recommended") {
+      // Only delete the recommended row — keep the completed copy
+      await supabase.from("books").delete().eq("id", id).eq("user_id", userId).eq("status", "recommended")
+      setBooks((prev) => ({
+        ...prev,
+        recommended: prev.recommended.filter((b) => b.id !== id),
+      }))
+    } else {
+      // For all other statuses, delete all rows with this id
+      await supabase.from("books").delete().eq("id", id).eq("user_id", userId)
+      setBooks((prev) => {
+        const updated = { ...prev }
+        for (const s of Object.keys(updated) as BookStatus[]) {
+          updated[s] = updated[s].filter((b) => b.id !== id)
+        }
+        return updated
+      })
+    }
   }, [userId])
 
   const updateNote = useCallback(async (bookId: string, note: string) => {

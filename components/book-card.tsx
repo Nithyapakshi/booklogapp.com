@@ -11,7 +11,7 @@ import { BookDetailsDialog } from "@/components/book-details-dialog"
 
 interface BookCardProps {
   book: Book
-  removeBook: (id: string) => void
+  removeBook: (id: string, status: BookStatus) => void
 }
 
 export default function BookCard({ book, removeBook }: BookCardProps) {
@@ -53,7 +53,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation()
-    removeBook(book.id)
+    removeBook(book.id, book.status)
   }
 
   const moveBook = (status: BookStatus) => {
