@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
@@ -7,8 +7,10 @@ import type { Book } from "@/types"
 import { Sidebar } from "@/components/sidebar"
 import { LayoutGrid, List } from "lucide-react"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
+import { getAIBookRecommendations } from "@/app/actions/ai-recommendations"
+import type { BookSearchResult } from "@/types"
+import { Textarea } from "@/components/ui/textarea"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
-import { AiRecommendationCard } from "@/components/ai-recommendation-card"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -85,6 +87,123 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
       </div>
       <BookDetailsDialog book={book} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="view" />
     </>
+  )
+}
+
+function generateBookColor(title: string): string {
+  let hash = 0
+  for (let i = 0; i < title.length; i++) {
+    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return `hsl(${Math.abs(hash) % 360}, 70%, 80%)`
+}
+
+function DiscoverTab() {
+  const [prompt, setPrompt] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [recommendations, setRecommendations] = React.useState<BookSearchResult[] | null>(null)
+  const [selectedBook, setSelectedBook] = React.useState<BookSearchResult | null>(null)
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!prompt.trim()) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const results = await getAIBookRecommendations(prompt)
+      setRecommendations(results)
+    } catch (err) {
+      setError("Sorry, we couldn't generate recommendations. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "1rem", height: "100%" }}>
+      {/* Prompt panel */}
+      <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "6px" }}>Tell us what you like</h2>
+        <p style={{ fontSize: "12px", color: "#8a7560", lineHeight: "1.6", marginBottom: "1rem" }}>
+          Describe the types of books you enjoy, authors you like, or themes you're interested in.
+        </p>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="I enjoy literary fiction with strong character development..."
+            style={{ flex: 1, minHeight: "140px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", marginBottom: "0.875rem", resize: "none" }}
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={{ padding: "9px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+          >
+            {isLoading ? "Generating..." : "Get Recommendations"}
+          </button>
+        </form>
+      </div>
+
+      {/* Results panel */}
+      <div style={{ overflow: "auto" }}>
+        {isLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
+            <div style={{ width: "32px", height: "32px", border: "2.5px solid #e0d5c4", borderTopColor: "#c17f3e", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <p style={{ marginTop: "0.875rem", fontSize: "13px", color: "#8a7560" }}>Analysing your preferences...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : error ? (
+          <div style={{ background: "#fdf2f2", border: "0.5px solid #e8c4c4", borderRadius: "10px", padding: "1.25rem" }}>
+            <p style={{ fontSize: "13px", color: "#a04040" }}>{error}</p>
+          </div>
+        ) : recommendations ? (
+          <div>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "0.875rem" }}>Your recommendations</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+              {recommendations.map((book, index) => (
+                <div
+                  key={index}
+                  onClick={() => { setSelectedBook(book); setDialogOpen(true) }}
+                  style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "8px", display: "flex", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(193,127,62,0.10)")}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+                >
+                  <div style={{ width: "70px", minWidth: "70px", height: "100px", background: "#f3ede3", overflow: "hidden", flexShrink: 0 }}>
+                    {book.cover ? (
+                      <img src={book.cover} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", background: generateBookColor(book.title), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "1rem" }}>
+                        {(book.title.charAt(0) + book.author.split(" ")[0].charAt(0)).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ padding: "0.75rem 1rem", flex: 1 }}>
+                    <h3 style={{ fontSize: "13px", fontWeight: "500", color: "#1a1208", marginBottom: "2px" }}>{book.title}</h3>
+                    <p style={{ fontSize: "11px", color: "#c17f3e", marginBottom: "5px" }}>by {book.author}</p>
+                    <p style={{ fontSize: "11px", color: "#6b5c42", lineHeight: "1.55" }}>{book.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ background: "#f3ede3", border: "0.5px solid #e0d5c4", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" opacity="0.3" />
+              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.18" />
+              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.1" />
+            </svg>
+            <p style={{ fontSize: "12px", color: "#8a7560", lineHeight: "1.65", marginTop: "0.75rem", maxWidth: "240px" }}>
+              Describe what you enjoy and click "Get Recommendations" to see personalised suggestions.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="add" />
+    </div>
   )
 }
 
@@ -215,9 +334,7 @@ export default function BooksPage() {
 
           {/* DISCOVER */}
           {sidebarTab === "discover" && (
-            <div className="max-w-sm">
-              <AiRecommendationCard />
-            </div>
+            <DiscoverTab />
           )}
 
         </div>
