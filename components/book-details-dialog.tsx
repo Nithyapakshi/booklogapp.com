@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useBooks } from "@/lib/book-context"
+import { useToast } from "@/hooks/use-toast"
 
 interface BookDetailsDialogProps {
   book: {
@@ -36,6 +37,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
   const { addBook, updateNote } = useBooks()
+  const { toast } = useToast()
   const [noteText, setNoteText] = useState(book?.notes ?? "")
   const [saved, setSaved] = useState(false)
 
@@ -46,6 +48,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   const handleAddBook = () => {
     if (book) {
       addBook(book, status)
+      toast({ title: `Added to ${statusLabels[status]}`, type: "success" })
       onClose()
     }
   }

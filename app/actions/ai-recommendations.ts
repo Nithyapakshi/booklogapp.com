@@ -2,8 +2,8 @@
 
 import Anthropic from "@anthropic-ai/sdk"
 
-// Function to get a book cover image URL from the Google Books API
-async function getBookCoverUrl(title: string, author: string): Promise<string> {
+// Function to get a book cover image URL and Google Books ID
+async function getBookCoverUrl(title: string, author: string): Promise<{ cover: string; googleId: string }> {
   try {
     const query = encodeURIComponent(`${title} ${author}`)
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
@@ -14,18 +14,18 @@ async function getBookCoverUrl(title: string, author: string): Promise<string> {
 
     const data = await response.json()
 
-    if (data.items && data.items.length > 0 && data.items[0].volumeInfo.imageLinks) {
-      // Return the thumbnail image URL
-      return data.items[0].volumeInfo.imageLinks.thumbnail
+    if (data.items && data.items.length > 0) {
+      const item = data.items[0]
+      return {
+        cover: item.volumeInfo.imageLinks?.thumbnail ?? "",
+        googleId: item.id ?? "",
+      }
     }
 
-    // If no image is found, return null
-    // The UI will handle displaying a fallback for null cover values
-    return ""
+    return { cover: "", googleId: "" }
   } catch (error) {
     console.error("Error fetching book cover:", error)
-    // Return empty string to indicate no cover was found
-    return ""
+    return { cover: "", googleId: "" }
   }
 }
 
@@ -70,15 +70,10 @@ Do not include any text outside the JSON array.`,
 
       // Add IDs and fetch cover images for each book
       const booksWithCovers = await Promise.all(
-        recommendations.map(async (book: any, index: number) => {
-          // Get a cover image URL for the book
-          const coverUrl = await getBookCoverUrl(book.title, book.author)
-
-          return {
-            ...book,
-            id: `ai-rec-${index}`,
-            cover: coverUrl,
-          }
+        recommendations.map(async (book: any) => {
+          const { cover, googleId } = await getBookCoverUrl(book.title, book.author)
+          const stableId = googleId || `ai-rec-${book.title}-${book.author}`.replace(/\s+/g, '-').toLowerCase()
+          return { ...book, id: stableId, cover }
         }),
       )
 
