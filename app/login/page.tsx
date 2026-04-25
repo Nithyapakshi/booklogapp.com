@@ -3,8 +3,17 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { BookOpen } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+
+function BookLogLogo({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" />
+      <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.62" />
+      <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.32" />
+    </svg>
+  )
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -33,7 +42,6 @@ export default function LoginPage() {
         return
       }
 
-      // Create a new client with explicit auth options
       const supabase = createClient(supabaseUrl, supabaseKey, {
         auth: {
           persistSession: true,
@@ -41,7 +49,6 @@ export default function LoginPage() {
         },
       })
 
-      // Perform login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -54,12 +61,8 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        setStatus("Login successful! Redirecting to Books page...")
-
-        // Store user in localStorage as a backup
+        setStatus("Login successful! Redirecting...")
         localStorage.setItem("booklog-user", JSON.stringify(data.user))
-
-        // Force a hard navigation to books page
         window.location.href = "/books"
       }
     } catch (err) {
@@ -69,21 +72,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <Link href="/" className="mb-8 flex items-center gap-2">
-        <BookOpen className="h-6 w-6 text-blue-600" />
-        <span className="text-xl font-bold text-blue-600">BookLog</span>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4" style={{ background: "#faf7f2", fontFamily: "DM Sans, sans-serif" }}>
+
+      {/* Logo */}
+      <Link href="/" className="mb-8 flex items-center gap-2" style={{ textDecoration: "none" }}>
+        <BookLogLogo size={22} />
+        <span style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "#1a1208", fontWeight: "normal" }}>BookLog</span>
       </Link>
 
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center">Log in to BookLog</h1>
+      {/* Card */}
+      <div className="w-full" style={{ maxWidth: "400px", background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "12px", padding: "2rem" }}>
+        <h1 style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "#1a1208", fontWeight: "normal", marginBottom: "4px" }}>Welcome back</h1>
+        <p style={{ fontSize: "13px", color: "#8a7560", marginBottom: "1.5rem" }}>Log in to your account</p>
 
-        {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">{error}</div>}
-        {status && <div className="p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-md">{status}</div>}
+        {error && (
+          <div style={{ padding: "10px 14px", background: "#fdf2f2", border: "0.5px solid #e8c4c4", color: "#a04040", borderRadius: "7px", fontSize: "13px", marginBottom: "1rem" }}>
+            {error}
+          </div>
+        )}
+        {status && !error && (
+          <div style={{ padding: "10px 14px", background: "#f5ede0", border: "0.5px solid #e0c9a8", color: "#7a5530", borderRadius: "7px", fontSize: "13px", marginBottom: "1rem" }}>
+            {status}
+          </div>
+        )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label htmlFor="email" style={{ display: "block", fontSize: "12px", color: "#6b5c42", fontWeight: "500", marginBottom: "4px" }}>
               Email
             </label>
             <input
@@ -92,12 +107,13 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="you@email.com"
+              style={{ width: "100%", padding: "8px 12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", fontSize: "13px", color: "#1a1208", background: "#fff", outline: "none", boxSizing: "border-box" }}
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label htmlFor="password" style={{ display: "block", fontSize: "12px", color: "#6b5c42", fontWeight: "500", marginBottom: "4px" }}>
               Password
             </label>
             <input
@@ -106,27 +122,26 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="••••••••"
+              style={{ width: "100%", padding: "8px 12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", fontSize: "13px", color: "#1a1208", background: "#fff", outline: "none", boxSizing: "border-box" }}
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            style={{ width: "100%", padding: "10px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
           >
             {isLoading ? "Logging in..." : "Log in"}
           </button>
         </form>
 
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign up
-            </Link>
-          </p>
-        </div>
+        <p style={{ textAlign: "center", fontSize: "12px", color: "#8a7560", marginTop: "1.25rem" }}>
+          Don't have an account?{" "}
+          <Link href="/signup" style={{ color: "#c17f3e", textDecoration: "none", fontWeight: "500" }}>
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   )
