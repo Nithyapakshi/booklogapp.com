@@ -1,13 +1,42 @@
 "use client"
 
 import type React from "react"
-
 import Link from "next/link"
-import { BookOpen } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+
+function BookLogLogo({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" />
+      <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.62" />
+      <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.32" />
+    </svg>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 12px",
+  border: "0.5px solid #d4c5a9",
+  borderRadius: "7px",
+  fontSize: "13px",
+  color: "#1a1208",
+  background: "#fff",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "DM Sans, sans-serif",
+}
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: "12px",
+  color: "#6b5c42",
+  fontWeight: "500",
+  marginBottom: "4px",
+}
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState("")
@@ -27,7 +56,6 @@ export default function SignupPage() {
     setError(null)
     setMessage(null)
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwords don't match")
       return
@@ -41,23 +69,18 @@ export default function SignupPage() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        setMessage("Account created successfully! Redirecting to dashboard...")
+        setMessage("Account created successfully! Redirecting...")
 
-        // Store user metadata
         try {
           const supabase = createClientSupabaseClient()
           await supabase.auth.updateUser({
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            },
+            data: { first_name: firstName, last_name: lastName },
           })
           await supabase.from("profiles").update({ name: firstName }).eq("user_id", data.user.id)
         } catch (err) {
           console.error("Failed to update user metadata:", err)
         }
 
-        // Redirect to dashboard after a short delay
         setTimeout(() => {
           router.push("/books")
         }, 1500)
@@ -71,116 +94,73 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <Link href="/" className="mb-8 flex items-center gap-2">
-        <BookOpen className="h-6 w-6 text-blue-600" />
-        <span className="text-xl font-bold text-blue-600">BookLog</span>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4" style={{ background: "#faf7f2", fontFamily: "DM Sans, sans-serif" }}>
+
+      {/* Logo */}
+      <Link href="/" className="mb-8 flex items-center gap-2" style={{ textDecoration: "none" }}>
+        <BookLogLogo size={22} />
+        <span style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "#1a1208", fontWeight: "normal" }}>BookLog</span>
       </Link>
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-        <div>
-          <h1 className="text-2xl font-bold text-center">Create your account</h1>
-          <p className="mt-2 text-center text-gray-600">Start tracking your reading journey today.</p>
-        </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">{error}</div>}
-        {message && <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-md">{message}</div>}
+      {/* Card */}
+      <div className="w-full" style={{ maxWidth: "400px", background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "12px", padding: "2rem" }}>
+        <h1 style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "#1a1208", fontWeight: "normal", marginBottom: "4px" }}>Create your account</h1>
+        <p style={{ fontSize: "13px", color: "#8a7560", marginBottom: "1.5rem" }}>Start tracking your reading today</p>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4">
+        {error && (
+          <div style={{ padding: "10px 14px", background: "#fdf2f2", border: "0.5px solid #e8c4c4", color: "#a04040", borderRadius: "7px", fontSize: "13px", marginBottom: "1rem" }}>
+            {error}
+          </div>
+        )}
+        {message && (
+          <div style={{ padding: "10px 14px", background: "#f5ede0", border: "0.5px solid #e0c9a8", color: "#7a5530", borderRadius: "7px", fontSize: "13px", marginBottom: "1rem" }}>
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {/* First / Last name row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "1rem" }}>
             <div>
-              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
-                First name
-              </label>
-              <input
-                id="first-name"
-                name="first-name"
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
+              <label htmlFor="first-name" style={labelStyle}>First name</label>
+              <input id="first-name" name="first-name" type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label htmlFor="last-name" className="block text-sm font-medium text-gray-700">
-                Last name
-              </label>
-              <input
-                id="last-name"
-                name="last-name"
-                type="text"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
+              <label htmlFor="last-name" style={labelStyle}>Last name</label>
+              <input id="last-name" name="last-name" type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} style={inputStyle} />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div style={{ marginBottom: "1rem" }}>
+            <label htmlFor="email" style={labelStyle}>Email</label>
+            <input id="email" name="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={inputStyle} />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div style={{ marginBottom: "1rem" }}>
+            <label htmlFor="password" style={labelStyle}>Password</label>
+            <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
           </div>
 
-          <div>
-            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
-              Confirm password
-            </label>
-            <input
-              id="confirm-password"
-              name="confirm-password"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label htmlFor="confirm-password" style={labelStyle}>Confirm password</label>
+            <input id="confirm-password" name="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isLoading ? "Creating account..." : "Create account"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={{ width: "100%", padding: "10px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+          >
+            {isLoading ? "Creating account..." : "Create account"}
+          </button>
         </form>
 
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Log in
-            </Link>
-          </p>
-        </div>
+        <p style={{ textAlign: "center", fontSize: "12px", color: "#8a7560", marginTop: "1.25rem" }}>
+          Already have an account?{" "}
+          <Link href="/login" style={{ color: "#c17f3e", textDecoration: "none", fontWeight: "500" }}>
+            Log in
+          </Link>
+        </p>
       </div>
     </div>
   )
