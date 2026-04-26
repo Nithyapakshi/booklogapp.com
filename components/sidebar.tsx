@@ -65,7 +65,11 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           className="flex items-center gap-3 overflow-hidden"
           style={{ padding: "22px 20px 18px", minHeight: "68px" }}
         >
-          <span style={{ fontSize: "22px", flexShrink: 0 }}>📚</span>
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
+              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" />
+              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.62" />
+              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.32" />
+            </svg>
           {!collapsed && (
             <span
               style={{
