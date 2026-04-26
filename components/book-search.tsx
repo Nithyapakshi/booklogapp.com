@@ -150,7 +150,7 @@ export default function BookSearch() {
         </div>
       )}
 
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="add" />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); }} mode="add" />
     </div>
   )
 }
