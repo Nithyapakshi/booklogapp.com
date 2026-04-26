@@ -124,6 +124,22 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
         <div className="p-3">
           <h3 className="font-bold text-sm truncate">{book.title}</h3>
           <p className="text-xs text-gray-600 truncate">{book.author}</p>
+              {book.genre && (
+                <span style={{
+                  display: "inline-block",
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  color: "#8a5a1e",
+                  background: "#f5ede0",
+                  border: "0.5px solid #d4a96a",
+                  borderRadius: "10px",
+                  padding: "2px 7px",
+                  marginTop: "3px",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {book.genre}
+                </span>
+              )}
           <div className="mt-2 flex justify-between items-center">
             <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded capitalize">
               {book.status}

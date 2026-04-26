@@ -88,6 +88,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             rowId: row.row_id ?? undefined,
             selfRating: row.self_rating ?? undefined,
             notes: row.notes ?? undefined,
+            genre: row.genre ?? undefined,
             ...(row.auto_completed ? { autoCompleted: true } : {}),
           } as Book)
         }
@@ -117,6 +118,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       published_year: book.publishedYear ?? null,
       auto_completed: auto,
       self_rating: book.selfRating ?? null,
+      genre: book.genre ?? null,
     })
 
     // Find existing status in local state

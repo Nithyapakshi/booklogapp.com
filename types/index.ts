@@ -6,6 +6,7 @@ export interface Book {
   status: string
   description?: string
   publishedYear?: number
+  genre?: string
   rowId?: string
   selfRating?: number
   notes?: string
@@ -18,4 +19,5 @@ export interface BookSearchResult {
   cover: string
   description?: string
   publishedYear?: number
+  genre?: string
 }

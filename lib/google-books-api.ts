@@ -39,6 +39,24 @@ function cleanText(text: string): string {
   }
 }
 
+function normaliseGenre(categories: string[] | undefined): string {
+  if (!categories || categories.length === 0) return "General"
+  const raw = categories[0].toLowerCase()
+  if (raw.includes("fiction") && !raw.includes("non")) return "Fiction"
+  if (raw.includes("non-fiction") || raw.includes("nonfiction")) return "Non-fiction"
+  if (raw.includes("biograph") || raw.includes("memoir")) return "Biography"
+  if (raw.includes("histor")) return "History"
+  if (raw.includes("business") || raw.includes("econom") || raw.includes("finance")) return "Business"
+  if (raw.includes("science") || raw.includes("technology") || raw.includes("nature")) return "Science"
+  if (raw.includes("self-help") || raw.includes("self help") || raw.includes("personal development") || raw.includes("body, mind") || raw.includes("psychology")) return "Self-help"
+  if (raw.includes("mystery") || raw.includes("thriller") || raw.includes("crime")) return "Mystery & Thriller"
+  if (raw.includes("fantasy") || raw.includes("sci-fi") || raw.includes("science fiction") || raw.includes("speculative")) return "Fantasy & Sci-fi"
+  if (raw.includes("romance") || raw.includes("love")) return "Romance"
+  if (raw.includes("child") || raw.includes("juvenile") || raw.includes("young adult") || raw.includes("ya")) return "Children's"
+  if (raw.includes("philosoph") || raw.includes("religion") || raw.includes("spiritual")) return "Philosophy"
+  return "General"
+}
+
 // Function to search for books
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   try {
@@ -65,6 +83,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
       publishedYear: item.volumeInfo.publishedDate
         ? Number.parseInt(item.volumeInfo.publishedDate.substring(0, 4))
         : undefined,
+      genre: normaliseGenre(item.volumeInfo.categories),
     }))
   } catch (error) {
     console.error("Error searching books:", error)
@@ -96,6 +115,7 @@ export async function getBookById(id: string): Promise<BookSearchResult | null> 
       publishedYear: item.volumeInfo.publishedDate
         ? Number.parseInt(item.volumeInfo.publishedDate.substring(0, 4))
         : undefined,
+      genre: normaliseGenre(item.volumeInfo.categories),
     }
   } catch (error) {
     console.error("Error getting book by ID:", error)

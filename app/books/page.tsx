@@ -49,6 +49,22 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
           <p className="text-xs text-gray-500 truncate" style={sans}>{book.author}</p>
+          {book.genre && (
+            <span style={{
+              display: "inline-block",
+              fontSize: "10px",
+              fontWeight: 500,
+              color: "#8a5a1e",
+              background: "#f5ede0",
+              border: "0.5px solid #d4a96a",
+              borderRadius: "10px",
+              padding: "2px 7px",
+              marginTop: "3px",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {book.genre}
+            </span>
+          )}
         </div>
         {(book.status === "completed" || book.status === "recommended") && (
           <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -207,10 +223,73 @@ function DiscoverTab() {
   )
 }
 
+const GENRES_INITIAL_COUNT = 5
+
+function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }: {
+  selected: string
+  onSelect: (g: string) => void
+  expanded: boolean
+  onToggleExpand: () => void
+  genres: string[]
+}) {
+  const visibleGenres = expanded ? genres : genres.slice(0, GENRES_INITIAL_COUNT)
+  const pillStyle = (g: string): React.CSSProperties => ({
+    padding: "4px 12px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    background: selected === g ? "#f5ede0" : "transparent",
+    color: selected === g ? "#8a5a1e" : "#8a7560",
+    border: selected === g ? "1px solid #c17f3e" : "0.5px solid #d4c5a9",
+    flexShrink: 0,
+  })
+  const morePillStyle: React.CSSProperties = {
+    padding: "4px 12px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    background: "#e8e0d5",
+    color: "#5a4a38",
+    border: "0.5px solid #c8b89a",
+    flexShrink: 0,
+  }
+  return (
+    <>
+      {/* Desktop: wrap + More */}
+      <div className="hidden md:flex flex-wrap gap-2 items-center" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px" }}>
+        {visibleGenres.map(g => (
+          <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
+        ))}
+        {genres.length > GENRES_INITIAL_COUNT && (
+          !expanded
+            ? <span style={morePillStyle} onClick={onToggleExpand}>+ More</span>
+            : <span style={{ ...morePillStyle, marginLeft: "4px" }} onClick={onToggleExpand}>− Less</span>
+        )}
+      </div>
+      {/* Mobile: horizontal scroll */}
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-1" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px", scrollbarWidth: "none" }}>
+        {genres.map(g => (
+          <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
+        ))}
+      </div>
+    </>
+  )
+}
+
 export default function BooksPage() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
   const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
+  const [myBooksGenreFilter, setMyBooksGenreFilter]               = useState<string>("All")
+  const [recommendedGenreFilter, setRecommendedGenreFilter]       = useState<string>("All")
+  const [myBooksGenreExpanded, setMyBooksGenreExpanded]           = useState(false)
+  const [recommendedGenreExpanded, setRecommendedGenreExpanded]   = useState(false)
 
   useEffect(() => {
     const savedTab = localStorage.getItem("booklog-active-tab")
@@ -219,16 +298,23 @@ export default function BooksPage() {
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
   }, [])
 
-  const { getBooksByStatus, getBookCountByStatus, removeBook } = useBooks()
+  const { getBooksByStatus, getBookCountByStatus, removeBook, books } = useBooks()
+
+  const userGenres = React.useMemo(() => {
+    const allBooks = Object.values(books).flat()
+    const genres = Array.from(new Set(allBooks.map(b => b.genre).filter(Boolean))) as string[]
+    genres.sort()
+    return ["All", ...genres]
+  }, [books])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
 
   useEffect(() => {
-    if (sidebarTab === "recommended") {
-      setFilteredBooks(getBooksByStatus("recommended"))
-    } else {
-      setFilteredBooks(getBooksByStatus(mapTabToStatus(activeTab)))
-    }
-  }, [activeTab, sidebarTab, getBooksByStatus])
+    const genreFilter = sidebarTab === "recommended" ? recommendedGenreFilter : myBooksGenreFilter
+    const raw = sidebarTab === "recommended"
+      ? getBooksByStatus("recommended")
+      : getBooksByStatus(mapTabToStatus(activeTab))
+    setFilteredBooks(genreFilter === "All" ? raw : raw.filter(b => b.genre === genreFilter))
+  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter])
 
   const tabs = [
     { name: "Reading",   count: getBookCountByStatus("reading")   },
@@ -312,6 +398,13 @@ export default function BooksPage() {
                 </ul>
                 {viewToggle}
               </div>
+              <GenreFilterRow
+                selected={myBooksGenreFilter}
+                onSelect={setMyBooksGenreFilter}
+                expanded={myBooksGenreExpanded}
+                onToggleExpand={() => setMyBooksGenreExpanded(e => !e)}
+                genres={userGenres}
+              />
               {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
             </>
           )}
@@ -328,6 +421,13 @@ export default function BooksPage() {
                 </span>
                 {viewToggle}
               </div>
+              <GenreFilterRow
+                selected={recommendedGenreFilter}
+                onSelect={setRecommendedGenreFilter}
+                expanded={recommendedGenreExpanded}
+                onToggleExpand={() => setRecommendedGenreExpanded(e => !e)}
+                genres={userGenres}
+              />
               {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
             </>
           )}
