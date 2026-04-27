@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
@@ -16,6 +16,18 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [displayName, setDisplayName] = useState("")
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showPopover, setShowPopover] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowPopover(false)
+      }
+    }
+    if (showPopover) document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showPopover])
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -204,48 +216,111 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           })}
         </nav>
 
-        {/* Profile */}
-        <Link
-          href="/settings"
-          className="flex items-center overflow-hidden"
-          style={{
-            gap: "10px",
-            padding: "14px 20px",
-            borderTop: "1px solid #ede6dc",
-            textDecoration: "none",
-          }}
-        >
-          <div
+        {/* Settings nav item */}
+        <div style={{ borderTop: "1px solid #ede6dc" }}>
+          <Link
+            href="/settings"
+            className="w-full flex items-center overflow-hidden"
             style={{
-              width: "28px",
-              height: "28px",
-              borderRadius: "50%",
-              background: "#c17f3e",
+              gap: "11px",
+              padding: "10px 20px",
+              color: "#6b5c4e",
+              fontWeight: "500",
+              fontSize: "13px",
+              fontFamily: "'DM Sans', sans-serif",
+              textDecoration: "none",
+              borderLeft: "2.5px solid transparent",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "white",
-              flexShrink: 0,
             }}
           >
-            {mounted && firstName ? firstName[0].toUpperCase() : "?"}
-          </div>
-          {!collapsed && (
-            <span
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            {!collapsed && <span>Settings</span>}
+          </Link>
+        </div>
+
+        {/* Profile — popover with sign out */}
+        <div ref={popoverRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowPopover(!showPopover)}
+            className="flex items-center overflow-hidden w-full"
+            style={{
+              gap: "10px",
+              padding: "14px 20px",
+              background: "transparent",
+              border: "none",
+              borderTop: "1px solid #ede6dc",
+              cursor: "pointer",
+              width: "100%",
+              textAlign: "left",
+            }}
+          >
+            <div
               style={{
-                fontSize: "13px",
-                fontWeight: "500",
-                color: "#8a7060",
-                whiteSpace: "nowrap",
-                fontFamily: "'DM Sans', sans-serif",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: "#c17f3e",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: "700",
+                color: "white",
+                flexShrink: 0,
               }}
             >
-              {mounted ? firstName : ""}
-            </span>
+              {mounted && firstName ? firstName[0].toUpperCase() : "?"}
+            </div>
+            {!collapsed && (
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  color: "#8a7060",
+                  whiteSpace: "nowrap",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {mounted ? firstName : ""}
+              </span>
+            )}
+          </button>
+          {showPopover && (
+            <div style={{
+              position: "absolute",
+              bottom: "56px",
+              left: "16px",
+              background: "#fff",
+              border: "0.5px solid #e0d5c4",
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              overflow: "hidden",
+              minWidth: "140px",
+              zIndex: 50,
+            }}>
+              <button
+                onClick={() => { setShowPopover(false); signOut() }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px 16px",
+                  fontSize: "13px",
+                  color: "#6b5c42",
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                Sign out
+              </button>
+            </div>
           )}
-        </Link>
+        </div>
       </aside>
 
       {/* ── Mobile bottom tab bar ── */}
