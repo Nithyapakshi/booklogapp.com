@@ -222,6 +222,16 @@ export default function SettingsPage() {
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
         </button>
+
+        {/* Sign out — mobile only */}
+        <div className="md:hidden" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid #e0d5c4" }}>
+          <button
+            onClick={() => signOut()}
+            style={{ fontSize: "13px", color: "#b85c5c", background: "none", border: "0.5px solid #e0c8c8", borderRadius: "6px", padding: "10px 24px", fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
+          >
+            Sign out
+          </button>
+        </div>
         <button
           onClick={async () => { const supabase = createClientSupabaseClient(); await supabase.auth.resetPasswordForEmail(email, { redirectTo: "https://booklogapp.com/settings" }); alert("Password reset email sent!") }}
           style={{ display: "block", marginTop: "12px", fontSize: "12px", color: "#c17f3e", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", padding: 0 }}
