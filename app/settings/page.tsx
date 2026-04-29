@@ -50,14 +50,12 @@ export default function SettingsPage() {
     setUsernameError("")
     setSaving(true)
     const supabase = createClientSupabaseClient()
-    await supabase.from("profiles").upsert({
-      user_id:            user.id,
-      email:              email,
+    await supabase.from("profiles").update({
       name:               displayName,
       username:           username,
       profile_visibility: sharingOn ? "public" : "private",
       share_mode:         shareMode,
-    }, { onConflict: "user_id" })
+    }).eq("user_id", user.id)
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
