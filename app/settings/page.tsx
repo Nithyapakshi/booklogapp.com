@@ -124,6 +124,13 @@ export default function SettingsPage() {
 
       {/* Main content */}
       <main style={{ flex: 1, padding: "24px 40px", maxWidth: "640px" }}>
+        {/* Back button — mobile only */}
+        <div className="md:hidden" style={{ marginBottom: "16px" }}>
+          <Link href="/books" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#c17f3e", fontWeight: "600", textDecoration: "none", fontFamily: "'DM Sans', sans-serif" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c17f3e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            My Books
+          </Link>
+        </div>
         <p style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#1a1208", fontWeight: "400", margin: "0 0 4px" }}>Settings</p>
         <p style={{ fontSize: "13px", color: "#8a7560", margin: "0 0 20px" }}>Manage your profile and sharing preferences</p>
 

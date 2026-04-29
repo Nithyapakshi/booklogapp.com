@@ -1,5 +1,6 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
@@ -11,6 +12,8 @@ import { getAIBookRecommendations } from "@/app/actions/ai-recommendations"
 import type { BookSearchResult } from "@/types"
 import { Textarea } from "@/components/ui/textarea"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
+import { useAuth } from "@/components/auth/auth-provider"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -71,7 +74,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             {[1, 2, 3, 4, 5].map((star) => (
               <span
                 key={star}
-                className={`cursor-pointer text-lg ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                className={`cursor-pointer text-base md:text-lg ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
                 onClick={() => handleStarClick(star)}
               >
                 ★
@@ -79,9 +82,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             ))}
           </div>
         )}
-        <span className="inline-block bg-amber-50 text-amber-800 text-xs px-2 py-0.5 rounded capitalize flex-shrink-0" style={sans}>
-          {book.status}
-        </span>
+
         <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             className="p-1 rounded hover:bg-gray-100 text-gray-500"
@@ -138,7 +139,7 @@ function DiscoverTab() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "1rem", height: "100%" }}>
+    <div className="flex flex-col md:grid gap-4" style={{ gridTemplateColumns: "220px 1fr" }}>
       {/* Prompt panel */}
       <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "6px" }}>Tell us what you like</h2>
@@ -307,6 +308,38 @@ export default function BooksPage() {
     return ["All", ...genres]
   }, [books])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
+  const [shareUsername, setShareUsername] = useState("")
+  const [sharingOn, setSharingOn]         = useState(false)
+  const [shareCopied, setShareCopied]     = useState(false)
+  const router = useRouter()
+  const { user } = useAuth()
+
+  useEffect(() => {
+    async function fetchShareProfile() {
+      if (!user) return
+      const supabase = createClientSupabaseClient()
+      const { data } = await supabase
+        .from("profiles")
+        .select("username, profile_visibility")
+        .eq("user_id", user.id)
+        .single()
+      if (data) {
+        setShareUsername(data.username || "")
+        setSharingOn(data.profile_visibility === "public")
+      }
+    }
+    fetchShareProfile()
+  }, [user])
+
+  const handleShare = useCallback(() => {
+    if (!sharingOn || !shareUsername) {
+      router.push("/settings")
+      return
+    }
+    navigator.clipboard.writeText(`https://booklogapp.com/u/${shareUsername}`)
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }, [sharingOn, shareUsername, router])
 
   useEffect(() => {
     const genreFilter = sidebarTab === "recommended" ? recommendedGenreFilter : myBooksGenreFilter
@@ -367,10 +400,36 @@ export default function BooksPage() {
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "#f7f4ef" }}>
         <div className="px-8 py-8 w-full">
 
-          {/* Page title */}
-          <h1 className="text-2xl font-bold mb-6" style={{ ...serif, color: "#2d2416" }}>
-            {pageTitle}
-          </h1>
+          {/* Page title + share button */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold" style={{ ...serif, color: "#2d2416" }}>
+              {pageTitle}
+            </h1>
+            {sidebarTab !== "discover" && <button
+              onClick={handleShare}
+              className="p-1.5 md:px-3.5 md:py-1.5"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "transparent",
+                border: "0.5px solid #c17f3e",
+                borderRadius: "7px",
+                cursor: "pointer",
+                fontSize: "12px",
+                color: "#c17f3e",
+                fontWeight: "600",
+                fontFamily: "'DM Sans', sans-serif",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c17f3e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              <span className="hidden md:inline">{shareCopied ? "Copied!" : "Share profile"}</span>
+            </button>}
+          </div>
 
           {/* MY BOOKS */}
           {sidebarTab === "my-books" && (
@@ -379,12 +438,12 @@ export default function BooksPage() {
                 <BookSearch />
               </div>
               <div className="flex items-center justify-between mb-3">
-                <ul className="flex flex-wrap gap-2">
+                <ul className="flex gap-2 overflow-x-auto md:flex-wrap" style={{ scrollbarWidth: "none", flexShrink: 1, minWidth: 0 }}>
                   {tabs.map((tab) => (
                     <li
                       key={tab.name}
                       onClick={() => setActiveTab(tab.name)}
-                      className="cursor-pointer px-4 py-2 rounded-full text-sm transition-colors"
+                      className="cursor-pointer px-4 py-2 rounded-full text-sm transition-colors flex-shrink-0"
                       style={{
                         ...sans,
                         background: activeTab === tab.name ? "#c17f3e" : "#ede6dc",
