@@ -104,7 +104,7 @@ export default function BookSearch() {
             </button>
           )}
         </div>
-        <Button type="submit" className="flex items-center gap-2">
+        <Button type="submit" className="flex items-center gap-2" style={{ background: "#c17f3e", color: "#fff", border: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: "600", fontSize: "13px", borderRadius: "8px", padding: "8px 16px" }}>
           <Search className="h-4 w-4" />
           Search
         </Button>

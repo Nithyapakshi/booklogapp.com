@@ -139,24 +139,21 @@ function DiscoverTab() {
   }
 
   return (
-    <div className="flex flex-col md:grid gap-4" style={{ gridTemplateColumns: "220px 1fr" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {/* Prompt panel */}
-      <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem", display: "flex", flexDirection: "column" }}>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "6px" }}>Tell us what you like</h2>
-        <p style={{ fontSize: "12px", color: "#8a7560", lineHeight: "1.6", marginBottom: "1rem" }}>
-          Describe the types of books you enjoy, authors you like, or themes you're interested in.
-        </p>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem" }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
+        <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="I enjoy literary fiction with strong character development..."
-            style={{ flex: 1, minHeight: "140px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", marginBottom: "0.875rem", resize: "none" }}
+            style={{ flex: 1, minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", resize: "none" }}
           />
           <button
             type="submit"
             disabled={isLoading}
-            style={{ padding: "9px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+            style={{ padding: "9px 18px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif", whiteSpace: "nowrap", flexShrink: 0, height: "70px" }}
           >
             {isLoading ? "Generating..." : "Get Recommendations"}
           </button>
@@ -164,7 +161,7 @@ function DiscoverTab() {
       </div>
 
       {/* Results panel */}
-      <div style={{ overflow: "auto" }}>
+      {(isLoading || error || recommendations) && <div style={{ overflow: "auto" }}>
         {isLoading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
             <div style={{ width: "32px", height: "32px", border: "2.5px solid #e0d5c4", borderTopColor: "#c17f3e", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -217,8 +214,7 @@ function DiscoverTab() {
             </p>
           </div>
         )}
-      </div>
-
+      </div>}
       <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="add" />
     </div>
   )
