@@ -143,20 +143,22 @@ function DiscoverTab() {
       {/* Prompt panel */}
       <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem" }}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
-        <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
+        <form onSubmit={handleSubmit}>
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="I enjoy literary fiction with strong character development..."
-            style={{ flex: 1, minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", resize: "none" }}
+            style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", resize: "none", marginBottom: "0.625rem" }}
           />
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{ padding: "9px 18px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif", whiteSpace: "nowrap", flexShrink: 0, height: "70px" }}
-          >
-            {isLoading ? "Generating..." : "Get Recommendations"}
-          </button>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{ padding: "7px 16px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "12px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+            >
+              {isLoading ? "Generating..." : "Get Recommendations"}
+            </button>
+          </div>
         </form>
       </div>
 

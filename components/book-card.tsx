@@ -141,16 +141,12 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
                 </span>
               )}
           <div className="mt-2 flex justify-between items-center">
-            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded capitalize">
-              {book.status}
-            </span>
-
             {(book.status === "completed" || book.status === "recommended") && (
               <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    className={`cursor-pointer text-xs ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                    className={`cursor-pointer text-base ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
                     onClick={() => handleStarClick(star)}
                   >
                     ★
