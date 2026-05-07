@@ -45,11 +45,15 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
     setNoteText(book?.notes ?? "")
   }, [book?.notes])
 
-  const handleAddBook = () => {
+  const handleAddBook = async () => {
     if (book) {
-      addBook(book, status)
-      toast({ title: `Added to ${statusLabels[status]}`, type: "success" })
-      onClose()
+      const result = await addBook(book, status)
+      if (result === 'duplicate') {
+        toast({ title: `Already in ${statusLabels[status]}`, type: "warning" })
+      } else {
+        toast({ title: `Added to ${statusLabels[status]}`, type: "success" })
+        onClose()
+      }
     }
   }
 

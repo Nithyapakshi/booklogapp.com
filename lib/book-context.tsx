@@ -20,7 +20,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 
 type BookContextType = {
   books: Record<BookStatus, Book[]>
-  addBook: (book: any, status: BookStatus) => void
+  addBook: (book: any, status: BookStatus) => Promise<'added' | 'duplicate' | 'moved'>
   removeBook: (id: string, status: BookStatus, rowId?: string) => void
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
@@ -102,7 +102,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   }, [userId])
 
   const addBook = useCallback(async (book: any, status: BookStatus) => {
-    if (!userId) return
+    if (!userId) return 'duplicate'
     const supabase = createClientSupabaseClient()
     const bookId = book.id || Math.random().toString(36).substring(2, 9)
     console.log('addBook called', bookId, status, userId)
@@ -123,14 +123,18 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
     // Find existing status in local state
     let existingStatus: BookStatus | null = null
+    const normalise = (s: string) => s.trim().toLowerCase()
     for (const s of Object.keys(books) as BookStatus[]) {
-      if (books[s].find((b) => b.id === bookId)) {
+      if (books[s].find((b) =>
+        b.id === bookId ||
+        (normalise(b.title) === normalise(book.title) && normalise(b.author) === normalise(book.author))
+      )) {
         existingStatus = s
         break
       }
     }
 
-    if (existingStatus === status) return
+    if (existingStatus === status) return 'duplicate'
 
     if (existingStatus) {
       if (existingStatus === "completed" && status === "recommended") {

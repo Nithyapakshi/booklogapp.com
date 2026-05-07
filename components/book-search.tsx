@@ -28,7 +28,14 @@ export default function BookSearch() {
       setIsLoading(true)
       try {
         const books = await searchBooks(debouncedQuery)
-        setResults(books)
+        const seen = new Set<string>()
+        const unique = books.filter((b) => {
+          const key = b.id || `${b.title}||${b.author}`
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+        setResults(unique)
       } catch (error) {
         console.error("Error searching books:", error)
       } finally {

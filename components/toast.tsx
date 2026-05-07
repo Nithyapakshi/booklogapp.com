@@ -15,12 +15,12 @@ export function Toast() {
   if (!mounted) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-[90vw] max-w-sm">
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`
-            flex items-center p-4 rounded-md shadow-md min-w-[300px] max-w-md
+            flex items-center p-4 rounded-md shadow-md w-full md:min-w-[300px] md:max-w-md
             animate-in fade-in slide-in-from-bottom-5
             ${
               toast.type === "success"
