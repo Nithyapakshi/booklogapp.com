@@ -1,6 +1,7 @@
 
 "use client"
 import React, { useState } from "react"
+import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
 
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -19,7 +20,7 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-function BookGrid({ books }: { books: any[] }) {
+function BookGrid({ books, showAmazonLink }: { books: any[]; showAmazonLink?: boolean }) {
   return (
     <div style={{
       display: "grid",
