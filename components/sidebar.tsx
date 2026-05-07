@@ -12,7 +12,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [displayName, setDisplayName] = useState("")
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -302,7 +302,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               zIndex: 50,
             }}>
               <button
-                onClick={() => { setShowPopover(false); signOut() }}
+                onClick={async () => { setShowPopover(false); await signOut(); window.location.href = '/login' }}
                 style={{
                   display: "block",
                   width: "100%",
