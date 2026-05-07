@@ -44,5 +44,5 @@ export function prefetchAmazonDomain(): void {
 
 export function getAmazonSearchUrl(title: string, author: string): string {
   const query = encodeURIComponent(`${title} ${author}`)
-  return `https://www.${resolvedDomain}/s?k=${query}`
+  return `https://www.${resolvedDomain}/s?k=${query}&tag=pakshi05-21`
 }
