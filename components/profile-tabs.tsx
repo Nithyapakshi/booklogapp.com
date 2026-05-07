@@ -56,6 +56,27 @@ function BookGrid({ books }: { books: any[] }) {
               ...sans
             }}>{book.author}</p>
             {book.self_rating > 0 && <StarRating rating={book.self_rating} />}
+            {showAmazonLink && (
+              <a
+                href={getAmazonSearchUrl(book.title, book.author)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  fontSize: "10px",
+                  color: "#c17f3e",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  marginTop: "4px",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                ↗ Find on Amazon
+              </a>
+            )}
           </div>
         </div>
       ))}
@@ -65,6 +86,7 @@ function BookGrid({ books }: { books: any[] }) {
 
 export function ProfileTabs({ allTabs }: { allTabs: { key: string; label: string; books: any[] }[] }) {
   const [activeKey, setActiveKey] = useState(allTabs[0]?.key)
+  React.useEffect(() => { prefetchAmazonDomain() }, [])
   const [pageSize, setPageSize] = useState<number | "all">(10)
   const [currentPages, setCurrentPages] = useState<Record<string, number>>(
     () => Object.fromEntries(allTabs.map(t => [t.key, 1]))
@@ -190,7 +212,7 @@ export function ProfileTabs({ allTabs }: { allTabs: { key: string; label: string
 
              return (
                <>
-                 <BookGrid books={paginatedBooks} />
+                 <BookGrid books={paginatedBooks} showAmazonLink={activeKey === "recommended"} />
                  {books.length > 0 && (
                    <div style={{ borderTop: "0.5px solid #e0d5c4", marginTop: "16px", paddingTop: "12px" }}>
                      <div className="md:hidden">

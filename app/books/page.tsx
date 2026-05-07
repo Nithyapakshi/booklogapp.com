@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { useBooks as useBooksContext, type BookStatus } from "@/lib/book-context"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
+import { useAmazonUrl } from "@/hooks/use-amazon-url"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -24,6 +26,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
   const { addBook, updateRating } = useBooksContext()
+  const amazonUrl = useAmazonUrl(book.title, book.author)
 
   const handleStarClick = async (star: number) => {
     setRating(star)
@@ -68,6 +71,25 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               {book.genre}
             </span>
           )}
+        {(book.status === "queued" || book.status === "recommended") && (
+          <a
+            href={amazonUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: "block",
+              fontSize: "11px",
+              color: "#c17f3e",
+              fontWeight: 500,
+              textDecoration: "none",
+              marginTop: "5px",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Find on Amazon →
+          </a>
+        )}
         </div>
         {(book.status === "completed" || book.status === "recommended") && (
           <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -97,6 +119,11 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
               {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>Move to Recommendations</div>}
               {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
+              <div
+                className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+                style={{ color: "#c17f3e" }}
+                onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
+              >Find on Amazon</div>
               <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={() => { removeBook(book.id, book.status, book.rowId); setDropdownOpen(false) }}>Remove</div>
             </div>
           )}
@@ -345,6 +372,7 @@ export default function BooksPage() {
     if (savedTab) { setActiveTab(savedTab); localStorage.removeItem("booklog-active-tab") }
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
+    prefetchAmazonDomain()
   }, [])
 
   const { getBooksByStatus, getBookCountByStatus, removeBook, books } = useBooks()

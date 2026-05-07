@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import type { Book } from "@/types"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
+import { useAmazonUrl } from "@/hooks/use-amazon-url"
 
 interface BookCardProps {
   book: Book
@@ -21,6 +22,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [rating, setRating] = useState<number>(book.selfRating || 0)
 
   const { addBook, updateRating } = useBooks()
+  const amazonUrl = useAmazonUrl(book.title, book.author)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -140,6 +142,25 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
                   {book.genre}
                 </span>
               )}
+          {(book.status === "queued" || book.status === "recommended") && (
+            <a
+              href={amazonUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: "block",
+                fontSize: "11px",
+                color: "#c17f3e",
+                fontWeight: 500,
+                textDecoration: "none",
+                marginTop: "5px",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Find on Amazon →
+            </a>
+          )}
           <div className="mt-2 flex justify-between items-center">
             {(book.status === "completed" || book.status === "recommended") && (
               <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
@@ -201,6 +222,13 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
               Move to On Hold
             </div>
           )}
+          <div
+            className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+            style={{ color: "#c17f3e" }}
+            onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
+          >
+            Find on Amazon
+          </div>
         </div>
       )}
 

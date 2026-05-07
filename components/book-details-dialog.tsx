@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { useBooks } from "@/lib/book-context"
 import { useToast } from "@/hooks/use-toast"
+import { useAmazonUrl } from "@/hooks/use-amazon-url"
 
 interface BookDetailsDialogProps {
   book: {
@@ -16,6 +17,7 @@ interface BookDetailsDialogProps {
     description?: string
     cover?: string
     notes?: string
+    status?: string
   } | null
   open: boolean
   onClose: () => void
@@ -38,6 +40,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   const [showFullDescription, setShowFullDescription] = useState(false)
   const { addBook, updateNote } = useBooks()
   const { toast } = useToast()
+  const amazonUrl = useAmazonUrl(book?.title ?? "", book?.author ?? "")
   const [noteText, setNoteText] = useState(book?.notes ?? "")
   const [saved, setSaved] = useState(false)
 
@@ -197,6 +200,27 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                     {saved && <span className="text-xs text-green-600">✓ Saved</span>}
                   </div>
                 </div>
+                {(book?.status === "queued" || book?.status === "recommended") && (
+                  <div style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "12px", marginTop: "4px" }}>
+                    <a
+                      href={amazonUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "13px",
+                        color: "#c17f3e",
+                        fontWeight: 500,
+                        textDecoration: "none",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}
+                    >
+                      ↗ Find on Amazon
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>
