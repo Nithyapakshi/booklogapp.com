@@ -285,6 +285,16 @@ export default function BooksPage() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
   const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number | "all">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("booklog-page-size")
+      if (saved === "all") return "all"
+      const n = parseInt(saved || "")
+      if (!isNaN(n)) return n
+    }
+    return 10
+  })
   const [myBooksGenreFilter, setMyBooksGenreFilter]               = useState<string>("All")
   const [recommendedGenreFilter, setRecommendedGenreFilter]       = useState<string>("All")
   const [myBooksGenreExpanded, setMyBooksGenreExpanded]           = useState(false)
@@ -345,6 +355,7 @@ export default function BooksPage() {
       ? getBooksByStatus("recommended")
       : getBooksByStatus(mapTabToStatus(activeTab))
     setFilteredBooks(genreFilter === "All" ? raw : raw.filter(b => b.genre === genreFilter))
+    setCurrentPage(1)
   }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter])
 
   const tabs = [
@@ -376,6 +387,105 @@ export default function BooksPage() {
       <button onClick={() => toggleView("list")} className={`p-2 rounded ${viewMode === "list" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} title="List view"><List size={15} /></button>
     </div>
   )
+
+  const paginatedBooks = pageSize === "all"
+    ? filteredBooks
+    : filteredBooks.slice((currentPage - 1) * (pageSize as number), currentPage * (pageSize as number))
+
+  const totalPages = pageSize === "all" ? 1 : Math.ceil(filteredBooks.length / (pageSize as number))
+
+  const handlePageSizeChange = (val: string) => {
+    const next = val === "all" ? "all" : parseInt(val)
+    setPageSize(next)
+    setCurrentPage(1)
+    localStorage.setItem("booklog-page-size", val)
+  }
+
+  const PaginationBar = () => {
+    if (filteredBooks.length === 0) return null
+    const start = pageSize === "all" ? 1 : (currentPage - 1) * (pageSize as number) + 1
+    const end   = pageSize === "all" ? filteredBooks.length : Math.min(currentPage * (pageSize as number), filteredBooks.length)
+    const showPages = totalPages > 1
+
+    const pageButtons = () => {
+      if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
+      if (currentPage <= 3) return [1, 2, 3, null, totalPages]
+      if (currentPage >= totalPages - 2) return [1, null, totalPages - 2, totalPages - 1, totalPages]
+      return [1, null, currentPage - 1, currentPage, currentPage + 1, null, totalPages]
+    }
+
+    const btnBase: React.CSSProperties = {
+      width: "28px", height: "28px", borderRadius: "6px",
+      border: "0.5px solid #e0d5c4", background: "transparent",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      cursor: "pointer", fontSize: "11px", fontFamily: "'DM Sans', sans-serif",
+      color: "#6b5c42",
+    }
+    const btnActive: React.CSSProperties = { ...btnBase, background: "#c17f3e", color: "#fff", border: "0.5px solid #c17f3e", fontWeight: 600 }
+    const btnDisabled: React.CSSProperties = { ...btnBase, opacity: 0.35, cursor: "default" }
+
+    const sizeSelector = (
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>Per page</span>
+        <select
+          value={pageSize === "all" ? "all" : String(pageSize)}
+          onChange={e => handlePageSizeChange(e.target.value)}
+          style={{
+            fontSize: "11px", fontFamily: "'DM Sans', sans-serif",
+            border: "0.5px solid #e0d5c4", borderRadius: "6px",
+            padding: "3px 20px 3px 7px", background: "#faf7f2",
+            color: "#1a1208", cursor: "pointer", appearance: "none",
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a7560'/%3E%3C/svg%3E\")",
+            backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center",
+          }}
+        >
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+    )
+
+    return (
+      <div style={{ borderTop: "0.5px solid #e0d5c4", marginTop: "16px", paddingTop: "12px" }}>
+        {/* Mobile: info + selector row, then page buttons centered */}
+        <div className="md:hidden">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif" }}>{start}–{end} of {filteredBooks.length}</span>
+            {sizeSelector}
+          </div>
+          {showPages && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+              <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
+              {pageButtons().map((p, i) =>
+                p === null
+                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "#8a7560", padding: "0 2px" }}>…</span>
+                  : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
+              )}
+              <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
+            </div>
+          )}
+        </div>
+        {/* Desktop: single row */}
+        <div className="hidden md:flex" style={{ alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", flex: 1 }}>Showing {start}–{end} of {filteredBooks.length}</span>
+          {showPages && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
+              {pageButtons().map((p, i) =>
+                p === null
+                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "#8a7560", padding: "0 2px" }}>…</span>
+                  : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
+              )}
+              <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
+            </div>
+          )}
+          {sizeSelector}
+        </div>
+      </div>
+    )
+  }
 
   const gridView = (books: Book[]) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
@@ -462,7 +572,8 @@ export default function BooksPage() {
                 onToggleExpand={() => setMyBooksGenreExpanded(e => !e)}
                 genres={userGenres}
               />
-              {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
+              {viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks)}
+              <PaginationBar />
             </>
           )}
 
@@ -485,7 +596,8 @@ export default function BooksPage() {
                 onToggleExpand={() => setRecommendedGenreExpanded(e => !e)}
                 genres={userGenres}
               />
-              {viewMode === "grid" ? gridView(filteredBooks) : listView(filteredBooks)}
+              {viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks)}
+              <PaginationBar />
             </>
           )}
 
