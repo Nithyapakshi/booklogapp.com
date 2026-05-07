@@ -120,8 +120,28 @@ function DiscoverTab() {
   const [isLoading, setIsLoading] = React.useState(false)
   const [recommendations, setRecommendations] = React.useState<BookSearchResult[] | null>(null)
   const [selectedBook, setSelectedBook] = React.useState<BookSearchResult | null>(null)
+  const [selectedBookInLibrary, setSelectedBookInLibrary] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+
+  const { books } = useBooksContext()
+  const allMyBooks = React.useMemo(() => Object.values(books).flat(), [books])
+
+  const normalise = (s: string) => s.trim().toLowerCase()
+
+  const findInLibrary = (title: string, author: string) =>
+    allMyBooks.find(b =>
+      b.id === title ||
+      (normalise(b.title) === normalise(title) && normalise(b.author) === normalise(author))
+    )
+
+  const statusLabel: Record<string, string> = {
+    reading:     "Reading",
+    queued:      "Queued",
+    completed:   "Completed",
+    recommended: "Recommendations",
+    onHold:      "On Hold",
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -181,7 +201,12 @@ function DiscoverTab() {
               {recommendations.map((book, index) => (
                 <div
                   key={index}
-                  onClick={() => { setSelectedBook(book); setDialogOpen(true) }}
+                  onClick={() => {
+                    const match = findInLibrary(book.title, book.author)
+                    setSelectedBook(book)
+                    setSelectedBookInLibrary(!!match)
+                    setDialogOpen(true)
+                  }}
                   style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "8px", display: "flex", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(193,127,62,0.10)")}
                   onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
@@ -198,6 +223,21 @@ function DiscoverTab() {
                   <div style={{ padding: "0.75rem 1rem", flex: 1 }}>
                     <h3 style={{ fontSize: "13px", fontWeight: "500", color: "#1a1208", marginBottom: "2px" }}>{book.title}</h3>
                     <p style={{ fontSize: "11px", color: "#c17f3e", marginBottom: "5px" }}>by {book.author}</p>
+                    {(() => {
+                      const match = findInLibrary(book.title, book.author)
+                      if (!match) return null
+                      return (
+                        <span style={{
+                          display: "inline-block", fontSize: "10px", fontWeight: 500,
+                          color: "#8a5a1e", background: "#f5ede0",
+                          border: "0.5px solid #c17f3e", borderRadius: "10px",
+                          padding: "2px 8px", marginBottom: "4px",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                          In your library · {statusLabel[match.status] ?? match.status}
+                        </span>
+                      )
+                    })()}
                     <p style={{ fontSize: "11px", color: "#6b5c42", lineHeight: "1.55" }}>{book.description}</p>
                   </div>
                 </div>
@@ -217,7 +257,7 @@ function DiscoverTab() {
           </div>
         )}
       </div>}
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="add" />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode={selectedBookInLibrary ? "view" : "add"} />
     </div>
   )
 }
