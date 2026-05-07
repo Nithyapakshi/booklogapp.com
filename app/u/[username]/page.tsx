@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { ProfileTabs } from "@/components/profile-tabs"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -58,7 +57,7 @@ export default async function PublicProfilePage({ params }: Props) {
     b.status?.toLowerCase() === "recommended"
   )
   const reading = books.filter(b => b.status === "reading")
-  const completed = books.filter(b => b.status === "completed")
+  const queued = books.filter(b => b.status === "queued")
 
   const showFullLibrary = profile.share_mode === "full_library"
 
@@ -68,11 +67,9 @@ export default async function PublicProfilePage({ params }: Props) {
     { key: "recommended", label: "Recommendations", books: recommended },
     ...(showFullLibrary ? [
       { key: "reading", label: "Reading", books: reading },
-      { key: "completed", label: "Completed", books: completed },
+      { key: "queued", label: "Queued", books: queued },
     ] : []),
   ].filter(t => t.books.length > 0)
-
-  const activeTab = allTabs[0]
 
   return (
     <div style={{ minHeight: "100vh", background: "#faf7f2", ...sans }}>
@@ -132,109 +129,6 @@ function Header() {
           Sign up
         </Link>
       </div>
-    </div>
-  )
-}
-
-function _unused({ allTabs }: { allTabs: { key: string; label: string; books: any[] }[] }) {
-  if (allTabs.length === 0) {
-    return (
-      <p style={{ color: "#8a7560", fontSize: 14, marginTop: 32 }}>
-        No books shared yet.
-      </p>
-    )
-  }
-
-  return (
-    <div>
-      {allTabs.map((tab, i) => (
-        <section key={tab.key} style={{ marginBottom: i < allTabs.length - 1 ? 40 : 0 }}>
-          {allTabs.length > 1 && (
-            <div style={{ borderBottom: "1px solid #e0d5c4", marginBottom: 16 }}>
-              <span style={{
-                display: "inline-block",
-                fontSize: 13, color: "#c17f3e",
-                borderBottom: "2px solid #c17f3e",
-                paddingBottom: 8, paddingRight: 4,
-                ...sans2
-              }}>
-                {tab.label}
-                <span style={{
-                  marginLeft: 6, fontSize: 10,
-                  background: "#fdf0e3", color: "#c17f3e",
-                  borderRadius: 8, padding: "1px 6px"
-                }}>
-                  {tab.books.length}
-                </span>
-              </span>
-            </div>
-          )}
-          {allTabs.length === 1 && (
-            <p style={{ fontSize: 11, color: "#6b5c42", marginBottom: 12, ...sans2 }}>
-              {tab.books.length} {tab.label.toLowerCase()}
-            </p>
-          )}
-          <BookGrid books={tab.books} />
-        </section>
-      ))}
-    </div>
-  )
-}
-
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-      {[1,2,3,4,5].map(s => (
-        <div key={s} style={{
-          width: 8, height: 8,
-          background: s <= rating ? "#c17f3e" : "#e0d5c4",
-          clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)"
-        }} />
-      ))}
-    </div>
-  )
-}
-
-function BookGrid({ books }: { books: any[] }) {
-  return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-      gap: 12
-    }}>
-      {books.map(book => (
-        <div key={book.id} style={{
-          background: "#fff",
-          border: "0.5px solid #e0d5c4",
-          borderRadius: 6,
-          overflow: "hidden"
-        }}>
-          <div style={{ height: 90, background: "#e0d5c4", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {book.cover_url ? (
-              <img
-                src={book.cover_url}
-                alt={book.title}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <div style={{ width: 44, height: 64, background: "#c17f3e", borderRadius: 2, opacity: 0.4 }} />
-            )}
-          </div>
-          <div style={{ padding: "8px 10px" }}>
-            <p style={{
-              fontSize: 11, color: "#1a1208", fontWeight: 500,
-              margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              ...sans2
-            }}>{book.title}</p>
-            <p style={{
-              fontSize: 10, color: "#8a7560", margin: "2px 0 0",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              ...sans2
-            }}>{book.author}</p>
-            {book.self_rating > 0 && <StarRating rating={book.self_rating} />}
-          </div>
-        </div>
-      ))}
     </div>
   )
 }
