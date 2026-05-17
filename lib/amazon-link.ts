@@ -42,7 +42,19 @@ export function prefetchAmazonDomain(): void {
     })
 }
 
+const AFFILIATE_TAGS: Record<string, string> = {
+  "amazon.com": "pakshi-20",
+  "amazon.co.uk": "pakshi0e-21",
+  "amazon.ca": "pakshi02-20",
+  "amazon.ae": "pakshi05-21",
+}
+
+const getAffiliateTag = (domain: string): string => {
+  return AFFILIATE_TAGS[domain] || "pakshi05-21"
+}
+
 export function getAmazonSearchUrl(title: string, author: string): string {
   const query = encodeURIComponent(`${title} ${author}`)
-  return `https://www.${resolvedDomain}/s?k=${query}&tag=pakshi05-21`
+  const tag = getAffiliateTag(resolvedDomain)
+  return `https://www.${resolvedDomain}/s?k=${query}&tag=${tag}`
 }
