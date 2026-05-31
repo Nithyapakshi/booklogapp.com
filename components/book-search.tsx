@@ -2,21 +2,43 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Search } from "lucide-react"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { searchBooks, getBookById } from "@/lib/google-books-api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { Button } from "@/components/ui/button"
+import { useBooks } from "@/lib/book-context"
 
 export default function BookSearch() {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<BookSearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null)
+  const [selectedBookInLibrary, setSelectedBookInLibrary] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const debouncedQuery = useDebounce(query, 500)
+
+  const { books } = useBooks()
+  const allMyBooks = useMemo(() => Object.values(books).flat(), [books])
+
+  const normalise = (s: string) => s.trim().toLowerCase()
+  const baseTitle = (s: string) => normalise(s).replace(/\s*:.*$/, "")
+
+  const findInLibrary = (id: string, title: string, author: string) =>
+    allMyBooks.find(b =>
+      b.id === id ||
+      (baseTitle(b.title) === baseTitle(title) && normalise(b.author) === normalise(author))
+    )
+
+  const statusLabel: Record<string, string> = {
+    reading:     "Reading",
+    queued:      "Queued",
+    completed:   "Completed",
+    recommended: "Recommendations",
+    onHold:      "On Hold",
+  }
 
   useEffect(() => {
     async function fetchBooks() {
@@ -49,19 +71,15 @@ export default function BookSearch() {
   const handleBookSelect = async (book: BookSearchResult) => {
     try {
       setIsLoading(true)
-      // Get full book details
       const fullBook = await getBookById(book.id)
-      if (fullBook) {
-        setSelectedBook(fullBook)
-      } else {
-        // If we couldn't get full details, use the search result
-        setSelectedBook(book)
-      }
+      const resolved = fullBook ?? book
+      setSelectedBook(resolved)
+      setSelectedBookInLibrary(!!findInLibrary(resolved.id, resolved.title, resolved.author))
       setDialogOpen(true)
     } catch (error) {
       console.error("Error getting book details:", error)
-      // Fallback to using the search result if there's an error
       setSelectedBook(book)
+      setSelectedBookInLibrary(!!findInLibrary(book.id, book.title, book.author))
       setDialogOpen(true)
     } finally {
       setIsLoading(false)
@@ -151,13 +169,28 @@ export default function BookSearch() {
               <div>
                 <div className="font-medium">{book.title}</div>
                 <div className="text-sm text-gray-600">{book.author}</div>
+                {(() => {
+                  const match = findInLibrary(book.id, book.title, book.author)
+                  if (!match) return null
+                  return (
+                    <span style={{
+                      display: "inline-block", fontSize: "10px", fontWeight: 500,
+                      color: "#8a5a1e", background: "#f5ede0",
+                      border: "0.5px solid #c17f3e", borderRadius: "10px",
+                      padding: "2px 8px", marginTop: "4px",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}>
+                      In your library · {statusLabel[match.status] ?? match.status}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); }} mode="add" />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); setSelectedBookInLibrary(false) }} mode={selectedBookInLibrary ? "view" : "add"} />
     </div>
   )
 }
