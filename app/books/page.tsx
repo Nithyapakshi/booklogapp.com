@@ -155,11 +155,12 @@ function DiscoverTab() {
   const allMyBooks = React.useMemo(() => Object.values(books).flat(), [books])
 
   const normalise = (s: string) => s.trim().toLowerCase()
+  const baseTitle = (s: string) => normalise(s).replace(/\s*:.*$/, "")
 
   const findInLibrary = (id: string, title: string, author: string) =>
     allMyBooks.find(b =>
       b.id === id ||
-      (normalise(b.title) === normalise(title) && normalise(b.author) === normalise(author))
+      (baseTitle(b.title) === baseTitle(title) && normalise(b.author) === normalise(author))
     )
 
   const statusLabel: Record<string, string> = {
