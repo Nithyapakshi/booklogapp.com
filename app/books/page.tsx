@@ -156,9 +156,9 @@ function DiscoverTab() {
 
   const normalise = (s: string) => s.trim().toLowerCase()
 
-  const findInLibrary = (title: string, author: string) =>
+  const findInLibrary = (id: string, title: string, author: string) =>
     allMyBooks.find(b =>
-      b.id === title ||
+      b.id === id ||
       (normalise(b.title) === normalise(title) && normalise(b.author) === normalise(author))
     )
 
@@ -229,7 +229,7 @@ function DiscoverTab() {
                 <div
                   key={index}
                   onClick={() => {
-                    const match = findInLibrary(book.title, book.author)
+                    const match = findInLibrary(book.id, book.title, book.author)
                     setSelectedBook(book)
                     setSelectedBookInLibrary(!!match)
                     setDialogOpen(true)
@@ -251,7 +251,7 @@ function DiscoverTab() {
                     <h3 style={{ fontSize: "13px", fontWeight: "500", color: "#1a1208", marginBottom: "2px" }}>{book.title}</h3>
                     <p style={{ fontSize: "11px", color: "#c17f3e", marginBottom: "5px" }}>by {book.author}</p>
                     {(() => {
-                      const match = findInLibrary(book.title, book.author)
+                      const match = findInLibrary(book.id, book.title, book.author)
                       if (!match) return null
                       return (
                         <span style={{
