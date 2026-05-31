@@ -3,7 +3,7 @@
 **Last updated**: 2026-05-31  
 **Current phase**: P3+ (Supabase persistence COMPLETE, now on features like public profiles, password reset, Amazon affiliates)  
 **Repo**: `Nithyapakshi/booklogapp.com.git` (pushed via local alias `repoA`, Vercel-connected, `main` branch)  
-**Latest commit**: `950f43a` — "Deploy Amazon Associates affiliate tags for US, UK, Canada regions" (2025-05-25)  
+**Latest commit**: `dc180a54` — "Fix library indicator: strip subtitles before title comparison" (2026-05-31)  
 **Active blockers**: None critical identified (see section below for status)  
 **Critical discovery**: Project is FURTHER ALONG than memory context suggested — Supabase fully integrated, public profiles live, auth mostly fixed
 
@@ -136,6 +136,8 @@ This file is structured by topic. Use this index to locate relevant sections:
 - 🟢 **WHAT-CHANGED**: Discover tab with inline AI recommendations
   - [Source: Commit `4d616d5` — "Discover tab renders inline alongside sidebar with warm cream AI recommendations UI"]
   - Warm cream theme, Georgia serif, amber accents
+  - "In your library" badge shows on recommendation cards for books already in the user's library (any status)
+  - [Source: Commits `7d741a0c`, `dc180a54` — fixed Google Books ID match + subtitle stripping]
   - Status: ✅ Live
 
 ### Deployment & Repository
@@ -148,8 +150,8 @@ This file is structured by topic. Use this index to locate relevant sections:
   - Note: `repoA` is a local alias only — GitHub shows the destination repo as `booklogapp.com`
   - Status: ✅ Verified ground truth
 
-- 🟢 **WHAT-CHANGED**: Latest commit is `950f43a` (VERIFIED 2026-05-31)
-  - Actual latest: `950f43a` — "Deploy Amazon Associates affiliate tags for US, UK, Canada regions"
+- 🟢 **WHAT-CHANGED**: Latest commit is `dc180a54` (VERIFIED 2026-05-31)
+  - Actual latest: `dc180a54` — "Fix library indicator: strip subtitles before title comparison"
   - [Source: `git log --oneline | head -1` + Vercel deployments dashboard]
   - Status: ✅ Verified
 
@@ -495,6 +497,8 @@ This section lists past sessions for reference. Sessions are NOT loaded at the s
 | 2026-05-31 | BOOKLOG_KNOWLEDGE.md | Created and committed this knowledge base file |
 | 2026-05-31 | Session review | WORKING: addBook from Discover page, mobile layout pass, Discover tab AI recommendations. BROKEN: "Book already exists" toast (not triggering), "In your library" indicator on Discover tab (commit 99fa51f shipped but not functioning). Latest commit: c50eff7. |
 | 2026-05-31 | Knowledge base setup | BOOKLOG_KNOWLEDGE.md established as single source of truth. Session protocol: start by reading /mnt/project/BOOKLOG_KNOWLEDGE.md. End protocol: (1) draft changes, (2) apply + push to repoA main, (3) re-upload file to Claude Project. Next session: fix "In your library" indicator + "Book already exists" toast. |
+| 2026-05-31 | Fix "In your library" indicator (part 1) | Root cause: `findInLibrary(title, author)` was comparing `b.id === title` (Google Books ID vs title string — always false). Added `id` as first parameter, fixed condition to `b.id === id`, updated both call sites to pass `book.id`. Google Books ID is now primary match; title+author is fallback. Commit: `7d741a0c`. |
+| 2026-05-31 | Fix "In your library" indicator (part 2) | Second root cause: Google Books stores full titles with subtitles (e.g. "Invisible Child: Poverty, Survival & Hope in an American City") but AI returns short titles ("Invisible Child"). Added `baseTitle()` helper that strips everything after the first `:` before comparing. Applied to BOTH sides of comparison. Commit: `dc180a54`. Status: ✅ FIXED and VERIFIED. |
 
 ---
 
