@@ -493,6 +493,7 @@ This section lists past sessions for reference. Sessions are NOT loaded at the s
 | Mid sessions | Auth flows | Forgot password + reset password flow; sign-out redirect fixed |
 | Recent sessions | Amazon Associates | Affiliate links added (UAE tag `pakshi05-21`); geo-routing via ipapi.co; US/UK/Canada tags deployed |
 | 2026-05-31 | BOOKLOG_KNOWLEDGE.md | Created and committed this knowledge base file |
+| 2026-05-31 | Session review | WORKING: addBook from Discover page, mobile layout pass, Discover tab AI recommendations. BROKEN: "Book already exists" toast (not triggering), "In your library" indicator on Discover tab (commit 99fa51f shipped but not functioning). Latest commit: c50eff7. |
 
 ---
 
