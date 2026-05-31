@@ -494,6 +494,7 @@ This section lists past sessions for reference. Sessions are NOT loaded at the s
 | Recent sessions | Amazon Associates | Affiliate links added (UAE tag `pakshi05-21`); geo-routing via ipapi.co; US/UK/Canada tags deployed |
 | 2026-05-31 | BOOKLOG_KNOWLEDGE.md | Created and committed this knowledge base file |
 | 2026-05-31 | Session review | WORKING: addBook from Discover page, mobile layout pass, Discover tab AI recommendations. BROKEN: "Book already exists" toast (not triggering), "In your library" indicator on Discover tab (commit 99fa51f shipped but not functioning). Latest commit: c50eff7. |
+| 2026-05-31 | Knowledge base setup | BOOKLOG_KNOWLEDGE.md established as single source of truth. Session protocol: start by reading /mnt/project/BOOKLOG_KNOWLEDGE.md. End protocol: (1) draft changes, (2) apply + push to repoA main, (3) re-upload file to Claude Project. Next session: fix "In your library" indicator + "Book already exists" toast. |
 
 ---
 
