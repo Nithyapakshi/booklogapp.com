@@ -3,7 +3,7 @@
 **Last updated**: 2026-05-31  
 **Current phase**: P3+ (Supabase persistence COMPLETE, now on features like public profiles, password reset, Amazon affiliates)  
 **Repo**: `Nithyapakshi/booklogapp.com.git` (pushed via local alias `repoA`, Vercel-connected, `main` branch)  
-**Latest commit**: `dc180a54` — "Fix library indicator: strip subtitles before title comparison" (2026-05-31)  
+**Latest commit**: `08782eb2` — "Add 'In your library' badge to search dropdown; open in view mode if already added" (2026-05-31)  
 **Active blockers**: None critical identified (see section below for status)  
 **Critical discovery**: Project is FURTHER ALONG than memory context suggested — Supabase fully integrated, public profiles live, auth mostly fixed
 
@@ -107,6 +107,13 @@ This file is structured by topic. Use this index to locate relevant sections:
   - [Evidence: Commits `35c3adf`, `f7316a7` show preservation across status changes]
   - Status: ✅ Live and refined
 
+- 🟢 **WHAT-CHANGED**: "In your library" badge on My Books search dropdown
+  - [Source: Commit `08782eb2` — `components/book-search.tsx`]
+  - Search dropdown (Google Books results) now shows "In your library · [Status]" badge if the book is already in the user's library
+  - Clicking a book already in the library opens it in view mode instead of add mode
+  - Uses same `findInLibrary` + `baseTitle` logic as Discover tab (imported `useBooks` into `BookSearch`)
+  - Status: ✅ Live
+
 - 🟢 **WHAT-CHANGED**: Amazon Associates affiliate links
   - [Source: Commit `3fbec84` — "Add Find on Amazon links for Queued and Recommended books"]
   - Affiliate tag: `pakshi05-21` (commit `6e21408`)
@@ -136,7 +143,7 @@ This file is structured by topic. Use this index to locate relevant sections:
 - 🟢 **WHAT-CHANGED**: Discover tab with inline AI recommendations
   - [Source: Commit `4d616d5` — "Discover tab renders inline alongside sidebar with warm cream AI recommendations UI"]
   - Warm cream theme, Georgia serif, amber accents
-  - "In your library" badge shows on recommendation cards for books already in the user's library (any status)
+  - "In your library · [Status]" badge shows on Discover tab recommendation cards for books already in the user's library
   - [Source: Commits `7d741a0c`, `dc180a54` — fixed Google Books ID match + subtitle stripping]
   - Status: ✅ Live
 
@@ -150,8 +157,8 @@ This file is structured by topic. Use this index to locate relevant sections:
   - Note: `repoA` is a local alias only — GitHub shows the destination repo as `booklogapp.com`
   - Status: ✅ Verified ground truth
 
-- 🟢 **WHAT-CHANGED**: Latest commit is `dc180a54` (VERIFIED 2026-05-31)
-  - Actual latest: `dc180a54` — "Fix library indicator: strip subtitles before title comparison"
+- 🟢 **WHAT-CHANGED**: Latest commit is `08782eb2` (VERIFIED 2026-05-31)
+  - Actual latest: `08782eb2` — "Add 'In your library' badge to search dropdown; open in view mode if already added"
   - [Source: `git log --oneline | head -1` + Vercel deployments dashboard]
   - Status: ✅ Verified
 
@@ -279,6 +286,16 @@ The commit history from `e36ef93` (Supabase migration) through `950f43a` (latest
   - [Source: lib/book-context.tsx fetches from Supabase on mount]
   - Losing Supabase data = losing user data
   - Backup/export strategy important for user trust
+
+### Library Matching Logic (findInLibrary)
+
+- 🔵 **HOW-IT-WORKS**: Matching a Google Books result against the user's library
+  - Primary: `b.id === id` — Google Books volume ID (reliable when both come from the API)
+  - Fallback: `baseTitle(b.title) === baseTitle(title) && normalise(b.author) === normalise(author)`
+  - `baseTitle` strips everything after the first `:` to handle subtitle mismatches (e.g. Google Books stores full subtitle, AI returns short title)
+  - `normalise` is `trim().toLowerCase()`
+  - This logic lives in TWO places: `DiscoverTab` in `app/books/page.tsx` and `BookSearch` in `components/book-search.tsx`
+  - 🔴 **GOTCHA**: If this logic ever needs updating, update BOTH files
 
 ### Google Books ID Handling
 
@@ -499,6 +516,7 @@ This section lists past sessions for reference. Sessions are NOT loaded at the s
 | 2026-05-31 | Knowledge base setup | BOOKLOG_KNOWLEDGE.md established as single source of truth. Session protocol: start by reading /mnt/project/BOOKLOG_KNOWLEDGE.md. End protocol: (1) draft changes, (2) apply + push to repoA main, (3) re-upload file to Claude Project. Next session: fix "In your library" indicator + "Book already exists" toast. |
 | 2026-05-31 | Fix "In your library" indicator (part 1) | Root cause: `findInLibrary(title, author)` was comparing `b.id === title` (Google Books ID vs title string — always false). Added `id` as first parameter, fixed condition to `b.id === id`, updated both call sites to pass `book.id`. Google Books ID is now primary match; title+author is fallback. Commit: `7d741a0c`. |
 | 2026-05-31 | Fix "In your library" indicator (part 2) | Second root cause: Google Books stores full titles with subtitles (e.g. "Invisible Child: Poverty, Survival & Hope in an American City") but AI returns short titles ("Invisible Child"). Added `baseTitle()` helper that strips everything after the first `:` before comparing. Applied to BOTH sides of comparison. Commit: `dc180a54`. Status: ✅ FIXED and VERIFIED. |
+| 2026-05-31 | "In your library" badge on search dropdown | Added same badge + logic to `components/book-search.tsx` (My Books / My Recommendations search bar). Imports `useBooks`, derives `allMyBooks`, uses identical `findInLibrary`+`baseTitle` logic. Dropdown rows show badge; clicking a library book opens view mode not add mode. Commit: `08782eb2`. Status: ✅ LIVE. |
 
 ---
 
