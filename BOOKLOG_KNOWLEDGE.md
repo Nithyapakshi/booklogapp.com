@@ -1,6 +1,6 @@
 # BookLog Knowledge Base
 
-**Last updated**: 2026-05-31  
+**Last updated**: 2026-06-16  
 **Current phase**: P3+ (Supabase persistence COMPLETE, now on features like public profiles, password reset, Amazon affiliates)  
 **Repo**: `Nithyapakshi/booklogapp.com.git` (pushed via local alias `repoA`, Vercel-connected, `main` branch)  
 **Latest commit**: `08782eb2` — "Add 'In your library' badge to search dropdown; open in view mode if already added" (2026-05-31)  
@@ -517,6 +517,7 @@ This section lists past sessions for reference. Sessions are NOT loaded at the s
 | 2026-05-31 | Fix "In your library" indicator (part 1) | Root cause: `findInLibrary(title, author)` was comparing `b.id === title` (Google Books ID vs title string — always false). Added `id` as first parameter, fixed condition to `b.id === id`, updated both call sites to pass `book.id`. Google Books ID is now primary match; title+author is fallback. Commit: `7d741a0c`. |
 | 2026-05-31 | Fix "In your library" indicator (part 2) | Second root cause: Google Books stores full titles with subtitles (e.g. "Invisible Child: Poverty, Survival & Hope in an American City") but AI returns short titles ("Invisible Child"). Added `baseTitle()` helper that strips everything after the first `:` before comparing. Applied to BOTH sides of comparison. Commit: `dc180a54`. Status: ✅ FIXED and VERIFIED. |
 | 2026-05-31 | "In your library" badge on search dropdown | Added same badge + logic to `components/book-search.tsx` (My Books / My Recommendations search bar). Imports `useBooks`, derives `allMyBooks`, uses identical `findInLibrary`+`baseTitle` logic. Dropdown rows show badge; clicking a library book opens view mode not add mode. Commit: `08782eb2`. Status: ✅ LIVE. |
+| 2026-06-16 | Session start verification | Visually confirmed "In your library · Reading" badge working on search dropdown (screenshot: "invisible child" → Andrea Elliott result shows badge). "Book already exists" toast also working. Both open items from 2026-05-31 now closed. |
 
 ---
 
