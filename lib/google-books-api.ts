@@ -61,7 +61,7 @@ function normaliseGenre(categories: string[] | undefined): string {
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   try {
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
     )
 
     if (!response.ok) {
