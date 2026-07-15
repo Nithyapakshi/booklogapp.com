@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { Search } from "lucide-react"
 import type { BookSearchResult } from "@/lib/google-books-api"
-import { searchBooks } from "@/lib/google-books-api"
+import { searchBooks, getBookById } from "@/lib/google-books-api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { Button } from "@/components/ui/button"
@@ -68,10 +68,22 @@ export default function BookSearch() {
     fetchBooks()
   }, [debouncedQuery])
 
-const handleBookSelect = (book: BookSearchResult) => {
-    setSelectedBook(book)
-    setSelectedBookInLibrary(!!findInLibrary(book.id, book.title, book.author))
-    setDialogOpen(true)
+const handleBookSelect = async (book: BookSearchResult) => {
+    try {
+      setIsLoading(true)
+      const fullBook = await getBookById(book.id)
+      const resolved = fullBook ?? book
+      setSelectedBook(resolved)
+      setSelectedBookInLibrary(!!findInLibrary(resolved.id, resolved.title, resolved.author))
+      setDialogOpen(true)
+    } catch (error) {
+      console.error("Error getting book details:", error)
+      setSelectedBook(book)
+      setSelectedBookInLibrary(!!findInLibrary(book.id, book.title, book.author))
+      setDialogOpen(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSearch = (e: React.FormEvent) => {
