@@ -52,7 +52,7 @@ export default function BookSearch() {
         const books = await searchBooks(debouncedQuery)
         const seen = new Set<string>()
         const unique = books.filter((b) => {
-          const key = b.id || `${b.title}||${b.author}`
+        const key = `${b.title.trim().toLowerCase()}||${b.author.trim().toLowerCase()}`
           if (seen.has(key)) return false
           seen.add(key)
           return true
