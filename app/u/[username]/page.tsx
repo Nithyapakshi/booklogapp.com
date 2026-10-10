@@ -16,7 +16,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   // 1. Fetch profile by username
   const { data: profile } = await supabase
-    .from("profiles")
+    .from("shared_profiles")
     .select("user_id, name, username, profile_visibility, share_mode, avatar_url")
     .eq("username", username)
     .single()
@@ -47,7 +47,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   // 3. Fetch books
   const { data: allBooks } = await supabase
-    .from("books")
+    .from("shared_books")
     .select("id, title, author, cover_url, status, self_rating")
     .eq("user_id", profile.user_id)
 
@@ -59,6 +59,8 @@ export default async function PublicProfilePage({ params }: Props) {
   const reading = books.filter(b => b.status === "reading")
   const queued = books.filter(b => b.status === "queued")
 
+  const completed = books.filter(b => b.status === "completed")
+  const onHold = books.filter(b => b.status === "onHold")
   const showFullLibrary = profile.share_mode === "full_library"
 
   // Build tabs — only tabs with books, recommendations always first
@@ -68,6 +70,8 @@ export default async function PublicProfilePage({ params }: Props) {
     ...(showFullLibrary ? [
       { key: "reading", label: "Reading", books: reading },
       { key: "queued", label: "Queued", books: queued },
+      { key: "completed", label: "Completed", books: completed },
+      { key: "onHold", label: "On Hold", books: onHold },
     ] : []),
   ].filter(t => t.books.length > 0)
 
