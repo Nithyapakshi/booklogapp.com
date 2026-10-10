@@ -31,6 +31,7 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
 
 export async function getAIBookRecommendations(query: string) {
   try {
+    if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
     }
