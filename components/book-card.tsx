@@ -17,13 +17,14 @@ interface BookCardProps {
 
 export default function BookCard({ book, removeBook }: BookCardProps) {
   const [isHovering, setIsHovering] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
 
-  const { addBook, updateRating } = useBooks()
+  const { moveBook: moveStoredBook, updateRating } = useBooks()
   const amazonUrl = useAmazonUrl(book.title, book.author)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -69,7 +70,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
 
     // Add the book to the new status (this will move it from the old status)
     setWriteError(null)
-    try { await addBook(book, status) }
+    try { await moveStoredBook(book, status) }
     catch { setWriteError("Book was not moved. Please try again.") }
 
     // Close dropdown after action
@@ -205,6 +206,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button type="button" className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100" onClick={e=>{e.stopPropagation(); setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</button>
           {book.status !== "reading" && (
             <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>
               Move to Reading
@@ -241,7 +243,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
       )}
 
       {/* Book details dialog */}
-      <BookDetailsDialog book={book} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="view" />
+      <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />
     </>
   )
 }
