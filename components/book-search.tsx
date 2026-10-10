@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { useBooks } from "@/lib/book-context"
 
 export default function BookSearch() {
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [searchAttempt, setSearchAttempt] = useState(0)
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<BookSearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -41,13 +43,17 @@ export default function BookSearch() {
   }
 
   useEffect(() => {
+    let active = true
     async function fetchBooks() {
       if (debouncedQuery.length < 2) {
         setResults([])
+        setSearchError(null)
+        setIsLoading(false)
         return
       }
 
       setIsLoading(true)
+      setSearchError(null)
       try {
         const books = await searchBooks(debouncedQuery)
         const seen = new Set<string>()
@@ -57,16 +63,17 @@ export default function BookSearch() {
           seen.add(key)
           return true
         })
-        setResults(unique)
+        if (active) setResults(unique)
       } catch (error) {
-        console.error("Error searching books:", error)
+        if (active) { setResults([]); setSearchError("Search is unavailable. Please try again.") }
       } finally {
-        setIsLoading(false)
+        if (active) setIsLoading(false)
       }
     }
 
     fetchBooks()
-  }, [debouncedQuery])
+    return () => { active = false }
+  }, [debouncedQuery, searchAttempt])
 
 const handleBookSelect = async (book: BookSearchResult) => {
     try {
@@ -90,7 +97,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
     e.preventDefault()
     // Trigger search with current query
     if (query.trim().length >= 2) {
-      searchBooks(query)
+      setSearchAttempt((attempt) => attempt + 1)
     }
   }
 
@@ -135,6 +142,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
         </Button>
       </form>
 
+{searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError}</p>}
 {isLoading && query.length >= 2 && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg px-4 py-3 text-sm text-gray-500" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Searching...
