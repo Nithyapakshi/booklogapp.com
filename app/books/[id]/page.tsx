@@ -28,7 +28,7 @@ const bookDetails = {
   estimatedFinishDate: "April 20, 2023",
 }
 
-export default function BookDetailPage({ params }: { params: { id: string } }) {
+export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [notes, setNotes] = useState(bookDetails.notes)
   const progress = Math.round((bookDetails.currentPage / bookDetails.pages) * 100)
 

@@ -1,9 +1,9 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 // Create a singleton for client-side usage
-let clientSupabaseInstance: ReturnType<typeof createClient> | null = null
+let clientSupabaseInstance: SupabaseClient | null = null
 
-export const createClientSupabaseClient = () => {
+export const createClientSupabaseClient = (): SupabaseClient => {
   if (clientSupabaseInstance) return clientSupabaseInstance
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -19,7 +19,7 @@ export const createClientSupabaseClient = () => {
   clientSupabaseInstance = createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: true,
-      storageKey: "sb-eebnkqmdpayvrbjubqdg-auth-token",
+      storageKey: `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`,
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },

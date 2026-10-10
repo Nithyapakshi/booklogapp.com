@@ -23,24 +23,29 @@ const sans  = { fontFamily: "'DM Sans', sans-serif" }
 function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string, status: BookStatus, rowId?: string) => void }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
   const { addBook, updateRating } = useBooksContext()
   const amazonUrl = useAmazonUrl(book.title, book.author)
 
   const handleStarClick = async (star: number) => {
-    setRating(star)
-    await updateRating(book.id, star)
+    setWriteError(null)
+    try { await updateRating(book.id, star); setRating(star) }
+    catch { setWriteError("Rating was not saved. Please try again.") }
   }
 
-  const moveBook = (status: BookStatus) => {
+  const moveBook = async (status: BookStatus) => {
     if (book.status === status) return
-    addBook(book, status)
+    setWriteError(null)
+    try { await addBook(book, status) }
+    catch { setWriteError("Book was not moved. Please try again.") }
     setDropdownOpen(false)
   }
 
   return (
     <>
+      {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
       <div
         className="flex items-center gap-4 bg-white rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setDialogOpen(true)}
@@ -124,7 +129,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
                 style={{ color: "#c17f3e" }}
                 onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
               >Find on Amazon</div>
-              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={() => { removeBook(book.id, book.status, book.rowId); setDropdownOpen(false) }}>Remove</div>
+              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={async () => { setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId); setDropdownOpen(false) } catch { setWriteError("Book was not removed. Please try again.") } }}>Remove</div>
             </div>
           )}
         </div>

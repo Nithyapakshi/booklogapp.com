@@ -54,7 +54,7 @@ export default function LoginSimplePage() {
         password,
       })
 
-      setDebugInfo((prev) => ({
+      setDebugInfo((prev: Record<string, unknown> | null) => ({
         ...prev,
         authResponse: {
           hasUser: !!data?.user,
@@ -81,7 +81,7 @@ export default function LoginSimplePage() {
       }
     } catch (err) {
       setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
-      setDebugInfo((prev) => ({
+      setDebugInfo((prev: Record<string, unknown> | null) => ({
         ...prev,
         unexpectedError: String(err),
       }))

@@ -30,30 +30,30 @@ export default function AuthStatusPage() {
 
         if (sessionError) {
           setError(`Session error: ${sessionError.message}`)
-          setDebugInfo((prev) => ({ ...prev, sessionError }))
+          setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, sessionError }))
           return
         }
 
-        setDebugInfo((prev) => ({ ...prev, hasSession: !!sessionData.session }))
+        setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, hasSession: !!sessionData.session }))
 
         // Get user
         const { data: userData, error: userError } = await supabase.auth.getUser()
 
         if (userError) {
           setError(`User error: ${userError.message}`)
-          setDebugInfo((prev) => ({ ...prev, userError }))
+          setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, userError }))
           return
         }
 
         setUser(userData.user)
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           hasUser: !!userData.user,
           userEmail: userData.user?.email,
         }))
       } catch (err) {
         setError(`Error: ${err instanceof Error ? err.message : String(err)}`)
-        setDebugInfo((prev) => ({ ...prev, error: String(err) }))
+        setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, error: String(err) }))
       } finally {
         setLoading(false)
       }
@@ -67,12 +67,12 @@ export default function AuthStatusPage() {
       const supabase = createClientSupabaseClient()
       await supabase.auth.signOut()
       setUser(null)
-      setDebugInfo((prev) => ({ ...prev, signedOut: true }))
+      setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, signedOut: true }))
       // Force reload the page
       window.location.reload()
     } catch (err) {
       setError(`Sign out error: ${err instanceof Error ? err.message : String(err)}`)
-      setDebugInfo((prev) => ({ ...prev, signOutError: String(err) }))
+      setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, signOutError: String(err) }))
     }
   }
 

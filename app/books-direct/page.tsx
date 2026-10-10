@@ -26,7 +26,7 @@ export default function BooksDirectPage() {
 
         if (!supabaseUrl || !supabaseKey) {
           setError("Missing Supabase environment variables")
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             error: "Missing environment variables",
             hasUrl: !!supabaseUrl,
@@ -49,18 +49,18 @@ export default function BooksDirectPage() {
           },
         })
 
-        setDebugInfo((prev) => ({ ...prev, step: "Checking session" }))
+        setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, step: "Checking session" }))
 
         // Get session
         const { data, error } = await supabase.auth.getSession()
 
         if (error) {
           console.error("Session error:", error)
-          setDebugInfo((prev) => ({ ...prev, sessionError: error.message }))
+          setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, sessionError: error.message }))
         } else if (data.session) {
           console.log("User authenticated via session")
           setUser(data.session.user)
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             step: "User authenticated via session",
             user: {
@@ -74,7 +74,7 @@ export default function BooksDirectPage() {
           try {
             const parsedUser = JSON.parse(localUser)
             setUser(parsedUser)
-            setDebugInfo((prev) => ({
+            setDebugInfo((prev: Record<string, unknown> | null) => ({
               ...prev,
               step: "Using backup user from localStorage",
               user: {
@@ -84,16 +84,16 @@ export default function BooksDirectPage() {
             }))
           } catch (err) {
             console.error("Failed to parse backup user:", err)
-            setDebugInfo((prev) => ({ ...prev, backupUserError: String(err) }))
+            setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, backupUserError: String(err) }))
           }
         } else {
           console.log("No user found")
-          setDebugInfo((prev) => ({ ...prev, step: "No user found" }))
+          setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, step: "No user found" }))
         }
       } catch (err) {
         console.error("Unexpected error:", err)
         setError(err instanceof Error ? err.message : String(err))
-        setDebugInfo((prev) => ({ ...prev, unexpectedError: String(err) }))
+        setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, unexpectedError: String(err) }))
       } finally {
         setLoading(false)
       }

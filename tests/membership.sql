@@ -1,0 +1,24 @@
+-- Isolated test backend, synthetic fixtures only.
+begin;
+insert into books(id,user_id,title,author,status,self_rating) values('membership-test','11111111-1111-4111-8111-111111111111','Synthetic membership','Test','completed',4);
+insert into book_notes(user_id,book_id,notes) values('11111111-1111-4111-8111-111111111111','membership-test','Keep');
+create function public.synthetic_deny_recommendation() returns trigger language plpgsql as $$ begin if new.id='membership-test' and new.status='recommended' then raise exception 'Synthetic denied insert'; end if; return new; end; $$;
+create trigger synthetic_denial before insert on books for each row execute function public.synthetic_deny_recommendation();
+set local role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+do $$ begin begin perform book_membership('membership-test','recommended'); raise exception 'Failed insert accepted'; exception when others then if SQLERRM <> 'Synthetic denied insert' then raise; end if; end; if (select count(*) from books where id='membership-test') <> 1 or not exists(select 1 from books where id='membership-test' and status='completed') then raise exception 'Failed transaction changed membership'; end if; end $$;
+reset role;
+drop trigger synthetic_denial on books;
+drop function public.synthetic_deny_recommendation();
+set local role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+select status from book_membership('membership-test','recommended');
+select status from book_membership('membership-test','queued');
+do $$ begin if not exists(select 1 from books where id='membership-test' and status='completed' and not auto_completed) or exists(select 1 from books where id='membership-test' and status='recommended') then raise exception 'Manual completed membership lost'; end if; end $$;
+select status from book_membership('membership-test','recommended');
+select status from book_membership('membership-test','recommended',true);
+do $$ begin if exists(select 1 from books where id='membership-test' and status='recommended') or not exists(select 1 from books where id='membership-test' and status='completed') then raise exception 'Recommendation removal failed'; end if; end $$;
+do $$ begin begin perform book_membership('membership-test','invalid'); raise exception 'Invalid membership accepted'; exception when others then if SQLERRM='Invalid membership accepted' then raise; end if; end; end $$;
+set constraints cleanup_book_note immediate;
+do $$ begin if not exists(select 1 from book_notes where book_id='membership-test') then raise exception 'Membership transitions lost note'; end if; end $$;
+rollback;

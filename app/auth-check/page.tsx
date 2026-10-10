@@ -39,7 +39,7 @@ export default function AuthCheckPage() {
 
         // Get cookies for debugging
         setCookies(document.cookie)
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           cookies: document.cookie.split(";").map((c) => c.trim()),
         }))
@@ -49,14 +49,14 @@ export default function AuthCheckPage() {
 
         if (error) {
           setAuthStatus(`Error: ${error.message}`)
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             sessionError: error.message,
           }))
         } else if (data.session) {
           setAuthStatus("Authenticated")
           setUser(data.session.user)
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             session: {
               expires_at: data.session.expires_at,
@@ -68,14 +68,14 @@ export default function AuthCheckPage() {
           }))
         } else {
           setAuthStatus("Not authenticated")
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             noSession: true,
           }))
         }
       } catch (err) {
         setAuthStatus(`Error: ${err instanceof Error ? err.message : String(err)}`)
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           unexpectedError: String(err),
         }))

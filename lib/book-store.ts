@@ -113,7 +113,8 @@ export function useBookStore() {
       if (bookExists && existingStatus && existingStatus !== status) {
         const updatedBooks = { ...prev }
         // Remove from old category
-        updatedBooks[existingStatus] = updatedBooks[existingStatus].filter((b) => b.id !== newBook.id)
+        const sourceStatus = existingStatus as BookStatus
+        updatedBooks[sourceStatus] = updatedBooks[sourceStatus].filter((b) => b.id !== newBook.id)
         // Add to new category
         updatedBooks[status] = [...updatedBooks[status], newBook]
         return updatedBooks

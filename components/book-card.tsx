@@ -19,7 +19,9 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
+  useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
 
   const { addBook, updateRating } = useBooks()
   const amazonUrl = useAmazonUrl(book.title, book.author)
@@ -27,8 +29,9 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleStarClick = async (star: number) => {
-    setRating(star)
-    await updateRating(book.id, star)
+    setWriteError(null)
+    try { await updateRating(book.id, star); setRating(star) }
+    catch { setWriteError("Rating was not saved. Please try again.") }
   }
 
   // Close dropdown when clicking outside
@@ -53,17 +56,21 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
     }
   }, [dropdownOpen])
 
-  const handleRemove = (e: React.MouseEvent) => {
+  const handleRemove = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    removeBook(book.id, book.status, book.rowId)
+    setWriteError(null)
+    try { await removeBook(book.id, book.status as BookStatus, book.rowId) }
+    catch { setWriteError("Book was not removed. Please try again.") }
   }
 
-  const moveBook = (status: BookStatus) => {
+  const moveBook = async (status: BookStatus) => {
     // Skip if the book is already in this status
     if (book.status === status) return
 
     // Add the book to the new status (this will move it from the old status)
-    addBook(book, status)
+    setWriteError(null)
+    try { await addBook(book, status) }
+    catch { setWriteError("Book was not moved. Please try again.") }
 
     // Close dropdown after action
     setDropdownOpen(false)
@@ -84,6 +91,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
 
   return (
     <>
+      {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
       <div
         className="bg-white rounded-lg shadow-md overflow-hidden relative cursor-pointer"
         onMouseEnter={() => setIsHovering(true)}
