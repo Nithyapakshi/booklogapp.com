@@ -42,7 +42,7 @@ export default function LoginStandalonePage() {
           storage: {
             getItem: (key) => {
               const item = localStorage.getItem(key)
-              setDebugInfo((prev) => ({
+              setDebugInfo((prev: Record<string, unknown> | null) => ({
                 ...prev,
                 storage: { key, value: item ? "exists" : "not found" },
               }))
@@ -50,14 +50,14 @@ export default function LoginStandalonePage() {
             },
             setItem: (key, value) => {
               localStorage.setItem(key, value)
-              setDebugInfo((prev) => ({
+              setDebugInfo((prev: Record<string, unknown> | null) => ({
                 ...prev,
                 storage: { key, action: "set" },
               }))
             },
             removeItem: (key) => {
               localStorage.removeItem(key)
-              setDebugInfo((prev) => ({
+              setDebugInfo((prev: Record<string, unknown> | null) => ({
                 ...prev,
                 storage: { key, action: "removed" },
               }))
@@ -82,7 +82,7 @@ export default function LoginStandalonePage() {
 
       if (error) {
         setError(`Login error: ${error.message}`)
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           authError: error.message,
         }))
@@ -94,7 +94,7 @@ export default function LoginStandalonePage() {
         setMessage("Login successful! Checking session...")
 
         // Update debug info with user data
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           user: {
             id: data.user?.id,
@@ -107,7 +107,7 @@ export default function LoginStandalonePage() {
 
         if (sessionError) {
           setError(`Session error: ${sessionError.message}`)
-          setDebugInfo((prev) => ({
+          setDebugInfo((prev: Record<string, unknown> | null) => ({
             ...prev,
             sessionError: sessionError.message,
           }))
@@ -115,7 +115,7 @@ export default function LoginStandalonePage() {
           return
         }
 
-        setDebugInfo((prev) => ({
+        setDebugInfo((prev: Record<string, unknown> | null) => ({
           ...prev,
           session: sessionData.session
             ? {
@@ -143,7 +143,7 @@ export default function LoginStandalonePage() {
       }
     } catch (err) {
       setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
-      setDebugInfo((prev) => ({
+      setDebugInfo((prev: Record<string, unknown> | null) => ({
         ...prev,
         unexpectedError: String(err),
       }))
