@@ -1,5 +1,6 @@
 -- Isolated test project only. Generated from verified production column metadata.
 begin;
+create extension if not exists "uuid-ossp" with schema extensions;
 create table public.profiles (
 "id" uuid default auth.uid() not null,
 "created_at" timestamp with time zone default now() not null,
@@ -33,7 +34,7 @@ create table public.books (
 );
 alter table public.books enable row level security;
 create table public.user_books (
-"id" uuid default gen_random_uuid() not null,
+"id" uuid default extensions.uuid_generate_v4() not null,
 "user_id" uuid not null,
 "book_id" text not null,
 "status" text not null,
@@ -46,7 +47,7 @@ create table public.user_books (
 );
 alter table public.user_books enable row level security;
 create table public.activity_logs (
-"id" uuid default gen_random_uuid() not null,
+"id" uuid default extensions.uuid_generate_v4() not null,
 "user_id" uuid,
 "book_id" text,
 "action_type" text not null,
@@ -58,6 +59,8 @@ alter table public.activity_logs enable row level security;
 alter table public.profiles add primary key (id);
 alter table public.user_books add primary key (id);
 alter table public.user_books add unique (user_id,book_id);
+alter table public.user_books add check (rating >= 1 and rating <= 5);
+alter table public.user_books add check (status = any (array['reading'::text,'queued'::text,'completed'::text,'recommended'::text,'on_hold'::text]));
 alter table public.activity_logs add primary key (id);
 alter table public.books add primary key (row_id);
 alter table public.books add unique (user_id,id,status);
@@ -95,3 +98,23 @@ grant usage on schema public to anon, authenticated;
 grant select on all tables in schema public to anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 commit;
+
+-- Recovered production signup profile trigger. Test project only.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+begin
+  insert into public.profiles (id, user_id, email, username, profile_visibility)
+  values (
+    new.id,
+    new.id,
+    new.email,
+    split_part(new.email, '@', 1),
+    'private'
+  );
+  return new;
+end;
+$function$;
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
