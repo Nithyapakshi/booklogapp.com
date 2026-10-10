@@ -67,12 +67,12 @@ export default function DashboardLayout({
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="border-b">
-        <div className="container flex h-16 items-center justify-between py-4">
+        <div className="container px-4 sm:px-6 flex min-h-16 flex-wrap items-center justify-between gap-3 py-4">
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-blue-600" />
             <span className="text-xl font-bold text-blue-600">BookLog</span>
           </div>
-          <nav className="flex items-center gap-4">
+          <nav className="flex flex-wrap items-center gap-3">
             <Link href="/dashboard" className="text-sm font-medium text-gray-900">
               Dashboard
             </Link>
@@ -90,7 +90,7 @@ export default function DashboardLayout({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-w-0">{children}</main>
     </div>
   )
 }
