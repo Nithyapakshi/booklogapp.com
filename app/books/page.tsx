@@ -350,7 +350,7 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
   )
 }
 
-function BooksLibrary() {
+function BooksLibraryContent() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
   const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
@@ -693,6 +693,10 @@ function BooksLibrary() {
   )
 }
 
+function BooksLibrary() {
+  return <React.Suspense fallback={<main className="container px-4 py-8">Loading your library...</main>}><BooksLibraryContent /></React.Suspense>
+}
+
 export default function BooksPage() {
   const { user, isLoading } = useAuth()
   if (isLoading) return <main className="container px-4 py-8">Loading your library...</main>
@@ -703,5 +707,5 @@ export default function BooksPage() {
       <a href="/login" className="text-blue-600 underline">Log in</a>
     </main>
   )
-  return <React.Suspense fallback={<main className="container px-4 py-8">Loading your library...</main>}><BooksLibrary /></React.Suspense>
+  return <BooksLibrary />
 }
