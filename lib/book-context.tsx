@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
+import { validateBookDetails } from "@/lib/book-identity"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -21,7 +22,12 @@ export function mapTabToStatus(tab: string): BookStatus {
   }
 }
 
+export type BookSaveResult = { outcome: "added" | "edited" | "duplicate"; books: Book[] }
+
 type BookContextType = {
+  createBook: (book: any, status: BookStatus) => Promise<BookSaveResult>
+  editBook: (id: string, details: {title: string; author: string; cover: string}) => Promise<BookSaveResult>
+  moveBook: (book: any, status: BookStatus) => Promise<"added" | "duplicate" | "moved">
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => Promise<'added' | 'duplicate' | 'moved'>
   removeBook: (id: string, status: BookStatus, rowId?: string) => Promise<void>
@@ -189,6 +195,39 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId, books, loading, authLoading])
 
+  const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean): Promise<BookSaveResult> => {
+    if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
+    const errorText = validateBookDetails(book.title, book.author, book.cover || "")
+    if (errorText) throw new Error(errorText)
+    const supabase = createClientSupabaseClient()
+    const {data, error} = await supabase.rpc("save_book_details", {
+      p_id: book.id || crypto.randomUUID(), p_title: book.title.trim(), p_author: book.author.trim(),
+      p_cover: (book.cover || "").trim(), p_edit: edit, p_status: status,
+      p_genre: book.genre ?? null, p_description: book.description ?? null,
+      p_year: book.publishedYear ?? null, p_rating: book.selfRating ?? null,
+    })
+    if (error) throw error
+    if (!data || !["added", "edited", "duplicate"].includes(data.outcome) || !data.books?.length) throw new Error("Book was not saved. Refresh and try again.")
+    const rows: Book[] = data.books.map((row: any) => {
+      const old = Object.values(books).flat().find(b => b.id === row.id)
+      return {...old, id: row.id, title: row.title, author: row.author, cover: row.cover_url || "", status: row.status,
+        rowId: row.row_id, genre: row.genre, description: row.description, publishedYear: row.published_year,
+        selfRating: row.self_rating, autoCompleted: row.auto_completed}
+    })
+    if (data.outcome !== "duplicate") {
+      setBooks(prev => {
+        const next = {...prev}
+        for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].filter(b => b.id !== rows[0].id)
+        for (const row of rows) next[row.status as BookStatus] = [...next[row.status as BookStatus], row]
+        return next
+      })
+      if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
+    }
+    return {outcome: data.outcome, books: rows}
+  }, [userId, loading, authLoading, books])
+  const createBook = useCallback((book: any, status: BookStatus) => saveDetails(book, status, false), [saveDetails])
+  const editBook = useCallback((id: string, details: {title: string; author: string; cover: string}) => saveDetails({...details, id}, "queued", true), [saveDetails])
+
   const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
     if (!userId) return
     const supabase = createClientSupabaseClient()
@@ -256,7 +295,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote, updateRating }}>
+    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote, updateRating }}>
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
     </BookContext.Provider>
