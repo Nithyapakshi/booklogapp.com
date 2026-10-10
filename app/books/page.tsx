@@ -1,7 +1,7 @@
 "use client"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
@@ -380,12 +380,12 @@ function BooksLibrary() {
   }, [])
 
   const { getBooksByStatus, getBookCountByStatus, removeBook, books } = useBooks()
+  const searchParams = useSearchParams()
+  const requestedBookId = searchParams.get("book")
   const [linkedBookId, setLinkedBookId] = useState<string | null>(null)
   useEffect(() => {
-    const update = () => setLinkedBookId(new URLSearchParams(window.location.search).get("book"))
-    update(); window.addEventListener("popstate", update)
-    return () => window.removeEventListener("popstate", update)
-  }, [])
+    setLinkedBookId(requestedBookId)
+  }, [requestedBookId])
   const linkedBook = linkedBookId ? Object.values(books).flat().find(b => b.id === linkedBookId) : null
 
 
@@ -703,5 +703,5 @@ export default function BooksPage() {
       <a href="/login" className="text-blue-600 underline">Log in</a>
     </main>
   )
-  return <BooksLibrary />
+  return <React.Suspense fallback={<main className="container px-4 py-8">Loading your library...</main>}><BooksLibrary /></React.Suspense>
 }
