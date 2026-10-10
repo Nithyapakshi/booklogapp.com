@@ -42,6 +42,8 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   const { toast } = useToast()
   const amazonUrl = useAmazonUrl(book?.title ?? "", book?.author ?? "")
   const [noteText, setNoteText] = useState(book?.notes ?? "")
+  const [saving, setSaving] = useState(false)
+  const [writeError, setWriteError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
@@ -49,15 +51,14 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   }, [book?.notes])
 
   const handleAddBook = async () => {
-    if (book) {
+    if (!book || saving) return
+    setSaving(true); setWriteError(null)
+    try {
       const result = await addBook(book, status)
-      if (result === 'duplicate') {
-        toast({ title: `Already in ${statusLabels[status]}`, type: "warning" })
-      } else {
-        toast({ title: `Added to ${statusLabels[status]}`, type: "success" })
-        onClose()
-      }
-    }
+      if (result === "duplicate") toast({ title: `Already in ${statusLabels[status]}`, type: "warning" })
+      else { toast({ title: `Added to ${statusLabels[status]}`, type: "success" }); onClose() }
+    } catch { setWriteError("The book was not saved. Please try again.") }
+    finally { setSaving(false) }
   }
 
   // Don't render anything if dialog is not open
@@ -66,6 +67,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
           <DialogDescription>
@@ -181,24 +183,15 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
                 )}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Notes</label>
-                  <textarea
-                    placeholder="Add your personal notes..."
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md bg-white text-sm resize-none h-24"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={async () => {
-                      if (book) {
-                        await updateNote(book.id, noteText)
-                        setSaved(true)
-                        setTimeout(() => setSaved(false), 2000)
-                      }
-                    }}>
-                      Save Note
-                    </Button>
-                    {saved && <span className="text-xs text-green-600">✓ Saved</span>}
-                  </div>
+                  <textarea placeholder="Add your personal notes..." value={noteText} onChange={e => setNoteText(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-white text-sm resize-none h-24" />
+                  <p className="text-xs text-gray-500">Only you can see these notes.</p>
+                  <Button size="sm" onClick={async () => {
+                    if (!book) return
+                    setWriteError(null)
+                    try { await updateNote(book.id, noteText); setSaved(true) }
+                    catch { setSaved(false); setWriteError("Note was not saved. Please try again.") }
+                  }}>Save Note</Button>
+                  {saved && <span className="text-xs text-green-600">Saved</span>}
                 </div>
                 {(book?.status === "queued" || book?.status === "recommended") && (
                   <div style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "12px", marginTop: "4px" }}>
