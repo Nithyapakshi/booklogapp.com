@@ -124,7 +124,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     let existingStatus: BookStatus | null = null
     let existingBook: Book | undefined
     const normalise = (s: string) => s.trim().toLowerCase()
-    for (const s of Object.keys(books) as BookStatus[]) {
+    const sourceOrder = (Object.keys(books) as BookStatus[]).sort((a, b) => Number(b === book.status) - Number(a === book.status))
+    for (const s of sourceOrder) {
       const match = books[s].find((b) =>
         b.id === bookId ||
         (normalise(b.title) === normalise(book.title) && normalise(b.author) === normalise(book.author))
