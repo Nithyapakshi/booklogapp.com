@@ -27,11 +27,13 @@ export function getUserFirstName(user: User | null): string {
     }
   }
 
+  const root = user as User & { first_name?: string; firstName?: string; name?: string }
+
   // Check root level properties
-  if (typeof user.first_name === "string") return user.first_name
-  if (typeof user.firstName === "string") return user.firstName
-  if (typeof user.name === "string") {
-    const nameParts = user.name.split(" ")
+  if (typeof root.first_name === "string") return root.first_name
+  if (typeof root.firstName === "string") return root.firstName
+  if (typeof root.name === "string") {
+    const nameParts = root.name.split(" ")
     return nameParts[0]
   }
 
