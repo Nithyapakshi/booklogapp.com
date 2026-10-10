@@ -131,7 +131,7 @@ export default function AddBookPage() {
           </div>
 
           {duplicate && <div role="alert" className="rounded-md border p-4 bg-amber-50">
-            <p>Already in your library: {duplicate.title} ({duplicate.status})</p>
+            <p>Already in your library: {duplicate.title} ({({reading: "Reading", queued: "Queued", completed: "Completed", recommended: "Recommendations", onHold: "On Hold"} as Record<string, string>)[duplicate.status] || duplicate.status})</p>
             <Link className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`}>View existing book</Link>
           </div>}
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
