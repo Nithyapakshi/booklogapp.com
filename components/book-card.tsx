@@ -21,6 +21,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
+  useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
 
   const { addBook, updateRating } = useBooks()
   const amazonUrl = useAmazonUrl(book.title, book.author)
