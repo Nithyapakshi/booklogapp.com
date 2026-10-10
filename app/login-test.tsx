@@ -45,7 +45,7 @@ export default function LoginTestPage() {
         password,
       })
 
-      setDebugInfo((prev) => ({ ...prev, authResponse: data, authError: error }))
+      setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, authResponse: data, authError: error }))
 
       if (error) {
         setError(`Login error: ${error.message}`)
@@ -55,7 +55,7 @@ export default function LoginTestPage() {
         // Check if we can get the session
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
-        setDebugInfo((prev) => ({ ...prev, sessionData, sessionError }))
+        setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, sessionData, sessionError }))
 
         if (sessionError) {
           setError(`Session error: ${sessionError.message}`)
@@ -70,7 +70,7 @@ export default function LoginTestPage() {
       }
     } catch (err) {
       setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
-      setDebugInfo((prev) => ({ ...prev, unexpectedError: err }))
+      setDebugInfo((prev: Record<string, unknown> | null) => ({ ...prev, unexpectedError: err }))
     } finally {
       setIsLoading(false)
     }
