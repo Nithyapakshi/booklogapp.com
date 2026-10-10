@@ -90,7 +90,7 @@ export default function SettingsPage() {
           <div style={{ fontSize: "10px", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", color: "#b8a898", padding: "0 20px 6px" }}>Library</div>
           {[
             { href: "/books", label: "My Books",           icon: BookOpen },
-            { href: "/books", label: "My Recommendations", icon: Heart    },
+            { href: "/books?section=recommended", label: "My Recommendations", icon: Heart    },
           ].map(({ href, label, icon: Icon }) => (
             <Link key={label} href={href} style={{ display: "flex", alignItems: "center", gap: "11px", padding: "10px 20px", color: "#6b5c4e", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderLeft: "2.5px solid transparent" }}>
               <Icon size={15} style={{ flexShrink: 0 }} />
@@ -99,7 +99,7 @@ export default function SettingsPage() {
           ))}
           <div style={{ height: "1px", background: "#ede6dc", margin: "10px 0" }} />
           <div style={{ fontSize: "10px", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", color: "#b8a898", padding: "6px 20px" }}>Explore</div>
-          <Link href="/books" style={{ display: "flex", alignItems: "center", gap: "11px", padding: "10px 20px", color: "#6b5c4e", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderLeft: "2.5px solid transparent" }}>
+          <Link href="/books?section=discover" style={{ display: "flex", alignItems: "center", gap: "11px", padding: "10px 20px", color: "#6b5c4e", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderLeft: "2.5px solid transparent" }}>
             <Sparkles size={15} style={{ flexShrink: 0 }} />
             <span>Discover</span>
           </Link>
