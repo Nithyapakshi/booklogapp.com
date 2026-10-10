@@ -14,8 +14,9 @@ import { useRouter } from "next/navigation"
 import { StarRating } from "@/components/star-rating"
 
 export default function AddBookPage() {
-  const { addBook, loading } = useBooks()
+  const { createBook, loading } = useBooks()
   const router = useRouter()
+  const [duplicate, setDuplicate] = useState<{id: string; title: string; status: string} | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [bookData, setBookData] = useState({
@@ -25,7 +26,8 @@ export default function AddBookPage() {
     publishedDate: "",
     pages: "",
     description: "",
-    status: "reading",
+    status: "queued",
+    cover: "",
     rating: 0,
   })
 
@@ -45,17 +47,17 @@ export default function AddBookPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (saving || loading) return
-    setSaving(true); setError(null)
+    setSaving(true); setError(null); setDuplicate(null)
     try {
-      const result = await addBook({
+      const result = await createBook({
         id: crypto.randomUUID(), title: bookData.title.trim(), author: bookData.author.trim(),
-        genre: bookData.genre, description: bookData.description,
+        cover: bookData.cover, genre: bookData.genre, description: bookData.description,
         publishedYear: bookData.publishedDate ? Number(bookData.publishedDate.slice(0, 4)) : undefined,
         selfRating: bookData.rating,
       }, bookData.status as BookStatus)
-      if (result === "duplicate") { setError("This book is already in that list."); return }
+      if (result.outcome === "duplicate") { setDuplicate(result.books[0]); return }
       router.push("/books")
-    } catch { setError("Book was not saved. Please try again.") }
+    } catch (e) { setError(e instanceof Error ? e.message : "Book was not saved. Please try again.") }
     finally { setSaving(false) }
   }
 
@@ -109,6 +111,10 @@ export default function AddBookPage() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="cover">Cover URL (optional)</Label>
+            <Input id="cover" name="cover" type="url" value={bookData.cover} onChange={handleChange} placeholder="https://..." />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="description">Book Description</Label>
             <Textarea
               id="description"
@@ -124,6 +130,10 @@ export default function AddBookPage() {
             <StarRating rating={bookData.rating} interactive={true} onRatingChange={handleRatingChange} size={24} />
           </div>
 
+          {duplicate && <div role="alert" className="rounded-md border p-4 bg-amber-50">
+            <p>Already in your library: {duplicate.title} ({duplicate.status})</p>
+            <Link className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`}>View existing book</Link>
+          </div>}
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
