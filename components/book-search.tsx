@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect, useMemo } from "react"
+import Link from "next/link"
+import { sameBook } from "@/lib/book-identity"
 import { Search } from "lucide-react"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { searchBooks, getBookById } from "@/lib/google-books-api"
@@ -25,14 +27,7 @@ export default function BookSearch() {
   const { books } = useBooks()
   const allMyBooks = useMemo(() => Object.values(books).flat(), [books])
 
-  const normalise = (s: string) => s.trim().toLowerCase()
-  const baseTitle = (s: string) => normalise(s).replace(/\s*:.*$/, "")
-
-  const findInLibrary = (id: string, title: string, author: string) =>
-    allMyBooks.find(b =>
-      b.id === id ||
-      (baseTitle(b.title) === baseTitle(title) && normalise(b.author) === normalise(author))
-    )
+  const findInLibrary = (id: string, title: string, author: string) => allMyBooks.find(b => sameBook(b, {id, title, author}))
 
   const statusLabel: Record<string, string> = {
     reading:     "Reading",
@@ -78,6 +73,8 @@ export default function BookSearch() {
 const handleBookSelect = async (book: BookSearchResult) => {
     try {
       setIsLoading(true)
+      const owned = findInLibrary(book.id, book.title, book.author)
+      if (owned) { setSelectedBook(owned as BookSearchResult); setSelectedBookInLibrary(true); setDialogOpen(true); return }
       const fullBook = await getBookById(book.id)
       const resolved = fullBook ?? book
       setSelectedBook(resolved)
@@ -103,7 +100,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
 
   return (
     <div className="relative">
-      <form onSubmit={handleSearch} className="flex gap-2">
+      <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
         <div className="flex-1 relative">
           <input
             type="text"
@@ -140,9 +137,10 @@ const handleBookSelect = async (book: BookSearchResult) => {
           <Search className="h-4 w-4" />
           Search
         </Button>
+        <Link href="/books/add" className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-amber-800">Add manually</Link>
       </form>
 
-{searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError}</p>}
+{searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError} <Link href="/books/add" className="underline">Add manually instead</Link>.</p>}
 {isLoading && query.length >= 2 && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg px-4 py-3 text-sm text-gray-500" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Searching...
