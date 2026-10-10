@@ -7,12 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useBooks, type BookStatus } from "@/lib/book-context"
+import { useRouter } from "next/navigation"
 import { StarRating } from "@/components/star-rating"
 
 export default function AddBookPage() {
+  const { addBook, loading } = useBooks()
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [bookData, setBookData] = useState({
     title: "",
     author: "",
@@ -37,15 +42,25 @@ export default function AddBookPage() {
     setBookData((prev) => ({ ...prev, rating }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Book data:", bookData)
-    // Here you would typically save the data to your backend
-    // Then redirect to the books page
+    if (saving || loading) return
+    setSaving(true); setError(null)
+    try {
+      const result = await addBook({
+        id: crypto.randomUUID(), title: bookData.title.trim(), author: bookData.author.trim(),
+        genre: bookData.genre, description: bookData.description,
+        publishedYear: bookData.publishedDate ? Number(bookData.publishedDate.slice(0, 4)) : undefined,
+        selfRating: bookData.rating,
+      }, bookData.status as BookStatus)
+      if (result === "duplicate") { setError("This book is already in that list."); return }
+      router.push("/books")
+    } catch { setError("Book was not saved. Please try again.") }
+    finally { setSaving(false) }
   }
 
   return (
-    <div className="container py-8">
+    <div className="container px-4 sm:px-6 py-8">
       <Link href="/books" className="flex items-center text-primary mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Books
@@ -83,23 +98,13 @@ export default function AddBookPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pages">Number of Pages</Label>
-              <Input id="pages" name="pages" value={bookData.pages} onChange={handleChange} type="number" />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="status">Reading Status</Label>
-              <Select value={bookData.status} onValueChange={(value) => handleSelectChange("status", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="reading">Currently Reading</SelectItem>
-                  <SelectItem value="queued">Want to Read</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="onHold">On Hold</SelectItem>
-                </SelectContent>
-              </Select>
+              <select id="status" value={bookData.status} onChange={e => handleSelectChange("status", e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+                <option value="reading">Currently Reading</option>
+                <option value="queued">Want to Read</option>
+                <option value="completed">Completed</option>
+                <option value="onHold">On Hold</option>
+              </select>
             </div>
           </div>
 
@@ -119,11 +124,12 @@ export default function AddBookPage() {
             <StarRating rating={bookData.rating} interactive={true} onRatingChange={handleRatingChange} size={24} />
           </div>
 
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
               <Link href="/books">Cancel</Link>
             </Button>
-            <Button type="submit">Add Book</Button>
+            <Button type="submit" disabled={saving || loading}>{saving ? "Saving..." : "Add Book"}</Button>
           </div>
         </form>
       </div>
