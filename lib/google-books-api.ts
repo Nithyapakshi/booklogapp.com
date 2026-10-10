@@ -74,8 +74,8 @@ export function rankSearchResults(query: string, books: BookSearchResult[]): Boo
     const score = exactTitle ? 120 : exactAuthor ? 110 : phrase ? 85 : Math.round(coverage * 70)
     return { book, index, score, coverage, quality: Number(!!book.cover) * 4 + Number(!!book.description) * 2 + Number(!!book.publishedYear) }
   }).filter(x => x.score >= 55 && x.coverage >= 0.75)
-  const hasExactTitle = ranked.some(x => x.score === 120)
-  const hasExactAuthor = !hasExactTitle && ranked.some(x => x.score === 110)
+  const hasExactAuthor = ranked.some(x => x.score === 110)
+  const hasExactTitle = !hasExactAuthor && ranked.some(x => x.score === 120)
   const finalists = ranked.filter(x => hasExactTitle ? x.score === 120 : hasExactAuthor ? x.score === 110 : true)
   const unique = new Map<string, typeof ranked[number]>()
   for (const result of finalists) {
