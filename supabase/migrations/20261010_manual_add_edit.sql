@@ -3,7 +3,7 @@
 begin;
 create or replace function public.book_identity_text(value text) returns text
 language sql immutable strict set search_path=public as $$
- select lower(regexp_replace(btrim(normalize(value,NFC)), '[[:space:]]+', ' ', 'g'))
+ select lower(btrim(regexp_replace(normalize(value,NFC), U&'[[:space:]\00A0\1680\2000-\200A\2028\2029\202F\205F\3000\FEFF]+', ' ', 'g')))
 $$;
 create or replace function public.save_book_details(
  p_id text, p_title text, p_author text, p_cover text default '',
@@ -20,6 +20,8 @@ begin
  if p_status not in ('reading','queued','completed','recommended','onHold') then raise exception 'Invalid status'; end if;
  if p_rating is not null and (p_rating<0 or p_rating>5) then raise exception 'Invalid rating'; end if;
  perform pg_advisory_xact_lock(hashtextextended(uid::text||':book-details',0));
+ -- Match the existing membership lock so edits cannot race a move/delete.
+ perform pg_advisory_xact_lock(hashtextextended(uid::text||':'||p_id,0));
  if p_edit and not exists(select 1 from public.books where user_id=uid and id=p_id) then raise exception 'Book not found'; end if;
  select * into existing from public.books where user_id=uid
  and (not p_edit or id<>p_id)
