@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { useAuth } from "@/components/auth/auth-provider"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -21,7 +22,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 type BookContextType = {
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => Promise<'added' | 'duplicate' | 'moved'>
-  removeBook: (id: string, status: BookStatus, rowId?: string) => void
+  removeBook: (id: string, status: BookStatus, rowId?: string) => Promise<void>
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
   loading: boolean
@@ -37,20 +38,15 @@ const BookContext = createContext<BookContextType | undefined>(undefined)
 
 export function BookProvider({ children }: { children: React.ReactNode }) {
   const [books, setBooks] = useState<Record<BookStatus, Book[]>>(emptyBooks)
-  const [userId, setUserId] = useState<string | null>(null)
+  const { user, isLoading: authLoading } = useAuth()
+  const userId = user?.id ?? null
   const [loading, setLoading] = useState(true)
-
-  // Get current user
-  useEffect(() => {
-    const supabase = createClientSupabaseClient()
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null)
-    })
-  }, [])
 
   // Load books from Supabase when userId is available
   useEffect(() => {
+    if (authLoading) { setLoading(true); return }
     if (!userId) {
+      setBooks(emptyBooks)
       setLoading(false)
       return
     }
@@ -63,6 +59,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         .from("books")
         .select("*")
         .eq("user_id", userId)
+
+      const { data: noteRows } = await supabase.from("book_notes").select("book_id,notes").eq("user_id", userId!)
+      const notesByBook = new Map((noteRows || []).map(row => [row.book_id, row.notes]))
 
       if (error) {
         console.error("Error loading books:", error)
@@ -87,7 +86,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             publishedYear: row.published_year ?? undefined,
             rowId: row.row_id ?? undefined,
             selfRating: row.self_rating ?? undefined,
-            notes: row.notes ?? undefined,
+            notes: notesByBook.get(row.id) ?? undefined,
             genre: row.genre ?? undefined,
             ...(row.auto_completed ? { autoCompleted: true } : {}),
           } as Book)
@@ -99,10 +98,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadBooks()
-  }, [userId])
+  }, [userId, authLoading])
 
   const addBook = useCallback(async (book: any, status: BookStatus) => {
-    if (!userId) return 'duplicate'
+    if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
     const supabase = createClientSupabaseClient()
     const bookId = book.id || Math.random().toString(36).substring(2, 9)
     console.log('addBook called', bookId, status, userId)
@@ -123,138 +122,88 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
     // Find existing status in local state
     let existingStatus: BookStatus | null = null
+    let existingBook: Book | undefined
     const normalise = (s: string) => s.trim().toLowerCase()
     for (const s of Object.keys(books) as BookStatus[]) {
-      if (books[s].find((b) =>
+      const match = books[s].find((b) =>
         b.id === bookId ||
         (normalise(b.title) === normalise(book.title) && normalise(b.author) === normalise(book.author))
-      )) {
+      )
+      if (match) {
+        existingBook = match
         existingStatus = s
         break
       }
     }
 
-    if (existingStatus === status) return 'duplicate'
+    if (books[status].some(b => b.id === bookId || (normalise(b.title) === normalise(book.title) && normalise(b.author) === normalise(book.author)))) return 'duplicate' 
 
     if (existingStatus) {
-      if (existingStatus === "completed" && status === "recommended") {
-        // Keep in completed, insert new row for recommended
-        const { error } = await supabase.from("books").insert(makeRow("recommended"))
-        if (error) { console.error("Error adding to recommended:", error); return }
-        setBooks((prev) => ({
-          ...prev,
-          recommended: [...prev.recommended, { ...book, id: bookId, status: "recommended" }],
-        }))
-        return
-      }
-
-      if (existingStatus === "recommended") {
-        // Delete recommended row, delete auto-completed row, insert new status row
-        await supabase.from("books")
-          .delete()
-          .eq("user_id", userId)
-          .eq("id", bookId)
-          .eq("status", "recommended")
-
-        const autoCompletedBook = books.completed.find((b) => b.id === bookId && (b as any).autoCompleted)
-        if (autoCompletedBook) {
-          await supabase.from("books")
-            .delete()
-            .eq("user_id", userId)
-            .eq("id", bookId)
-            .eq("status", "completed")
-            .eq("auto_completed", true)
-        }
-
-        await supabase.from("books").insert(makeRow(status))
-        setBooks((prev) => {
-          const updated = { ...prev }
-          updated.recommended = updated.recommended.filter((b) => b.id !== bookId)
-          updated.completed = updated.completed.filter((b) => !(b.id === bookId && (b as any).autoCompleted))
-          updated[status] = [...updated[status], { ...book, id: bookId, status }]
-          return updated
+      if (existingStatus === "recommended" || status === "recommended") {
+        const { data, error } = await supabase.rpc("book_membership", { p_book_id: existingBook!.id, p_status: status, p_remove: false })
+        if (error) throw error
+        if (!data?.length) throw new Error("Book was not moved")
+        setBooks(prev => {
+          const next = { ...prev }
+          for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].filter(b => b.id !== existingBook!.id)
+          for (const row of data) {
+            const key = row.status as BookStatus
+            next[key] = [...next[key], { ...existingBook!, status: key, rowId: row.row_id, autoCompleted: row.auto_completed } as Book]
+          }
+          return next
         })
-        return
+        return "moved" as const
       }
 
-      // Normal move: delete old row, insert new row
-      await supabase.from("books")
-        .delete()
-        .eq("user_id", userId)
-        .eq("id", bookId)
-        .eq("status", existingStatus)
-
-      await supabase.from("books").insert(makeRow(status))
-      setBooks((prev) => {
-        const updated = { ...prev }
-        updated[existingStatus!] = updated[existingStatus!].filter((b) => b.id !== bookId)
-        updated[status] = [...updated[status], { ...book, id: bookId, status }]
-        return updated
-      })
+      const storedId = existingBook!.id
+      const { data, error } = await supabase.from("books")
+        .update({ status }).eq("user_id", userId).eq("id", storedId).eq("status", existingStatus)
+        .select("id")
+      if (error) throw error
+      if (!data?.length) throw new Error("Book was not moved. Refresh and try again.")
+      setBooks((prev) => ({ ...prev,
+        [existingStatus!]: prev[existingStatus!].filter((b) => b.id !== storedId),
+        [status]: [...prev[status], { ...existingBook!, status }],
+      }))
+      return "moved" as const
 
     } else {
-      // New book — insert
-      const { error } = await supabase.from("books").insert(makeRow(status))
-      if (error) { console.error("Error inserting book:", error); console.log('insert error:', error); return }
-
+      // One INSERT request is atomic, including the deliberate Completed copy.
+      const rows = status === "recommended" ? [makeRow(status), makeRow("completed", true)] : [makeRow(status)]
+      const { data, error } = await supabase.from("books").insert(rows).select("row_id,status")
+      if (error) throw error
+      if (data?.length !== rows.length) throw new Error("Book was not saved. Refresh and try again.")
       setBooks((prev) => ({
         ...prev,
-        [status]: [...prev[status], { ...book, id: bookId, status }],
+        [status]: [...prev[status], { ...book, id: bookId, status, rowId: data.find(r => r.status === status)?.row_id }],
+        ...(status === "recommended" ? { completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true, rowId: data.find(r => r.status === "completed")?.row_id }] } : {}),
       }))
-
-      // If added to recommended, also auto-add to completed
-      if (status === "recommended") {
-        const { error: err2 } = await supabase.from("books").insert(makeRow("completed", true))
-        if (!err2) {
-          setBooks((prev) => ({
-            ...prev,
-            completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true }],
-          }))
-        }
-      }
+      return "added" as const
     }
-  }, [userId, books])
+  }, [userId, books, loading, authLoading])
 
   const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
     if (!userId) return
     const supabase = createClientSupabaseClient()
 
     if (status === "recommended") {
-      // Delete exactly this row by its primary key (row_id), leaving any completed copy untouched
-      const deleteQuery = rowId
-        ? supabase.from("books").delete().eq("row_id", rowId)
-        : supabase.from("books").delete().eq("id", id).eq("user_id", userId).eq("status", "recommended")
-      await deleteQuery
-
-      // If no completed copy exists for this book, create one
-      const recBook = books.recommended.find((b) => b.id === id)
-      const hasCompleted = books.completed.some((b) => b.id === id)
-      if (!hasCompleted && recBook) {
-        const { data } = await supabase.from("books").insert({
-          id,
-          user_id: userId,
-          title: recBook.title,
-          author: recBook.author,
-          cover_url: recBook.cover || "",
-          status: "completed",
-          description: recBook.description ?? null,
-          published_year: recBook.publishedYear ?? null,
-          self_rating: recBook.selfRating ?? null,
-          auto_completed: true,
-        }).select()
-        setBooks((prev) => ({
-          ...prev,
-          completed: [...prev.completed, { ...recBook, status: "completed", autoCompleted: true, rowId: data?.[0]?.row_id }],
-        }))
-      }
-
-      setBooks((prev) => ({
-        ...prev,
-        recommended: prev.recommended.filter((b) => b.id !== id),
-      }))
+      const { data, error } = await supabase.rpc("book_membership", { p_book_id: id, p_status: status, p_remove: true })
+      if (error) throw error
+      setBooks(prev => {
+        const next = { ...prev }
+        const source = prev.recommended.find(b => b.id === id)
+        for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].filter(b => b.id !== id)
+        for (const row of data || []) {
+          const key = row.status as BookStatus
+          next[key] = [...next[key], { ...source!, status: key, rowId: row.row_id, autoCompleted: row.auto_completed } as Book]
+        }
+        return next
+      })
     } else {
       // For all other statuses, delete all rows with this id
-      await supabase.from("books").delete().eq("id", id).eq("user_id", userId)
+      const { data, error } = await supabase.from("books").delete().eq("id", id).eq("user_id", userId).select("id")
+      if (error) throw error
+      if (!data?.length) throw new Error("Book was not deleted")
       setBooks((prev) => {
         const updated = { ...prev }
         for (const s of Object.keys(updated) as BookStatus[]) {
@@ -268,7 +217,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const updateNote = useCallback(async (bookId: string, note: string) => {
     if (!userId) return
     const supabase = createClientSupabaseClient()
-    await supabase.from("books").update({ notes: note }).eq("id", bookId).eq("user_id", userId)
+    const { data, error } = await supabase.from("book_notes").upsert({ user_id: userId, book_id: bookId, notes: note, updated_at: new Date().toISOString() }).select("book_id")
+    if (error) throw error
+    if (!data?.length) throw new Error("Note was not saved")
     setBooks((prev) => {
       const updated = { ...prev }
       for (const s of Object.keys(updated) as BookStatus[]) {
@@ -282,7 +233,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return
     const supabase = createClientSupabaseClient()
     // Update all rows for this book (covers both completed and recommended copies)
-    await supabase.from("books").update({ self_rating: rating }).eq("id", bookId).eq("user_id", userId)
+    const { data, error } = await supabase.from("books").update({ self_rating: rating }).eq("id", bookId).eq("user_id", userId).select("id")
+    if (error) throw error
+    if (!data?.length) throw new Error("Rating was not saved")
     setBooks((prev) => {
       const updated = { ...prev }
       for (const s of Object.keys(updated) as BookStatus[]) {
