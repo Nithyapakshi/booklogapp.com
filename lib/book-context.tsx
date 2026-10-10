@@ -218,7 +218,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       setBooks(prev => {
         const next = {...prev}
         for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].filter(b => b.id !== rows[0].id)
-        for (const row of rows) next[row.status as BookStatus] = [...next[row.status as BookStatus], row]
+        for (const row of rows) {
+          const latest = Object.values(prev).flat().find(b => b.id === row.id)
+          next[row.status as BookStatus] = [...next[row.status as BookStatus], {...row, notes: latest?.notes ?? row.notes}]
+        }
         return next
       })
       if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
