@@ -17,3 +17,5 @@ test('SQL is invoker scoped, locked and additive without legacy cleanup',()=>{co
 test('overlapping note save retains latest note when edit response lands',async()=>{const h=harness({outcome:'edited',books:rows});h.injectNote('new note');await h.value.editBook('old',{title:'Edit',author:'A',cover:''});assert.equal(h.state().completed[0].notes,'new note');assert.equal(h.state().recommended[0].notes,'new note')});
 
 test('SQL trims after Unicode whitespace folding and uses membership lock',()=>{const s=fs.readFileSync('supabase/migrations/20261010_manual_add_edit.sql','utf8');assert.ok(s.includes('lower(btrim(regexp_replace(normalize'));assert.ok(s.includes("uid::text||':'||p_id"))});
+
+test('existing-book route tracks Next query changes without stale dialog resurrection',()=>{const s=fs.readFileSync('app/books/page.tsx','utf8');assert.ok(s.includes('useSearchParams()'));assert.ok(s.includes('[requestedBookId]'));assert.ok(s.includes('React.Suspense'))});
