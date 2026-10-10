@@ -354,7 +354,7 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
   )
 }
 
-export default function BooksPage() {
+function BooksLibrary() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
   const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
@@ -378,6 +378,8 @@ export default function BooksPage() {
     if (savedTab) { setActiveTab(savedTab); localStorage.removeItem("booklog-active-tab") }
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
+    const section = new URLSearchParams(window.location.search).get("section")
+    if (section === "discover" || section === "recommended") setSidebarTab(section)
     prefetchAmazonDomain()
   }, [])
 
@@ -684,4 +686,17 @@ export default function BooksPage() {
       </main>
     </div>
   )
+}
+
+export default function BooksPage() {
+  const { user, isLoading } = useAuth()
+  if (isLoading) return <main className="container px-4 py-8">Loading your library...</main>
+  if (!user) return (
+    <main className="container px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Log in to view your library</h1>
+      <p className="mb-4">Your books are saved. Log in to see them.</p>
+      <a href="/login" className="text-blue-600 underline">Log in</a>
+    </main>
+  )
+  return <BooksLibrary />
 }
