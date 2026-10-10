@@ -3,6 +3,7 @@ export interface BookSearchResult {
   title: string
   author: string
   cover: string
+  genre?: string
   description?: string
   publishedYear?: number
 }
@@ -57,11 +58,38 @@ function normaliseGenre(categories: string[] | undefined): string {
   return "General"
 }
 
+export function rankSearchResults(query: string, books: BookSearchResult[]): BookSearchResult[] {
+  const normalise = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+  const baseTitle = (s: string) => normalise(s.split(":")[0].replace(/\s*\([^)]*(?:edition|anniversary)[^)]*\)\s*/gi, ""))
+  const q = normalise(query)
+  if (!q) return []
+  const words = q.split(" ")
+  const ranked = books.map((book, index) => {
+    const title = normalise(book.title), base = baseTitle(book.title), author = normalise(book.author)
+    const haystack = (title + " " + author).split(" ")
+    const coverage = words.filter(w => haystack.some(t => t === w || (w.length >= 3 && t.startsWith(w)))).length / words.length
+    const exact = title === q || base === q || author === q
+    const phrase = title.includes(q) || author.includes(q)
+    const score = exact ? 100 : phrase ? 85 : Math.round(coverage * 70)
+    return { book, index, score, coverage, quality: Number(!!book.cover) * 4 + Number(!!book.description) * 2 + Number(!!book.publishedYear) }
+  }).filter(x => x.score >= 55 && x.coverage >= 0.75)
+  const unique = new Map<string, typeof ranked[number]>()
+  for (const result of ranked) {
+    const key = baseTitle(result.book.title) + "|" + normalise(result.book.author)
+    const prev = unique.get(key)
+    if (!prev || result.score > prev.score || (result.score === prev.score && result.quality > prev.quality)) unique.set(key, result)
+  }
+  const sorted = [...unique.values()].sort((a,b) => b.score-a.score || a.index-b.index)
+  const cutoff = sorted.length ? Math.max(55, sorted[0].score - 25) : 55
+  return sorted.filter(x => x.score >= cutoff).slice(0,5).map(x => x.book)
+}
+
 // Function to search for books
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
+  if (!query.trim()) return []
   try {
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
     )
 
     if (!response.ok) {
@@ -74,7 +102,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
       return []
     }
 
-    return data.items.map((item: any) => ({
+    const books = data.items.map((item: any) => ({
       id: item.id,
       title: item.volumeInfo.title || "Unknown Title",
       author: item.volumeInfo.authors ? item.volumeInfo.authors.join(", ") : "Unknown Author",
@@ -85,9 +113,9 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
         : undefined,
       genre: normaliseGenre(item.volumeInfo.categories),
     }))
+    return rankSearchResults(query, books)
   } catch (error) {
-    console.error("Error searching books:", error)
-    return []
+    throw error instanceof Error ? error : new Error("Book search failed")
   }
 }
 
