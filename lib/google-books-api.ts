@@ -68,16 +68,20 @@ export function rankSearchResults(query: string, books: BookSearchResult[]): Boo
     const title = normalise(book.title), base = baseTitle(book.title), author = normalise(book.author)
     const haystack = (title + " " + author).split(" ")
     const coverage = words.filter(w => haystack.some(t => t === w || (w.length >= 3 && t.startsWith(w)))).length / words.length
-    const exact = title === q || base === q || author === q
+    const exactTitle = title === q || base === q
+    const exactAuthor = author === q
     const phrase = title.includes(q) || author.includes(q)
-    const score = exact ? 100 : phrase ? 85 : Math.round(coverage * 70)
+    const score = exactTitle ? 120 : exactAuthor ? 110 : phrase ? 85 : Math.round(coverage * 70)
     return { book, index, score, coverage, quality: Number(!!book.cover) * 4 + Number(!!book.description) * 2 + Number(!!book.publishedYear) }
   }).filter(x => x.score >= 55 && x.coverage >= 0.75)
+  const hasExactTitle = ranked.some(x => x.score === 120)
+  const hasExactAuthor = !hasExactTitle && ranked.some(x => x.score === 110)
+  const finalists = ranked.filter(x => hasExactTitle ? x.score === 120 : hasExactAuthor ? x.score === 110 : true)
   const unique = new Map<string, typeof ranked[number]>()
-  for (const result of ranked) {
-    const key = baseTitle(result.book.title) + "|" + normalise(result.book.author)
+  for (const result of finalists) {
+    const key = baseTitle(result.book.title) + (hasExactTitle ? "" : "|" + normalise(result.book.author))
     const prev = unique.get(key)
-    if (!prev || result.score > prev.score || (result.score === prev.score && result.quality > prev.quality)) unique.set(key, result)
+    if (!prev || result.score > prev.score || (result.score === prev.score && normalise(result.book.author) === normalise(prev.book.author) && result.quality > prev.quality)) unique.set(key, result)
   }
   const sorted = [...unique.values()].sort((a,b) => b.score-a.score || a.index-b.index)
   const cutoff = sorted.length ? Math.max(55, sorted[0].score - 25) : 55
