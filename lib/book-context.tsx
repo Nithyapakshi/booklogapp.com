@@ -6,6 +6,8 @@ import { useAuth } from "@/components/auth/auth-provider"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
+import { RecommendationRatingDialog } from "@/components/recommendation-rating-dialog"
+
 export type BookStatus = "reading" | "queued" | "completed" | "recommended" | "onHold"
 
 export function mapTabToStatus(tab: string): BookStatus {
@@ -41,12 +43,14 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth()
   const userId = user?.id ?? null
   const [loading, setLoading] = useState(true)
+  const [ratingPrompt, setRatingPrompt] = useState<{ id: string; title: string; rating: number } | null>(null)
 
   // Load books from Supabase when userId is available
   useEffect(() => {
     if (authLoading) { setLoading(true); return }
     if (!userId) {
       setBooks(emptyBooks)
+      setRatingPrompt(null)
       setLoading(false)
       return
     }
@@ -153,6 +157,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           }
           return next
         })
+        if (status === "recommended") setRatingPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0 })
         return "moved" as const
       }
 
@@ -179,6 +184,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         [status]: [...prev[status], { ...book, id: bookId, status, rowId: data.find(r => r.status === status)?.row_id }],
         ...(status === "recommended" ? { completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true, rowId: data.find(r => r.status === "completed")?.row_id }] } : {}),
       }))
+      if (status === "recommended") setRatingPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0 })
       return "added" as const
     }
   }, [userId, books, loading, authLoading])
@@ -252,6 +258,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   return (
     <BookContext.Provider value={{ books, addBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote, updateRating }}>
       {children}
+      {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
     </BookContext.Provider>
   )
 }
