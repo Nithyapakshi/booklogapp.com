@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { validateBookDetails } from "@/lib/book-identity"
+import { lookupEnrichment } from "@/lib/book-enrichment"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -26,7 +27,7 @@ export type BookSaveResult = { outcome: "added" | "edited" | "duplicate"; books:
 
 type BookContextType = {
   createBook: (book: any, status: BookStatus) => Promise<BookSaveResult>
-  editBook: (id: string, details: {title: string; author: string; cover: string}) => Promise<BookSaveResult>
+  editBook: (id: string, details: {title: string; author: string; cover?: string}) => Promise<BookSaveResult>
   moveBook: (book: any, status: BookStatus) => Promise<"added" | "duplicate" | "moved">
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => Promise<'added' | 'duplicate' | 'moved'>
@@ -195,6 +196,35 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId, books, loading, authLoading])
 
+  // Best effort, after the book is already saved. Fills only blank fields, only while the title and author are unchanged,
+  // and any failure leaves the book exactly as saved.
+  const enrichMissing = useCallback(async (saved: Book) => {
+    try {
+      if (!userId || (saved.cover && saved.description)) return
+      const found = await lookupEnrichment(saved.title, saved.author)
+      if (!found) return
+      const supabase = createClientSupabaseClient()
+      const applied: Partial<Book> = {}
+      const fill = async (column: string, key: keyof Book, value: unknown, blank: string) => {
+        if (value === undefined || value === null || value === "") return
+        const { data } = await supabase.from("books").update({ [column]: value })
+          .eq("user_id", userId).eq("id", saved.id).eq("title", saved.title).eq("author", saved.author).or(blank).select("row_id")
+        if (data?.length) (applied as any)[key] = value
+      }
+      if (!saved.cover) await fill("cover_url", "cover", found.cover, "cover_url.is.null,cover_url.eq.")
+      if (!saved.description) await fill("description", "description", found.description, "description.is.null,description.eq.")
+      if (!saved.genre) await fill("genre", "genre", found.genre, "genre.is.null,genre.eq.")
+      if (!saved.publishedYear) await fill("published_year", "publishedYear", found.publishedYear, "published_year.is.null")
+      if (Object.keys(applied).length) setBooks(prev => {
+        const next = {...prev}
+        for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].map(b => b.id === saved.id && b.title === saved.title && b.author === saved.author ? {...b, ...Object.fromEntries(Object.entries(applied).filter(([k]) => !(b as any)[k]))} : b)
+        return next
+      })
+    } catch (error) {
+      console.error("Book detail lookup failed", error)
+    }
+  }, [userId])
+
   const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean): Promise<BookSaveResult> => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
     const errorText = validateBookDetails(book.title, book.author, book.cover || "")
@@ -202,7 +232,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClientSupabaseClient()
     const {data, error} = await supabase.rpc("save_book_details", {
       p_id: book.id || crypto.randomUUID(), p_title: book.title.trim(), p_author: book.author.trim(),
-      p_cover: (book.cover || "").trim(), p_edit: edit, p_status: status,
+      p_cover: book.cover === undefined || book.cover === null ? (edit ? null : "") : String(book.cover).trim(), p_edit: edit, p_status: status,
       p_genre: book.genre ?? null, p_description: book.description ?? null,
       p_year: book.publishedYear ?? null, p_rating: book.selfRating ?? null,
     })
@@ -226,10 +256,11 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       })
       if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
     }
+    if (data.outcome !== "duplicate" && (edit || (!book.cover && !book.description))) void enrichMissing(rows[0])
     return {outcome: data.outcome, books: rows}
-  }, [userId, loading, authLoading, books])
+  }, [userId, loading, authLoading, books, enrichMissing])
   const createBook = useCallback((book: any, status: BookStatus) => saveDetails(book, status, false), [saveDetails])
-  const editBook = useCallback((id: string, details: {title: string; author: string; cover: string}) => saveDetails({...details, id}, "queued", true), [saveDetails])
+  const editBook = useCallback((id: string, details: {title: string; author: string; cover?: string}) => saveDetails({...details, id}, "queued", true), [saveDetails])
 
   const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
     if (!userId) return
