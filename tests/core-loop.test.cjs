@@ -1,0 +1,17 @@
+const test = require("node:test")
+const assert = require("node:assert")
+const fs = require("fs")
+test("a failed library read is reported, never shown as an empty library", () => {
+  const s = fs.readFileSync("lib/book-context.tsx", "utf8")
+  assert.match(s, /error \|\| notesError \|\| !data/)
+  assert.match(s, /setLoadError\(true\)/)
+  assert.match(s, /reloadBooks/)
+  const failure = s.slice(s.indexOf("if (error || notesError"), s.indexOf("const notesByBook"))
+  assert.ok(!/setBooks\(/.test(failure), "failure path must not replace the library")
+})
+test("books page shows a retry banner when the library could not load", () => {
+  const p = fs.readFileSync("app/books/page.tsx", "utf8")
+  assert.match(p, /loadError &&/)
+  assert.match(p, /Your books are safe/)
+  assert.match(p, /onClick=\{reloadBooks\}/)
+})
