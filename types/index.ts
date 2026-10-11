@@ -10,6 +10,7 @@ export interface Book {
   rowId?: string
   selfRating?: number
   notes?: string
+  autoCompleted?: boolean
   startedAt?: string
   finishedAt?: string
 }
