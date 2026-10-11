@@ -64,10 +64,13 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await signUp(email, password)
+      const { data, error } = await signUp(email, password, { first_name: firstName, last_name: lastName })
 
       if (error) {
         setError(error.message)
+      } else if (data.user && !data.session) {
+        // Email confirmation is on: there is no session until the link in the email is opened.
+        setMessage("Check your email to confirm your account, then log in.")
       } else if (data.user) {
         setMessage("Account created successfully! Redirecting...")
 

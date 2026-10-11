@@ -1,6 +1,7 @@
 "use client"
+import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
@@ -21,12 +22,13 @@ const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
 function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string, status: BookStatus, rowId?: string) => void }) {
+  const [editOpen, setEditOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
-  const { addBook, updateRating } = useBooksContext()
+  const { moveBook: moveStoredBook, updateRating } = useBooksContext()
   const amazonUrl = useAmazonUrl(book.title, book.author)
 
   const handleStarClick = async (star: number) => {
@@ -38,7 +40,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
   const moveBook = async (status: BookStatus) => {
     if (book.status === status) return
     setWriteError(null)
-    try { await addBook(book, status) }
+    try { await moveStoredBook(book, status) }
     catch { setWriteError("Book was not moved. Please try again.") }
     setDropdownOpen(false)
   }
@@ -119,6 +121,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-1 w-44 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50" style={sans}>
+              <button type="button" className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</button>
               {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
               {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
               {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
@@ -134,7 +137,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           )}
         </div>
       </div>
-      <BookDetailsDialog book={book} open={dialogOpen} onClose={() => setDialogOpen(false)} mode="view" />
+      <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />
     </>
   )
 }
@@ -159,14 +162,7 @@ function DiscoverTab() {
   const { books } = useBooksContext()
   const allMyBooks = React.useMemo(() => Object.values(books).flat(), [books])
 
-  const normalise = (s: string) => s.trim().toLowerCase()
-  const baseTitle = (s: string) => normalise(s).replace(/\s*:.*$/, "")
-
-  const findInLibrary = (id: string, title: string, author: string) =>
-    allMyBooks.find(b =>
-      b.id === id ||
-      (baseTitle(b.title) === baseTitle(title) && normalise(b.author) === normalise(author))
-    )
+  const findInLibrary = (id: string, title: string, author: string) => allMyBooks.find(b => sameBook(b, {id, title, author}))
 
   const statusLabel: Record<string, string> = {
     reading:     "Reading",
@@ -236,7 +232,7 @@ function DiscoverTab() {
                   key={index}
                   onClick={() => {
                     const match = findInLibrary(book.id, book.title, book.author)
-                    setSelectedBook(book)
+                    setSelectedBook(match ? {...book, ...match} : book)
                     setSelectedBookInLibrary(!!match)
                     setDialogOpen(true)
                   }}
@@ -354,7 +350,7 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
   )
 }
 
-function BooksLibrary() {
+function BooksLibraryContent() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
   const [viewMode, setViewMode]     = useState<"grid" | "list">("grid")
@@ -384,6 +380,14 @@ function BooksLibrary() {
   }, [])
 
   const { getBooksByStatus, getBookCountByStatus, removeBook, books } = useBooks()
+  const searchParams = useSearchParams()
+  const requestedBookId = searchParams.get("book")
+  const [linkedBookId, setLinkedBookId] = useState<string | null>(null)
+  useEffect(() => {
+    setLinkedBookId(requestedBookId)
+  }, [requestedBookId])
+  const linkedBook = linkedBookId ? Object.values(books).flat().find(b => b.id === linkedBookId) : null
+
 
   const userGenres = React.useMemo(() => {
     const allBooks = Object.values(books).flat()
@@ -579,6 +583,7 @@ function BooksLibrary() {
 
   return (
     <div className="flex min-h-screen" style={{ background: "#faf7f2" }}>
+      {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "#f7f4ef" }}>
@@ -686,6 +691,10 @@ function BooksLibrary() {
       </main>
     </div>
   )
+}
+
+function BooksLibrary() {
+  return <React.Suspense fallback={<main className="container px-4 py-8">Loading your library...</main>}><BooksLibraryContent /></React.Suspense>
 }
 
 export default function BooksPage() {

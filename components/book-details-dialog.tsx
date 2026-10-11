@@ -1,5 +1,8 @@
 "use client"
 
+import Link from "next/link"
+import { BookEditForm } from "@/components/book-edit-form"
+import type { Book } from "@/types"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -22,6 +25,7 @@ interface BookDetailsDialogProps {
   open: boolean
   onClose: () => void
   mode?: "view" | "add"
+  initialEdit?: boolean
 }
 
 type BookStatus = "reading" | "queued" | "completed" | "recommended" | "onHold"
@@ -34,11 +38,15 @@ const statusLabels = {
   onHold: "On Hold",
 }
 
-export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDetailsDialogProps) {
+export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false }: BookDetailsDialogProps) {
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
-  const { addBook, updateNote } = useBooks()
+  const { createBook, updateNote, books } = useBooks()
+  const ownedBook = Object.values(books).flat().find(b => b.id === book?.id)
+  const [editing, setEditing] = useState(initialEdit)
+  const [duplicate, setDuplicate] = useState<Book | null>(null)
+  useEffect(() => { setEditing(initialEdit); setDuplicate(null); setWriteError(null) }, [open, book?.id, initialEdit])
   const { toast } = useToast()
   const amazonUrl = useAmazonUrl(book?.title ?? "", book?.author ?? "")
   const [noteText, setNoteText] = useState(book?.notes ?? "")
@@ -54,8 +62,8 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
     if (!book || saving) return
     setSaving(true); setWriteError(null)
     try {
-      const result = await addBook(book, status)
-      if (result === "duplicate") toast({ title: `Already in ${statusLabels[status]}`, type: "warning" })
+      const result = await createBook(book, status)
+      if (result.outcome === "duplicate") { setDuplicate(result.books[0]); toast({ title: "Already in your library", type: "warning" }) }
       else { toast({ title: `Added to ${statusLabels[status]}`, type: "success" }); onClose() }
     } catch { setWriteError("The book was not saved. Please try again.") }
     finally { setSaving(false) }
@@ -68,6 +76,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
+        {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
           <DialogDescription>
@@ -75,7 +84,8 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row gap-6">
+        {mode === "view" && ownedBook && !editing && <Button variant="outline" onClick={() => setEditing(true)}>Edit details</Button>}
+        {editing && ownedBook ? <BookEditForm key={ownedBook.id} book={ownedBook} onDone={() => {setEditing(false); onClose()}} /> : <div className="flex flex-col md:flex-row gap-6">
           {/* Book cover image */}
           <div className="w-full md:w-1/3 max-w-[180px] mx-auto md:mx-0">
             {book?.cover ? (
@@ -217,7 +227,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view" }: BookDe
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </DialogContent>
     </Dialog>
   )

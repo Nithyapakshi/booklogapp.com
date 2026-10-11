@@ -238,7 +238,7 @@ export default function SettingsPage() {
           </button>
         </div>
         <button
-          onClick={async () => { const supabase = createClientSupabaseClient(); await supabase.auth.resetPasswordForEmail(email, { redirectTo: "https://booklogapp.com/settings" }); alert("Password reset email sent!") }}
+          onClick={async () => { const supabase = createClientSupabaseClient(); await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }); alert("Password reset email sent!") }}
           style={{ display: "block", marginTop: "12px", fontSize: "12px", color: "#c17f3e", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", padding: 0 }}
         >
           Change password
