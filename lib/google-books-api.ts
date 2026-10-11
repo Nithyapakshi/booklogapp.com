@@ -88,11 +88,28 @@ export function rankSearchResults(query: string, books: BookSearchResult[]): Boo
   return sorted.filter(x => x.score >= cutoff).slice(0,5).map(x => x.book)
 }
 
+// Google Books intermittently answers 503 (and occasionally 429). Retry those a few times
+// before giving up so a single bad response does not surface as "Search is unavailable".
+async function fetchWithRetry(url: string, attempts = 6): Promise<Response> {
+  let last: Response | undefined
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok || (res.status < 500 && res.status !== 429)) return res
+      last = res
+    } catch (error) {
+      if (i === attempts - 1) throw error
+    }
+    await new Promise((r) => setTimeout(r, 300 * (i + 1)))
+  }
+  return last as Response
+}
+
 // Function to search for books
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   if (!query.trim()) return []
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
     )
 
@@ -126,7 +143,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
 // Function to get a book by ID
 export async function getBookById(id: string): Promise<BookSearchResult | null> {
   try {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes/${id}?key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
+    const response = await fetchWithRetry(`https://www.googleapis.com/books/v1/volumes/${id}?key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
 
     if (!response.ok) {
       throw new Error(`Google Books API error: ${response.status}`)
