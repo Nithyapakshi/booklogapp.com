@@ -10,6 +10,8 @@ export interface Book {
   rowId?: string
   selfRating?: number
   notes?: string
+  startedAt?: string
+  finishedAt?: string
 }
 
 export interface BookSearchResult {
