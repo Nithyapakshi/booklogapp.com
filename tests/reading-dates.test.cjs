@@ -21,12 +21,23 @@ test("label shows what is known and nothing else", () => {
   assert.strictEqual(readingDatesLabel(undefined, undefined), "")
   assert.strictEqual(readingDatesLabel("garbage", "2026-13-01"), "")
 })
-test("moves never invent a finish date and fall back if date columns are missing", () => {
+test("dates are asked only when they happen and never invented", () => {
   const c = fs.readFileSync("lib/book-context.tsx", "utf8")
-  assert.match(c, /status === "reading" && !existingBook!\.startedAt \? todayLocal\(\)/)
+  assert.doesNotMatch(c, /todayLocal\(\)/)
   assert.doesNotMatch(c, /finished_at: todayLocal/)
-  assert.match(c, /if \(error && startedAt\) \(\{ data, error \} = await moveUpdate\(false\)\)/)
-  assert.match(c, /FinishBookDialog/)
-  const d = fs.readFileSync("components/finish-book-dialog.tsx", "utf8")
-  assert.match(d, /Skip/)
+  // Finish prompt only when leaving Reading for Completed or Recommendations.
+  assert.match(c, /status === "completed" && existingStatus === "reading"\) setFinishPrompt/)
+  assert.match(c, /status === "recommended" && existingStatus === "reading"\) setFinishPrompt/)
+  // Start prompt when a book lands in Reading, by move or by add.
+  assert.strictEqual((c.match(/setStartPrompt\(\{/g) || []).length, 4)
+  assert.match(c, /status === "reading"\) setStartPrompt/)
+  assert.match(fs.readFileSync("components/start-book-dialog.tsx", "utf8"), /Skip/)
+  assert.match(fs.readFileSync("components/finish-book-dialog.tsx", "utf8"), /Skip/)
+})
+test("recommended copy returns to Reading as one unit and keeps its dates", () => {
+  const c = fs.readFileSync("lib/book-context.tsx", "utf8")
+  assert.match(c, /status === "reading" && existingBook!\.autoCompleted/)
+  const m = fs.readFileSync("supabase/migrations/20261011_membership_keeps_dates.sql", "utf8")
+  assert.strictEqual((m.match(/,st,fi\)/g) || []).length, 4)
+  assert.match(m, /select min\(started_at\),max\(finished_at\) into st,fi/)
 })

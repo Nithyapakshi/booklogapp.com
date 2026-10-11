@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { todayLocal, isValidDate } from "@/lib/reading-dates"
 
 export function FinishBookDialog({ book, onSave, onClose }: {
-  book: { id: string; title: string; rating: number; finishedAt?: string }
+  book: { id: string; title: string; rating: number; finishedAt?: string; where: "Completed" | "Recommendations" }
   onSave: (rating: number, finishedAt: string) => Promise<void>
   onClose: () => void
 }) {
@@ -27,7 +27,7 @@ export function FinishBookDialog({ book, onSave, onClose }: {
     <DialogContent className="w-[calc(100%-2rem)] max-w-sm" onPointerDownOutside={(e) => { if (saving) e.preventDefault() }} onEscapeKeyDown={(e) => { if (saving) e.preventDefault() }}>
       <DialogHeader>
         <DialogTitle>Finished this book?</DialogTitle>
-        <DialogDescription>{book.title} is in Completed. Add your rating and the day you finished, or skip.</DialogDescription>
+        <DialogDescription>{book.title} is in {book.where}. Add your rating and the day you finished, or skip.</DialogDescription>
       </DialogHeader>
       <div className="flex justify-center gap-2" role="group" aria-label="Your rating">
         {[1,2,3,4,5].map(star => <button key={star} type="button" aria-label={`Rate ${star} out of 5`} aria-pressed={rating === star} disabled={saving} onClick={() => setRating(star)} className={`text-3xl p-1 rounded focus-visible:outline focus-visible:outline-2 ${star <= rating ? "text-amber-400" : "text-gray-300"}`}>★</button>)}
