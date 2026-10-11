@@ -85,7 +85,7 @@ export default function FeedbackPage() {
           <Link href="/books" style={{ fontSize: "13px", color: "#c17f3e", fontWeight: "600", textDecoration: "none" }}>&larr; My Books</Link>
         </div>
         <p style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#1a1208", fontWeight: "400", margin: "0 0 4px" }}>Feedback</p>
-        <p style={{ fontSize: "13px", color: "#8a7560", margin: "0 0 20px" }}>Ideas, bugs, or a hello. This goes straight to Pakshiraj and I read every one.</p>
+        <p style={{ fontSize: "13px", color: "#8a7560", margin: "0 0 20px" }}>Ideas, bugs, or a hello.</p>
 
         {sent ? (
           <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "20px 24px" }}>
