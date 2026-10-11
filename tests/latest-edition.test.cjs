@@ -1,0 +1,16 @@
+const test = require("node:test")
+const assert = require("node:assert")
+const fs = require("fs")
+test("search keeps one result per title and prefers the newest edition", () => {
+  const s = fs.readFileSync("lib/google-books-api.ts", "utf8")
+  assert.match(s, /export function isNewerEdition/)
+  assert.match(s, /isNewerEdition\(result\.book, prev\.book, result\.quality, prev\.quality\)/)
+  assert.match(s, /if \(!!a\.cover !== !!b\.cover\) return !!a\.cover/)
+  assert.match(s, /if \(ya !== yb\) return ya > yb/)
+})
+test("AI recommendation covers come from the newest edition of the same book", () => {
+  const s = fs.readFileSync("app/actions/ai-recommendations.ts", "utf8")
+  assert.match(s, /maxResults=10/)
+  assert.match(s, /year\(b\) - year\(a\)/)
+  assert.match(s, /\[data\.items\[0\]\]/)
+})

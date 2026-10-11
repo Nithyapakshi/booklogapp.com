@@ -1,5 +1,6 @@
 "use client"
 
+import { nearDuplicate } from "@/lib/book-identity"
 import type React from "react"
 
 import { useState } from "react"
@@ -12,10 +13,11 @@ import { useBooks, type BookStatus } from "@/lib/book-context"
 import { useRouter } from "next/navigation"
 
 export default function AddBookPage() {
-  const { createBook, loading } = useBooks()
+  const { createBook, loading, books } = useBooks()
   const router = useRouter()
   const [duplicate, setDuplicate] = useState<{id: string; title: string; status: string} | null>(null)
   const [saving, setSaving] = useState(false)
+  const [near, setNear] = useState<{id: string; title: string; author: string} | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [bookData, setBookData] = useState({ title: "", author: "", status: "queued" })
 
@@ -28,9 +30,14 @@ export default function AddBookPage() {
     setBookData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, confirmed = false) => {
     e.preventDefault()
     if (saving || loading) return
+    if (!confirmed) {
+      const similar = nearDuplicate({ title: bookData.title.trim(), author: bookData.author.trim() }, Object.values(books).flat())
+      if (similar) { setNear(similar); return }
+    }
+    setNear(null)
     setSaving(true); setError(null); setDuplicate(null)
     try {
       const result = await createBook({ id: crypto.randomUUID(), title: bookData.title.trim(), author: bookData.author.trim() }, bookData.status as BookStatus)
@@ -75,6 +82,11 @@ export default function AddBookPage() {
 
           <p className="text-sm text-muted-foreground">We will look up the cover and description for you after you add it.</p>
 
+          {near && <div role="alert" className="rounded-md border p-4 bg-amber-50">
+            <p>This looks like a book you already have: {near.title} by {near.author}.</p>
+            <button type="button" className="underline mr-4" onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}>Add anyway</button>
+            <Link className="underline" href={`/books?book=${encodeURIComponent(near.id)}`}>View existing book</Link>
+          </div>}
           {duplicate && <div role="alert" className="rounded-md border p-4 bg-amber-50">
             <p>Already in your library: {duplicate.title} ({({reading: "Reading", queued: "Queued", completed: "Completed", recommended: "Recommendations", onHold: "On Hold"} as Record<string, string>)[duplicate.status] || duplicate.status})</p>
             <Link className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`}>View existing book</Link>
