@@ -1,5 +1,6 @@
 "use client"
 
+import { nearDuplicate } from "@/lib/book-identity"
 import Link from "next/link"
 import { BookEditForm } from "@/components/book-edit-form"
 import type { Book } from "@/types"
@@ -46,6 +47,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   const ownedBook = Object.values(books).flat().find(b => b.id === book?.id)
   const [editing, setEditing] = useState(initialEdit)
   const [duplicate, setDuplicate] = useState<Book | null>(null)
+  const [near, setNear] = useState<Book | null>(null)
   useEffect(() => { setEditing(initialEdit); setDuplicate(null); setWriteError(null) }, [open, book?.id, initialEdit])
   const { toast } = useToast()
   const amazonUrl = useAmazonUrl(book?.title ?? "", book?.author ?? "")
@@ -58,8 +60,13 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
     setNoteText(book?.notes ?? "")
   }, [book?.notes])
 
-  const handleAddBook = async () => {
+  const handleAddBook = async (confirmed = false) => {
     if (!book || saving) return
+    if (!confirmed) {
+      const similar = nearDuplicate(book, Object.values(books).flat())
+      if (similar) { setNear(similar); return }
+    }
+    setNear(null)
     setSaving(true); setWriteError(null)
     try {
       const result = await createBook(book, status)
@@ -76,6 +83,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
+        {near && <p role="alert">This looks like a book you already have: {near.title} by {near.author}. <button type="button" className="underline" onClick={() => handleAddBook(true)}>Add anyway</button> <a className="underline" href={`/books?book=${encodeURIComponent(near.id)}`} onClick={onClose}>View existing book</a></p>}
         {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
@@ -155,7 +163,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                   </select>
                 </div>
 
-                <Button onClick={handleAddBook} className="w-full">
+                <Button onClick={() => handleAddBook()} className="w-full">
                   Add to Collection
                 </Button>
               </div>
