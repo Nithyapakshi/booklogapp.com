@@ -32,7 +32,7 @@ begin
   return jsonb_build_object('outcome','duplicate','books',result_rows);
  end if;
  if p_edit then
-  update public.books set title=btrim(p_title),author=btrim(p_author),cover_url=coalesce(btrim(p_cover),'') where user_id=uid and id=p_id;
+  update public.books set title=btrim(p_title),author=btrim(p_author),cover_url=case when p_cover is null then cover_url else btrim(p_cover) end where user_id=uid and id=p_id;
  else
   insert into public.books(id,user_id,title,author,cover_url,status,genre,description,published_year,self_rating,auto_completed)
   values(p_id,uid,btrim(p_title),btrim(p_author),coalesce(btrim(p_cover),''),p_status,p_genre,p_description,p_year,p_rating,false);
