@@ -4,7 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { validateBookDetails } from "@/lib/book-identity"
-import { lookupEnrichment } from "@/lib/book-enrichment"
+import { lookupEnrichment, isUnknownAuthor, UNKNOWN_AUTHOR } from "@/lib/book-enrichment"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -44,6 +44,7 @@ const emptyBooks: Record<BookStatus, Book[]> = {
 }
 
 const BookContext = createContext<BookContextType | undefined>(undefined)
+const healedUsers = new Set<string>() // auto-heal runs once per page load per user
 
 export function BookProvider({ children }: { children: React.ReactNode }) {
   const [books, setBooks] = useState<Record<BookStatus, Book[]>>(emptyBooks)
@@ -200,7 +201,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   // and any failure leaves the book exactly as saved.
   const enrichMissing = useCallback(async (saved: Book) => {
     try {
-      if (!userId || (saved.cover && saved.description)) return
+      if (!userId || (saved.cover && saved.description && !isUnknownAuthor(saved.author))) return
       const found = await lookupEnrichment(saved.title, saved.author)
       if (!found) return
       const supabase = createClientSupabaseClient()
@@ -215,6 +216,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       if (!saved.description) await fill("description", "description", found.description, "description.is.null,description.eq.")
       if (!saved.genre) await fill("genre", "genre", found.genre, "genre.is.null,genre.eq.")
       if (!saved.publishedYear) await fill("published_year", "publishedYear", found.publishedYear, "published_year.is.null")
+      if (isUnknownAuthor(saved.author)) await fill("author", "author", found.author, `author.eq.${UNKNOWN_AUTHOR}`)
       if (Object.keys(applied).length) setBooks(prev => {
         const next = {...prev}
         for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].map(b => b.id === saved.id && b.title === saved.title && b.author === saved.author ? {...b, ...Object.fromEntries(Object.entries(applied).filter(([k]) => !(b as any)[k]))} : b)
@@ -225,13 +227,40 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId])
 
+  // Auto-heal on app open: fill blank details on this user's own books that have no cover (or no author).
+  // Best effort and fill-only (enrichMissing never overwrites anything typed). At most 12 books per open,
+  // and each book is tried at most once every 6 hours so a flaky lookup is not hammered.
+  useEffect(() => {
+    if (loading || authLoading || !userId || healedUsers.has(userId)) return
+    healedUsers.add(userId)
+    const now = Date.now()
+    const seen = new Set<string>()
+    const todo: { book: Book; key: string }[] = []
+    for (const list of Object.values(books)) for (const b of list) {
+      if ((b.cover && !isUnknownAuthor(b.author)) || seen.has(b.id)) continue
+      seen.add(b.id)
+      const key = `booklog.heal:${userId}:${b.id}`
+      let last = 0
+      try { last = Number(localStorage.getItem(key) || 0) } catch {}
+      if (now - last < 6 * 60 * 60 * 1000) continue
+      todo.push({ book: b, key })
+    }
+    if (!todo.length) return
+    void (async () => {
+      for (const { book, key } of todo.slice(0, 12)) {
+        try { localStorage.setItem(key, String(Date.now())) } catch {}
+        await enrichMissing(book)
+      }
+    })()
+  }, [loading, authLoading, userId, books, enrichMissing])
+
   const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean): Promise<BookSaveResult> => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
-    const errorText = validateBookDetails(book.title, book.author, book.cover || "")
+    const errorText = validateBookDetails(book.title, book.author || "", book.cover || "")
     if (errorText) throw new Error(errorText)
     const supabase = createClientSupabaseClient()
     const {data, error} = await supabase.rpc("save_book_details", {
-      p_id: book.id || crypto.randomUUID(), p_title: book.title.trim(), p_author: book.author.trim(),
+      p_id: book.id || crypto.randomUUID(), p_title: book.title.trim(), p_author: (book.author || "").trim() || UNKNOWN_AUTHOR,
       p_cover: book.cover === undefined || book.cover === null ? (edit ? null : "") : String(book.cover).trim(), p_edit: edit, p_status: status,
       p_genre: book.genre ?? null, p_description: book.description ?? null,
       p_year: book.publishedYear ?? null, p_rating: book.selfRating ?? null,

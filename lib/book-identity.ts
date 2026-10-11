@@ -6,7 +6,7 @@ export function sameBook(a: {id?: string; title: string; author: string}, b: {id
     (normalizeBookText(a.title) === normalizeBookText(b.title) && normalizeBookText(a.author) === normalizeBookText(b.author))
 }
 export function validateBookDetails(title: string, author: string, cover: string): string | null {
-  if (!title.trim() || !author.trim()) return "Enter a title and author."
+  if (!title.trim()) return "Enter a title."
   if (title.trim().length > 500 || author.trim().length > 500) return "Title and author must each be 500 characters or fewer."
   if (cover.trim()) {
     try { const url = new URL(cover.trim()); if (!["http:", "https:"].includes(url.protocol)) return "Use an http or https cover URL." }
