@@ -1,4 +1,5 @@
 "use client"
+import { readingDatesLabel } from "@/lib/reading-dates"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -62,6 +63,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
           <p className="text-xs text-gray-500 truncate" style={sans}>{book.author}</p>
+          {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
           {book.genre && (
             <span style={{
               display: "inline-block",
@@ -801,4 +803,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
+          }
