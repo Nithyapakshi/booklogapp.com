@@ -58,8 +58,8 @@ export default function AddBookPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="author">Author</Label>
-              <Input id="author" name="author" value={bookData.author} onChange={handleChange} required />
+              <Label htmlFor="author">Author (optional)</Label>
+              <Input id="author" name="author" value={bookData.author} onChange={handleChange} />
             </div>
 
             <div className="space-y-2">
