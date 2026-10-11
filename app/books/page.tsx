@@ -445,7 +445,7 @@ function BooksLibraryContent() {
     prefetchAmazonDomain()
   }, [])
 
-  const { getBooksByStatus, getBookCountByStatus, removeBook, books } = useBooks()
+  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks } = useBooks()
   const searchParams = useSearchParams()
   const requestedBookId = searchParams.get("book")
   const [linkedBookId, setLinkedBookId] = useState<string | null>(null)
@@ -656,6 +656,11 @@ function BooksLibraryContent() {
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "#f7f4ef" }}>
         <div className="px-8 py-8 w-full">
+          {loadError && (
+            <div role="alert" className="mb-4 rounded-lg border px-4 py-3 text-sm" style={{ background: "#fdf3e7", borderColor: "#e8c9a0", color: "#6b4a1f" }}>
+              We could not load your library just now. Your books are safe. <button type="button" onClick={reloadBooks} className="underline font-medium">Try again</button>
+            </div>
+          )}
 
           {/* Page title + share button */}
           <div className="flex items-center justify-between mb-6">
@@ -796,4 +801,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-      }
+}
