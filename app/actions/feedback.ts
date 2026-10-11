@@ -2,26 +2,17 @@
 
 import { createClient } from "@supabase/supabase-js"
 
-export type FeedbackKind = "idea" | "broken" | "thanks"
 export type FeedbackResult = { ok: true } | { ok: false; error: string }
 
-const KIND_LABEL: Record<FeedbackKind, string> = {
-  idea: "Idea",
-  broken: "Something is broken",
-  thanks: "Just saying thanks",
-}
 const MAX_PER_HOUR = 5
 
 export async function submitFeedback(input: {
-  kind: string
   message: string
   replyTo: string
   accessToken: string
 }): Promise<FeedbackResult> {
-  const kind = input.kind as FeedbackKind
   const message = (input.message || "").trim()
   const replyTo = (input.replyTo || "").trim()
-  if (!KIND_LABEL[kind]) return { ok: false, error: "Pick a type." }
   if (!message) return { ok: false, error: "Please write a message." }
   if (message.length > 4000) return { ok: false, error: "Message is too long (4000 characters max)." }
   if (replyTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo)) return { ok: false, error: "That reply-to email doesn't look right." }
@@ -50,7 +41,6 @@ export async function submitFeedback(input: {
 
   const { error: insertErr } = await supabase.from("feedback").insert({
     user_id: user.id,
-    kind,
     message,
     reply_to: replyTo || null,
     user_name: userName,
@@ -73,9 +63,9 @@ export async function submitFeedback(input: {
           from: "BookLog Feedback <onboarding@resend.dev>",
           to: [to],
           reply_to: replyTo || user.email || undefined,
-          subject: `BookLog feedback: ${KIND_LABEL[kind]} from ${userName}`,
-          html: `<p><b>${esc(KIND_LABEL[kind])}</b> from <b>${esc(userName)}</b> (${esc(replyTo || user.email || "no email")})</p><p style="white-space:pre-wrap">${esc(message)}</p>`,
-          text: `${KIND_LABEL[kind]} from ${userName} (${replyTo || user.email || "no email"})\n\n${message}`,
+          subject: `BookLog feedback from ${userName}`,
+          html: `<p>From <b>${esc(userName)}</b> (${esc(replyTo || user.email || "no email")})</p><p style="white-space:pre-wrap">${esc(message)}</p>`,
+          text: `From ${userName} (${replyTo || user.email || "no email"})\n\n${message}`,
         }),
       })
       if (!res.ok) console.error("feedback email failed", res.status)
