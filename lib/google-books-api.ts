@@ -58,6 +58,15 @@ function normaliseGenre(categories: string[] | undefined): string {
   return "General"
 }
 
+// True when `a` is a newer edition of the same book than `b`. A cover matters most (a wrong or missing cover is worse
+// than an old year), then the later publication year, then the richer record.
+export function isNewerEdition(a: { cover?: string; publishedYear?: number }, b: { cover?: string; publishedYear?: number }, qualityA = 0, qualityB = 0): boolean {
+  if (!!a.cover !== !!b.cover) return !!a.cover
+  const ya = a.publishedYear || 0, yb = b.publishedYear || 0
+  if (ya !== yb) return ya > yb
+  return qualityA > qualityB
+}
+
 export function rankSearchResults(query: string, books: BookSearchResult[]): BookSearchResult[] {
   const normalise = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
   const baseTitle = (s: string) => normalise(s.split(":")[0].replace(/\s*\([^)]*(?:edition|anniversary)[^)]*\)\s*/gi, ""))
@@ -81,11 +90,13 @@ export function rankSearchResults(query: string, books: BookSearchResult[]): Boo
   for (const result of finalists) {
     const key = baseTitle(result.book.title) + (hasExactTitle ? "" : "|" + normalise(result.book.author))
     const prev = unique.get(key)
-    if (!prev || result.score > prev.score || (result.score === prev.score && normalise(result.book.author) === normalise(prev.book.author) && result.quality > prev.quality)) unique.set(key, result)
+    // Editions of the same title collapse to one result, and the newest edition wins (a cover beats no cover,
+    // then the later publication year). Different authors are never merged.
+    if (!prev || result.score > prev.score || (result.score === prev.score && normalise(result.book.author) === normalise(prev.book.author) && isNewerEdition(result.book, prev.book, result.quality, prev.quality))) unique.set(key, result)
   }
   const sorted = [...unique.values()].sort((a,b) => b.score-a.score || a.index-b.index)
   const cutoff = sorted.length ? Math.max(55, sorted[0].score - 25) : 55
-  return sorted.filter(x => x.score >= cutoff).slice(0,5).map(x => x.book)
+  return sorted.filter(x => x.score >= cutoff).slice(0,5).map(x => ({ ...x.book, title: x.book.title.replace(/\s*\([^)]*(?:edition|anniversary)[^)]*\)\s*/gi, " ").trim() || x.book.title }))
 }
 
 // Google Books intermittently answers 503 (and occasionally 429). Retry those a few times
