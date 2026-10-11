@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk"
 async function getBookCoverUrl(title: string, author: string): Promise<{ cover: string; googleId: string }> {
   try {
     const query = encodeURIComponent(`${title} ${author}`)
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1&key=${process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=10&key=${process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
 
     if (!response.ok) {
       throw new Error(`Google Books API error: ${response.status}`)
@@ -15,7 +15,20 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
     const data = await response.json()
 
     if (data.items && data.items.length > 0) {
-      const item = data.items[0]
+      // Several editions of the same title come back; use the newest edition of THIS book (same title and author),
+      // preferring one that has a cover. Fall back to the first hit when nothing matches cleanly.
+      const norm = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+      const base = (v: string) => norm(String(v || "").split(":")[0].replace(/\([^)]*\)/g, ""))
+      const wantTitle = base(title), wantAuthors = norm(author).split(" ").filter((w) => w.length > 2)
+      const matches = data.items.filter((it: any) => {
+        const info = it.volumeInfo || {}
+        const authors = norm((info.authors || []).join(" "))
+        return base(info.title) === wantTitle && (!wantAuthors.length || wantAuthors.some((w) => authors.includes(w)))
+      })
+      const year = (it: any) => Number.parseInt(String(it.volumeInfo?.publishedDate || "").slice(0, 4)) || 0
+      const pool = matches.length ? matches : [data.items[0]]
+      const item = [...pool].sort((a: any, b: any) =>
+        Number(!!b.volumeInfo?.imageLinks?.thumbnail) - Number(!!a.volumeInfo?.imageLinks?.thumbnail) || year(b) - year(a))[0]
       return {
         cover: item.volumeInfo.imageLinks?.thumbnail ?? "",
         googleId: item.id ?? "",
