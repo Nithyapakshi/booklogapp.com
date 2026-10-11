@@ -1,5 +1,6 @@
 "use client"
 
+import { readingDatesLabel } from "@/lib/reading-dates"
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
@@ -135,6 +136,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
         <div className="p-3">
           <h3 className="font-bold text-sm truncate">{book.title}</h3>
           <p className="text-xs text-gray-600 truncate">{book.author}</p>
+          {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-gray-500 truncate">{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
               {book.genre && (
                 <span style={{
                   display: "inline-block",
