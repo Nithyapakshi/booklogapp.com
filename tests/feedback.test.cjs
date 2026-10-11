@@ -24,8 +24,10 @@ test("sidebar footer links to feedback next to settings, in both sidebars", () =
     assert.ok(s.indexOf("Settings") < s.indexOf('href="/feedback"'))
   }
 })
-test("feedback page has kind chips, message and reply-to", () => {
+test("feedback page has message and reply-to, no kind chips", () => {
   const s = read("app/feedback/page.tsx")
-  for (const t of ["Idea", "Something is broken", "Just saying thanks", "Reply to", "Send feedback"]) assert.ok(s.includes(t), t)
+  for (const t of ["Your message", "Reply to", "Send feedback"]) assert.ok(s.includes(t), t)
   assert.ok(!/star/i.test(s), "no star rating")
+  for (const t of ["Something is broken", "Just saying thanks", "What kind of feedback"]) assert.ok(!s.includes(t), t)
+  assert.doesNotMatch(read("app/actions/feedback.ts"), /KIND_LABEL/)
 })
