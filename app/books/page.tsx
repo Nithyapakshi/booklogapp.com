@@ -121,11 +121,11 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-1 w-44 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50" style={sans}>
-              <button type="button" className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</button>
+              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
               {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
               {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
               {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
-              {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>Move to Recommendations</div>}
+              {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" title="Moves this book into My Recommendations" onClick={() => moveBook("recommended")}>&#9733; Move to Recommendations</div>}
               {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
               <div
                 className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
@@ -158,6 +158,31 @@ function DiscoverTab() {
   const [selectedBookInLibrary, setSelectedBookInLibrary] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false)
+  const { user: discoverUser } = useAuth()
+  const discoverKey = discoverUser?.id ? `booklog.discover:${discoverUser.id}` : ""
+  const restoredRef = React.useRef("")
+
+  // Restore the last Discover session (prompt + every recommendation shown) when coming back to the page.
+  React.useEffect(() => {
+    if (!discoverKey || restoredRef.current === discoverKey) return
+    restoredRef.current = discoverKey
+    try {
+      const raw = localStorage.getItem(discoverKey)
+      if (!raw) return
+      const saved = JSON.parse(raw)
+      if (typeof saved?.prompt === "string") setPrompt(saved.prompt)
+      if (Array.isArray(saved?.recommendations) && saved.recommendations.length) setRecommendations(saved.recommendations)
+    } catch {}
+  }, [discoverKey])
+
+  const saveDiscover = (nextPrompt: string, nextRecs: BookSearchResult[] | null) => {
+    if (!discoverKey) return
+    try {
+      if (!nextRecs || nextRecs.length === 0) localStorage.removeItem(discoverKey)
+      else localStorage.setItem(discoverKey, JSON.stringify({ prompt: nextPrompt, recommendations: nextRecs.slice(0, 60), savedAt: Date.now() }))
+    } catch {}
+  }
 
   const { books } = useBooksContext()
   const allMyBooks = React.useMemo(() => Object.values(books).flat(), [books])
@@ -180,11 +205,36 @@ function DiscoverTab() {
     try {
       const results = await getAIBookRecommendations(prompt)
       setRecommendations(results)
+      saveDiscover(prompt, results)
     } catch (err) {
       setError("Sorry, we couldn't generate recommendations. Please try again.")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleShowMore = async () => {
+    if (!prompt.trim() || !recommendations || isLoadingMore) return
+    setIsLoadingMore(true)
+    setError(null)
+    try {
+      const seen = recommendations.map(r => `${r.title} by ${r.author}`)
+      const more = await getAIBookRecommendations(prompt, seen)
+      const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
+      const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
+      const merged = [...recommendations, ...fresh]
+      setRecommendations(merged)
+      saveDiscover(prompt, merged)
+    } catch (err) {
+      setError("Sorry, we couldn't load more recommendations. Please try again.")
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  const handleClearHistory = () => {
+    setRecommendations(null)
+    saveDiscover(prompt, null)
   }
 
   return (
@@ -225,7 +275,10 @@ function DiscoverTab() {
           </div>
         ) : recommendations ? (
           <div>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "0.875rem" }}>Your recommendations</h2>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "0.875rem" }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", margin: 0 }}>Your recommendations ({recommendations.length})</h2>
+              <button type="button" onClick={handleClearHistory} style={{ fontSize: "11px", color: "#8a7560", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>Clear</button>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
               {recommendations.map((book, index) => (
                 <div
@@ -271,6 +324,16 @@ function DiscoverTab() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+              <button
+                type="button"
+                onClick={handleShowMore}
+                disabled={isLoadingMore}
+                style={{ padding: "8px 20px", background: "transparent", color: "#c17f3e", border: "0.5px solid #c17f3e", borderRadius: "7px", fontSize: "12px", fontWeight: "600", cursor: isLoadingMore ? "not-allowed" : "pointer", opacity: isLoadingMore ? 0.6 : 1, fontFamily: "DM Sans, sans-serif" }}
+              >
+                {isLoadingMore ? "Finding more..." : "Show me more"}
+              </button>
             </div>
           </div>
         ) : (
@@ -331,6 +394,7 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
     <>
       {/* Desktop: wrap + More */}
       <div className="hidden md:flex flex-wrap gap-2 items-center" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px" }}>
+        <span title="Genres come from the books in your library" style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", marginRight: "2px" }}>Genre:</span>
         {visibleGenres.map(g => (
           <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
         ))}
@@ -341,7 +405,8 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
         )}
       </div>
       {/* Mobile: horizontal scroll */}
-      <div className="md:hidden flex gap-2 overflow-x-auto pb-1" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px", scrollbarWidth: "none" }}>
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-1 items-center" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px", scrollbarWidth: "none" }}>
+        <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>Genre:</span>
         {genres.map(g => (
           <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
         ))}
@@ -364,6 +429,7 @@ function BooksLibraryContent() {
     }
     return 10
   })
+  const [listSearch, setListSearch] = useState("")
   const [myBooksGenreFilter, setMyBooksGenreFilter]               = useState<string>("All")
   const [recommendedGenreFilter, setRecommendedGenreFilter]       = useState<string>("All")
   const [myBooksGenreExpanded, setMyBooksGenreExpanded]           = useState(false)
@@ -434,9 +500,11 @@ function BooksLibraryContent() {
     const raw = sidebarTab === "recommended"
       ? getBooksByStatus("recommended")
       : getBooksByStatus(mapTabToStatus(activeTab))
-    setFilteredBooks(genreFilter === "All" ? raw : raw.filter(b => b.genre === genreFilter))
+    const byGenre = genreFilter === "All" ? raw : raw.filter(b => b.genre === genreFilter)
+    const q = listSearch.trim().toLowerCase()
+    setFilteredBooks(q ? byGenre.filter(b => `${b.title} ${b.author}`.toLowerCase().includes(q)) : byGenre)
     setCurrentPage(1)
-  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter])
+  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter, listSearch])
 
   const tabs = [
     { name: "Reading",   count: getBookCountByStatus("reading")   },
@@ -646,6 +714,16 @@ function BooksLibraryContent() {
                 </ul>
                 {viewToggle}
               </div>
+              <div className="mb-3">
+                <input
+                  type="search"
+                  value={listSearch}
+                  onChange={e => setListSearch(e.target.value)}
+                  placeholder="Filter this list by title or author..."
+                  aria-label="Filter this list by title or author"
+                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#fff", color: "#1a1208", fontFamily: "'DM Sans', sans-serif" }}
+                />
+              </div>
               <GenreFilterRow
                 selected={myBooksGenreFilter}
                 onSelect={setMyBooksGenreFilter}
@@ -669,6 +747,16 @@ function BooksLibraryContent() {
                   My Recommendations ({recommendedCount})
                 </span>
                 {viewToggle}
+              </div>
+              <div className="mb-3">
+                <input
+                  type="search"
+                  value={listSearch}
+                  onChange={e => setListSearch(e.target.value)}
+                  placeholder="Filter this list by title or author..."
+                  aria-label="Filter this list by title or author"
+                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#fff", color: "#1a1208", fontFamily: "'DM Sans', sans-serif" }}
+                />
               </div>
               <GenreFilterRow
                 selected={recommendedGenreFilter}
@@ -708,4 +796,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
+      }
