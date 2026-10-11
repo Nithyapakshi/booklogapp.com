@@ -108,6 +108,12 @@ async function fetchWithRetry(url: string, attempts = 6): Promise<Response> {
 // Function to search for books
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   if (!query.trim()) return []
+  return rankSearchResults(query, await searchBooksRaw(query))
+}
+
+// Unranked Google Books results. Used where the caller does its own (fuzzy) matching.
+export async function searchBooksRaw(query: string): Promise<BookSearchResult[]> {
+  if (!query.trim()) return []
   try {
     const response = await fetchWithRetry(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
@@ -134,7 +140,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
         : undefined,
       genre: normaliseGenre(item.volumeInfo.categories),
     }))
-    return rankSearchResults(query, books)
+    return books
   } catch (error) {
     throw error instanceof Error ? error : new Error("Book search failed")
   }
