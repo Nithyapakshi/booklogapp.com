@@ -14,3 +14,7 @@ test("AI recommendation covers come from the newest edition of the same book", (
   assert.match(s, /year\(b\) - year\(a\)/)
   assert.match(s, /\[data\.items\[0\]\]/)
 })
+test("AI recommendation cover lookup retries Google Books 503s", () => {
+  const s = fs.readFileSync("app/actions/ai-recommendations.ts", "utf8")
+  assert.match(s, /response\.status === 503 \|\| response\.status === 429/)
+})
