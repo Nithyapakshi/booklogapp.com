@@ -35,6 +35,8 @@ type BookContextType = {
   getBooksByStatus: (status: BookStatus) => Book[]
   getBookCountByStatus: (status: BookStatus) => number
   loading: boolean
+  loadError: boolean
+  reloadBooks: () => void
   updateNote: (bookId: string, note: string) => Promise<void>
   updateRating: (bookId: string, rating: number) => Promise<void>
 }
@@ -51,6 +53,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading } = useAuth()
   const userId = user?.id ?? null
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadTick, setReloadTick] = useState(0)
+  const reloadBooks = useCallback(() => setReloadTick(t => t + 1), [])
   const [ratingPrompt, setRatingPrompt] = useState<{ id: string; title: string; rating: number } | null>(null)
 
   // Load books from Supabase when userId is available
@@ -67,50 +72,58 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
     async function loadBooks() {
       setLoading(true)
-      const { data, error } = await supabase
-        .from("books")
-        .select("*")
-        .eq("user_id", userId)
+      setLoadError(false)
+      try {
+        const { data, error } = await supabase
+          .from("books")
+          .select("*")
+          .eq("user_id", userId)
 
-      const { data: noteRows } = await supabase.from("book_notes").select("book_id,notes").eq("user_id", userId!)
-      const notesByBook = new Map((noteRows || []).map(row => [row.book_id, row.notes]))
+        const { data: noteRows, error: notesError } = await supabase.from("book_notes").select("book_id,notes").eq("user_id", userId!)
 
-      if (error) {
-        console.error("Error loading books:", error)
-        setLoading(false)
-        return
-      }
-
-      const grouped: Record<BookStatus, Book[]> = {
-        reading: [], queued: [], completed: [], recommended: [], onHold: [],
-      }
-
-      for (const row of data) {
-        const status = row.status as BookStatus
-        if (grouped[status]) {
-          grouped[status].push({
-            id: row.id,
-            title: row.title,
-            author: row.author,
-            cover: row.cover_url ?? "",
-            status: row.status,
-            description: row.description ?? undefined,
-            publishedYear: row.published_year ?? undefined,
-            rowId: row.row_id ?? undefined,
-            selfRating: row.self_rating ?? undefined,
-            notes: notesByBook.get(row.id) ?? undefined,
-            genre: row.genre ?? undefined,
-            ...(row.auto_completed ? { autoCompleted: true } : {}),
-          } as Book)
+        // A failed read must never look like an empty library: keep what is on screen and say so.
+        if (error || notesError || !data) {
+          console.error("Error loading books:", error || notesError)
+          setLoadError(true)
+          setLoading(false)
+          return
         }
-      }
+        const notesByBook = new Map((noteRows || []).map(row => [row.book_id, row.notes]))
 
-      setBooks(grouped)
+        const grouped: Record<BookStatus, Book[]> = {
+          reading: [], queued: [], completed: [], recommended: [], onHold: [],
+        }
+
+        for (const row of data) {
+          const status = row.status as BookStatus
+          if (grouped[status]) {
+            grouped[status].push({
+              id: row.id,
+              title: row.title,
+              author: row.author,
+              cover: row.cover_url ?? "",
+              status: row.status,
+              description: row.description ?? undefined,
+              publishedYear: row.published_year ?? undefined,
+              rowId: row.row_id ?? undefined,
+              selfRating: row.self_rating ?? undefined,
+              notes: notesByBook.get(row.id) ?? undefined,
+              genre: row.genre ?? undefined,
+              ...(row.auto_completed ? { autoCompleted: true } : {}),
+            } as Book)
+          }
+        }
+
+        setBooks(grouped)
+      } catch (error) {
+        console.error("Error loading books:", error)
+        setLoadError(true)
+      }
       setLoading(false)
     }
 
     loadBooks()
-  }, [userId, authLoading])
+  }, [userId, authLoading, reloadTick])
 
   const addBook = useCallback(async (book: any, status: BookStatus) => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
@@ -358,7 +371,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, updateNote, updateRating }}>
+    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating }}>
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
     </BookContext.Provider>
