@@ -6,16 +6,9 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { submitFeedback } from "@/app/actions/feedback"
 import { BookOpen, Heart, Sparkles, Settings, MessageSquare } from "lucide-react"
 
-const KINDS = [
-  { value: "idea", label: "Idea" },
-  { value: "broken", label: "Something is broken" },
-  { value: "thanks", label: "Just saying thanks" },
-]
-
 export default function FeedbackPage() {
   const { user } = useAuth()
   const [displayName, setDisplayName] = useState("")
-  const [kind, setKind] = useState("idea")
   const [message, setMessage] = useState("")
   const [replyTo, setReplyTo] = useState("")
   const [sending, setSending] = useState(false)
@@ -43,7 +36,7 @@ export default function FeedbackPage() {
       const supabase = createClientSupabaseClient()
       const { data } = await supabase.auth.getSession()
       const token = data.session?.access_token || ""
-      const res = await submitFeedback({ kind, message, replyTo, accessToken: token })
+      const res = await submitFeedback({ message, replyTo, accessToken: token })
       if (res.ok) { setSent(true); setMessage("") }
       else setError(res.error)
     } catch {
@@ -102,15 +95,6 @@ export default function FeedbackPage() {
           </div>
         ) : (
           <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "20px 24px" }}>
-            <div style={{ fontSize: "12px", color: "#6b5c42", fontWeight: "600", marginBottom: "8px" }}>What kind of feedback?</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
-              {KINDS.map(k => (
-                <button key={k.value} onClick={() => setKind(k.value)} aria-pressed={kind === k.value}
-                  style={{ padding: "6px 14px", borderRadius: "999px", fontSize: "12px", cursor: "pointer", border: `0.5px solid ${kind === k.value ? "#c17f3e" : "#e0d5c4"}`, background: kind === k.value ? "#c17f3e" : "#fff", color: kind === k.value ? "#fff" : "#6b5c42", fontWeight: "600" }}>
-                  {k.label}
-                </button>
-              ))}
-            </div>
             <label style={{ display: "block", fontSize: "12px", color: "#6b5c42", fontWeight: "600", marginBottom: "4px" }}>Your message</label>
             <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={4000} rows={6} placeholder="Tell me what's on your mind..."
               style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", border: "0.5px solid #e0d5c4", borderRadius: "6px", fontSize: "13px", color: "#1a1208", fontFamily: "'DM Sans', sans-serif", marginBottom: "14px", resize: "vertical" }} />
