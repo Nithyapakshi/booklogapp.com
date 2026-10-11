@@ -31,3 +31,9 @@ test("feedback page has message and reply-to, no kind chips", () => {
   for (const t of ["Something is broken", "Just saying thanks", "What kind of feedback"]) assert.ok(!s.includes(t), t)
   assert.doesNotMatch(read("app/actions/feedback.ts"), /KIND_LABEL/)
 })
+
+test("warm theme is the global default (new pages inherit it)", () => {
+  const css = read("app/globals.css")
+  assert.match(css, /--background: 38 44% 96%/)
+  assert.match(css, /--primary: 30 51% 50%/)
+})
