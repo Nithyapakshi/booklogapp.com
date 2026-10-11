@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
-import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight } from "lucide-react"
+import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react"
 
 interface SidebarProps {
   activeTab: string
@@ -238,6 +238,24 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
             {!collapsed && <span>Settings</span>}
+          </Link>
+          <Link
+            href="/feedback"
+            className="w-full flex items-center overflow-hidden"
+            style={{
+              gap: "11px",
+              padding: "10px 20px",
+              color: "#6b5c4e",
+              fontWeight: "500",
+              fontSize: "13px",
+              fontFamily: "'DM Sans', sans-serif",
+              textDecoration: "none",
+              borderLeft: "2.5px solid transparent",
+              display: "flex",
+            }}
+          >
+            <MessageSquare size={15} style={{ flexShrink: 0 }} />
+            {!collapsed && <span>Feedback</span>}
           </Link>
         </div>
 

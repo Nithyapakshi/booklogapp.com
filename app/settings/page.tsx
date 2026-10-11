@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
-import { BookOpen, Heart, Sparkles, Settings } from "lucide-react"
+import { BookOpen, Heart, Sparkles, Settings, MessageSquare } from "lucide-react"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -111,6 +111,10 @@ export default function SettingsPage() {
             <Settings size={15} style={{ flexShrink: 0 }} />
             <span>Settings</span>
           </div>
+          <Link href="/feedback" style={{ display: "flex", alignItems: "center", gap: "11px", padding: "10px 20px", color: "#6b5c4e", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderLeft: "2.5px solid transparent" }}>
+            <MessageSquare size={15} style={{ flexShrink: 0 }} />
+            <span>Feedback</span>
+          </Link>
         </div>
 
         {/* User avatar */}
