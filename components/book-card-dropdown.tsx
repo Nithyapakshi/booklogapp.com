@@ -67,7 +67,7 @@ export function BookCardDropdown({ book, isOpen, onClose, onMove, anchorRect }: 
       )}
       {book.status !== "recommended" && (
         <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("recommended")}>
-          Move to Recommendations
+          &#9733; Move to Recommendations
         </div>
       )}
       {book.status !== "onHold" && (

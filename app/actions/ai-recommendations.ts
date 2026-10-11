@@ -29,7 +29,7 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
   }
 }
 
-export async function getAIBookRecommendations(query: string) {
+export async function getAIBookRecommendations(query: string, exclude: string[] = []) {
   try {
     if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -52,6 +52,7 @@ export async function getAIBookRecommendations(query: string) {
 - Genre
 
 User preferences: ${query}
+${exclude.length ? `\nDo not recommend any of these books, the user has already seen them: ${exclude.slice(0, 60).map((t) => String(t).slice(0, 120)).join('; ')}\n` : ''}
 
 Format the response as a JSON array with title, author, description, and genre.
 Do not include any text outside the JSON array.`,

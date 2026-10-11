@@ -206,7 +206,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button type="button" className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100" onClick={e=>{e.stopPropagation(); setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</button>
+          <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={e=>{e.stopPropagation(); setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
           {book.status !== "reading" && (
             <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>
               Move to Reading
@@ -224,7 +224,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           )}
           {book.status !== "recommended" && (
             <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>
-              Move to Recommendations
+              &#9733; Move to Recommendations
             </div>
           )}
           {book.status !== "onHold" && (
