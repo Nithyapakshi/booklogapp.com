@@ -39,7 +39,7 @@ export const DropdownMenuContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "absolute z-[9999] min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 shadow-md animate-in fade-in-80",
+        "absolute z-[9999] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 shadow-md animate-in fade-in-80",
         "right-0 top-0 mt-8",
         className,
       )}
@@ -61,7 +61,7 @@ export const DropdownMenuItem = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100",
+      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent",
       className,
     )}
     onClick={(e) => {
@@ -85,5 +85,5 @@ export const DropdownMenuSubContent = ({ children }: { children: React.ReactNode
 export const DropdownMenuCheckboxItem = ({ children }: { children: React.ReactNode }) => <>{children}</>
 export const DropdownMenuRadioItem = ({ children }: { children: React.ReactNode }) => <>{children}</>
 export const DropdownMenuLabel = ({ children }: { children: React.ReactNode }) => <>{children}</>
-export const DropdownMenuSeparator = () => <div className="my-1 h-px bg-gray-200" />
+export const DropdownMenuSeparator = () => <div className="my-1 h-px bg-border" />
 export const DropdownMenuShortcut = ({ children }: { children: React.ReactNode }) => <>{children}</>
