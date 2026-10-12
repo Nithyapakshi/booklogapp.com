@@ -82,7 +82,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
+        {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
         {near && <p role="alert">This looks like a book you already have: {near.title} by {near.author}. <button type="button" className="underline" onClick={() => handleAddBook(true)}>Add anyway</button> <a className="underline" href={`/books?book=${encodeURIComponent(near.id)}`} onClick={onClose}>View existing book</a></p>}
         {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
         <DialogHeader>
@@ -137,7 +137,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                     {book.description && book.description.length > 200 && (
                       <button
                         onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="text-blue-500 text-xs mt-1 hover:underline"
+                        className="text-primary text-xs mt-1 hover:underline"
                       >
                         {showFullDescription ? "Show less" : "Show more"}
                       </button>
@@ -171,16 +171,16 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Title</label>
-                  <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.title || ""}</p>
+                  <p className="px-3 py-2 border rounded-md bg-muted">{book?.title || ""}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Author</label>
-                  <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.author || ""}</p>
+                  <p className="px-3 py-2 border rounded-md bg-muted">{book?.author || ""}</p>
                 </div>
                 {book?.publishedYear && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Published Year</label>
-                    <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.publishedYear}</p>
+                    <p className="px-3 py-2 border rounded-md bg-muted">{book?.publishedYear}</p>
                   </div>
                 )}
                 {book?.description && (
@@ -191,7 +191,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                       {book.description && book.description.length > 200 && (
                         <button
                           onClick={() => setShowFullDescription(!showFullDescription)}
-                          className="text-blue-500 text-xs mt-1 hover:underline"
+                          className="text-primary text-xs mt-1 hover:underline"
                         >
                           {showFullDescription ? "Show less" : "Show more"}
                         </button>
@@ -209,7 +209,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                     try { await updateNote(book.id, noteText); setSaved(true) }
                     catch { setSaved(false); setWriteError("Note was not saved. Please try again.") }
                   }}>Save Note</Button>
-                  {saved && <span className="text-xs text-green-600">Saved</span>}
+                  {saved && <span className="text-xs text-green-600 dark:text-green-300">Saved</span>}
                 </div>
                 {(book?.status === "queued" || book?.status === "recommended") && (
                   <div style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", paddingTop: "12px", marginTop: "4px" }}>
