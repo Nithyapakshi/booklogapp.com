@@ -4,6 +4,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookOpen, Heart, Sparkles, Settings, MessageSquare } from "lucide-react"
+import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -16,6 +17,42 @@ export default function SettingsPage() {
   const [usernameError, setUsernameError] = useState("")
   const [copied, setCopied]           = useState(false)
   const email = user?.email || ""
+  const [exporting, setExporting] = useState(false)
+  const [exportMsg, setExportMsg]   = useState("")
+
+  async function handleExport() {
+    if (!user || exporting) return
+    setExporting(true)
+    setExportMsg("")
+    try {
+      const supabase = createClientSupabaseClient()
+      const rows: any[] = []
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("books").select("*").eq("user_id", user.id).range(from, from + 999)
+        if (error || !data) throw new Error("books")
+        rows.push(...data)
+        if (data.length < 1000) break
+      }
+      const { data: noteRows, error: notesError } = await supabase.from("book_notes").select("book_id,notes").eq("user_id", user.id)
+      if (notesError) throw new Error("notes")
+      if (rows.length === 0) { setExportMsg("Your library is empty, so there is nothing to export yet."); return }
+      const notes = new Map<string, string>((noteRows || []).map((r: any) => [r.book_id, r.notes]))
+      const csv = buildLibraryCsv(rows, notes, r => String((r as any).id))
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }))
+      const a = document.createElement("a")
+      a.href = url
+      a.download = csvFileName()
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setExportMsg(`Downloaded ${rows.length} book${rows.length === 1 ? "" : "s"}.`)
+    } catch {
+      setExportMsg("We could not read your library just now, so nothing was downloaded. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchProfile() {
@@ -231,6 +268,23 @@ export default function SettingsPage() {
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
         </button>
+
+        {/* Your data section */}
+        <div style={{ marginTop: "28px", marginBottom: "8px" }}>
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#a8927a", fontWeight: "600", marginBottom: "8px" }}>Your data</div>
+          <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "16px 20px" }}>
+            <div style={{ fontSize: "13px", color: "#1a1208", fontWeight: "600" }}>Download your library</div>
+            <div style={{ fontSize: "12px", color: "#8a7560", margin: "2px 0 12px" }}>A CSV file with every book: title, author, list, dates, rating, genre and your notes. Opens in Excel, Numbers or Google Sheets.</div>
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              style={{ background: "#fff", color: "#c17f3e", border: "1px solid #c17f3e", borderRadius: "6px", padding: "8px 18px", fontSize: "13px", fontFamily: "'DM Sans', sans-serif", cursor: exporting ? "not-allowed" : "pointer", fontWeight: "600", opacity: exporting ? 0.7 : 1 }}
+            >
+              {exporting ? "Preparing…" : "Download CSV"}
+            </button>
+            {exportMsg && <p role="status" style={{ fontSize: "12px", color: "#6b5c42", margin: "10px 0 0" }}>{exportMsg}</p>}
+          </div>
+        </div>
 
         {/* Sign out — mobile only */}
         <div className="md:hidden" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid #e0d5c4" }}>
