@@ -95,7 +95,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
     <>
       {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
       <div
-        className="bg-white rounded-lg shadow-md overflow-hidden relative cursor-pointer"
+        className="bg-card rounded-lg shadow-md overflow-hidden relative cursor-pointer"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={handleBookClick}
@@ -110,17 +110,17 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
                 // If image fails, show a colored div with text
                 const target = e.currentTarget
                 target.onerror = null
-                target.style.backgroundColor = "#e5e7eb"
+                target.style.backgroundColor = "var(--bl-e5e7eb)"
                 target.style.display = "flex"
                 target.style.alignItems = "center"
                 target.style.justifyContent = "center"
-                target.style.color = "#6b7280"
+                target.style.color = "var(--bl-6b7280)"
                 target.style.fontSize = "12px"
                 target.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
               }}
             />
           ) : (
-            <div className="h-full w-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+            <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-xs">
               No Cover
             </div>
           )}
@@ -135,16 +135,16 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
         </div>
         <div className="p-3">
           <h3 className="font-bold text-sm truncate">{book.title}</h3>
-          <p className="text-xs text-gray-600 truncate">{book.author}</p>
-          {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-gray-500 truncate">{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
+          <p className="text-xs text-muted-foreground truncate">{book.author}</p>
+          {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-muted-foreground truncate">{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
               {book.genre && (
                 <span style={{
                   display: "inline-block",
                   fontSize: "10px",
                   fontWeight: 500,
-                  color: "#8a5a1e",
-                  background: "#f5ede0",
-                  border: "0.5px solid #d4a96a",
+                  color: "var(--bl-8a5a1e)",
+                  background: "var(--bl-f5ede0)",
+                  border: "0.5px solid var(--bl-d4a96a)",
                   borderRadius: "10px",
                   padding: "2px 7px",
                   marginTop: "3px",
@@ -162,7 +162,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
               style={{
                 display: "block",
                 fontSize: "11px",
-                color: "#c17f3e",
+                color: "var(--bl-c17f3e)",
                 fontWeight: 500,
                 textDecoration: "none",
                 marginTop: "5px",
@@ -178,7 +178,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    className={`cursor-pointer text-base ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                    className={`cursor-pointer text-base ${star <= rating ? "text-amber-400" : "text-muted-foreground/40"}`}
                     onClick={() => handleStarClick(star)}
                   >
                     ★
@@ -201,42 +201,42 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
       {dropdownOpen && buttonRef.current && (
         <div
           ref={dropdownRef}
-          className="fixed bg-white rounded-md shadow-lg border border-gray-200 py-1 z-[9999] w-40 book-dropdown-menu"
+          className="fixed bg-card rounded-md shadow-lg border border-border py-1 z-[9999] w-40 book-dropdown-menu"
           style={{
             top: `${buttonRef.current.getBoundingClientRect().bottom + 200 > window.innerHeight ? buttonRef.current.getBoundingClientRect().top - 200 : buttonRef.current.getBoundingClientRect().bottom + 4}px`,
             left: `${buttonRef.current.getBoundingClientRect().right - 160}px`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={e=>{e.stopPropagation(); setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
+          <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={e=>{e.stopPropagation(); setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
           {book.status !== "reading" && (
-            <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>
+            <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("reading")}>
               Move to Reading
             </div>
           )}
           {book.status !== "queued" && (
-            <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>
+            <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("queued")}>
               Move to Queued
             </div>
           )}
           {book.status !== "completed" && (
-            <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>
+            <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("completed")}>
               Move to Completed
             </div>
           )}
           {book.status !== "recommended" && (
-            <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("recommended")}>
+            <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("recommended")}>
               &#9733; Move to Recommendations
             </div>
           )}
           {book.status !== "onHold" && (
-            <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>
+            <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("onHold")}>
               Move to On Hold
             </div>
           )}
           <div
-            className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-            style={{ color: "#c17f3e" }}
+            className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
+            style={{ color: "var(--bl-c17f3e)" }}
             onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
           >
             Find on Amazon
