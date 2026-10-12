@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { sameBook } from "@/lib/book-identity"
+import { BookBarcodeScanner } from "@/components/book-barcode-scanner"
 import { Search } from "lucide-react"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { searchBooks, getBookById } from "@/lib/google-books-api"
@@ -22,6 +23,7 @@ export default function BookSearch() {
   const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null)
   const [selectedBookInLibrary, setSelectedBookInLibrary] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [fromScan, setFromScan] = useState(false)
   const debouncedQuery = useDebounce(query, 500)
 
   const { books } = useBooks()
@@ -71,6 +73,7 @@ export default function BookSearch() {
   }, [debouncedQuery, searchAttempt])
 
 const handleBookSelect = async (book: BookSearchResult) => {
+    setFromScan(false)
     try {
       setIsLoading(true)
       const owned = findInLibrary(book.id, book.title, book.author)
@@ -107,13 +110,13 @@ const handleBookSelect = async (book: BookSearchResult) => {
             placeholder="Search for books or authors..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-[5.5rem] md:pr-10"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-14 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Clear search"
             >
               <svg
@@ -132,6 +135,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
               </svg>
             </button>
           )}
+          <BookBarcodeScanner onSearch={() => { document.querySelector<HTMLInputElement>('input[placeholder="Search for books or authors..."]')?.focus() }} onBook={book => { const owned = findInLibrary(book.id, book.title, book.author); setSelectedBook((owned ?? book) as BookSearchResult); setSelectedBookInLibrary(!!owned); setFromScan(!owned); setDialogOpen(true) }} />
         </div>
         <Button type="submit" className="flex items-center gap-2" style={{ background: "#c17f3e", color: "#fff", border: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: "600", fontSize: "13px", borderRadius: "8px", padding: "8px 16px" }}>
           <Search className="h-4 w-4" />
@@ -200,7 +204,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
         </div>
       )}
 
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); setSelectedBookInLibrary(false) }} mode={selectedBookInLibrary ? "view" : "add"} />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); setSelectedBookInLibrary(false); setFromScan(false) }} latestEditionNotice={fromScan} mode={selectedBookInLibrary ? "view" : "add"} />
     </div>
   )
 }
