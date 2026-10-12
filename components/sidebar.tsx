@@ -68,8 +68,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         `}
         style={{
           minHeight: "100vh",
-          background: "#faf7f2",
-          borderRight: "1px solid #e8e0d5",
+          background: "var(--bl-faf7f2)",
+          borderRight: "1px solid var(--bl-e8e0d5)",
         }}
       >
         {/* Logo */}
@@ -78,9 +78,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           style={{ padding: "22px 20px 18px", minHeight: "68px" }}
         >
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" />
-              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.62" />
-              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.32" />
+              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="var(--bl-c17f3e)" />
+              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.62" />
+              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.32" />
             </svg>
           {!collapsed && (
             <span
@@ -88,7 +88,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 fontSize: "17px",
                 fontWeight: "700",
-                color: "#2d2416",
+                color: "var(--bl-2d2416)",
                 whiteSpace: "nowrap",
               }}
             >
@@ -107,9 +107,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             width: "24px",
             height: "24px",
             borderRadius: "50%",
-            background: "#f0ebe2",
-            border: "1px solid #ddd5c8",
-            color: "#888",
+            background: "var(--bl-f0ebe2)",
+            border: "1px solid var(--bl-ddd5c8)",
+            color: "var(--bl-888)",
             fontSize: "10px",
             fontWeight: "700",
             cursor: "pointer",
@@ -129,7 +129,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 fontWeight: "600",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                color: "#b8a898",
+                color: "var(--bl-b8a898)",
                 padding: "0 20px 6px",
                 fontFamily: "'DM Sans', sans-serif",
               }}
@@ -149,9 +149,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 style={{
                   gap: "11px",
                   padding: "10px 20px",
-                  borderLeft: `2.5px solid ${isActive ? "#c17f3e" : "transparent"}`,
-                  background: isActive ? "rgba(193,127,62,0.08)" : "transparent",
-                  color: isActive ? "#c17f3e" : "#6b5c4e",
+                  borderLeft: `2.5px solid ${isActive ? "var(--bl-c17f3e)" : "transparent"}`,
+                  background: isActive ? "var(--bl-selected)" : "transparent",
+                  color: isActive ? "var(--bl-c17f3e)" : "var(--bl-6b5c4e)",
                   fontWeight: isActive ? "600" : "500",
                   fontSize: "13px",
                   fontFamily: "'DM Sans', sans-serif",
@@ -168,7 +168,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           })}
 
           {/* Divider */}
-          <div style={{ height: "1px", background: "#ede6dc", margin: "10px 0" }} />
+          <div style={{ height: "1px", background: "var(--bl-ede6dc)", margin: "10px 0" }} />
 
           {/* Explore section */}
           {!collapsed && (
@@ -178,7 +178,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 fontWeight: "600",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                color: "#b8a898",
+                color: "var(--bl-b8a898)",
                 padding: "6px 20px 6px",
                 fontFamily: "'DM Sans', sans-serif",
               }}
@@ -197,9 +197,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 style={{
                   gap: "11px",
                   padding: "10px 20px",
-                  borderLeft: `2.5px solid ${isActive ? "#c17f3e" : "transparent"}`,
-                  background: isActive ? "rgba(193,127,62,0.08)" : "transparent",
-                  color: isActive ? "#c17f3e" : "#6b5c4e",
+                  borderLeft: `2.5px solid ${isActive ? "var(--bl-c17f3e)" : "transparent"}`,
+                  background: isActive ? "var(--bl-selected)" : "transparent",
+                  color: isActive ? "var(--bl-c17f3e)" : "var(--bl-6b5c4e)",
                   fontWeight: isActive ? "600" : "500",
                   fontSize: "13px",
                   fontFamily: "'DM Sans', sans-serif",
@@ -217,14 +217,14 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         </nav>
 
         {/* Settings nav item */}
-        <div style={{ borderTop: "1px solid #ede6dc" }}>
+        <div style={{ borderTop: "1px solid var(--bl-ede6dc)" }}>
           <Link
             href="/settings"
             className="w-full flex items-center overflow-hidden"
             style={{
               gap: "11px",
               padding: "10px 20px",
-              color: "#6b5c4e",
+              color: "var(--bl-6b5c4e)",
               fontWeight: "500",
               fontSize: "13px",
               fontFamily: "'DM Sans', sans-serif",
@@ -245,7 +245,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             style={{
               gap: "11px",
               padding: "10px 20px",
-              color: "#6b5c4e",
+              color: "var(--bl-6b5c4e)",
               fontWeight: "500",
               fontSize: "13px",
               fontFamily: "'DM Sans', sans-serif",
@@ -269,7 +269,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               padding: "14px 20px",
               background: "transparent",
               border: "none",
-              borderTop: "1px solid #ede6dc",
+              borderTop: "1px solid var(--bl-ede6dc)",
               cursor: "pointer",
               width: "100%",
               textAlign: "left",
@@ -280,13 +280,13 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 width: "28px",
                 height: "28px",
                 borderRadius: "50%",
-                background: "#c17f3e",
+                background: "var(--bl-c17f3e)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "11px",
                 fontWeight: "700",
-                color: "white",
+                color: "var(--bl-primary-ink)",
                 flexShrink: 0,
               }}
             >
@@ -297,7 +297,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 style={{
                   fontSize: "13px",
                   fontWeight: "500",
-                  color: "#8a7060",
+                  color: "var(--bl-8a7060)",
                   whiteSpace: "nowrap",
                   fontFamily: "'DM Sans', sans-serif",
                 }}
@@ -311,8 +311,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               position: "absolute",
               bottom: "56px",
               left: "16px",
-              background: "#fff",
-              border: "0.5px solid #e0d5c4",
+              background: "var(--bl-fff)",
+              border: "0.5px solid var(--bl-e0d5c4)",
               borderRadius: "8px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               overflow: "hidden",
@@ -326,7 +326,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   width: "100%",
                   padding: "10px 16px",
                   fontSize: "13px",
-                  color: "#6b5c42",
+                  color: "var(--bl-6b5c42)",
                   fontFamily: "'DM Sans', sans-serif",
                   background: "transparent",
                   border: "none",
@@ -345,8 +345,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 flex z-50"
         style={{
-          background: "#faf7f2",
-          borderTop: "1px solid #e8e0d5",
+          background: "var(--bl-faf7f2)",
+          borderTop: "1px solid var(--bl-e8e0d5)",
         }}
       >
         {[...libraryItems, ...exploreItems].map(({ id, label, icon: Icon }) => {
@@ -362,7 +362,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 padding: "8px 0 16px",
                 fontSize: "10px",
                 fontWeight: "500",
-                color: isActive ? "#c17f3e" : "#b8a898",
+                color: isActive ? "var(--bl-c17f3e)" : "var(--bl-b8a898)",
                 fontFamily: "'DM Sans', sans-serif",
                 cursor: "pointer",
                 background: "transparent",
@@ -382,7 +382,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             padding: "8px 0 16px",
             fontSize: "10px",
             fontWeight: "500",
-            color: "#b8a898",
+            color: "var(--bl-b8a898)",
             fontFamily: "'DM Sans', sans-serif",
             textDecoration: "none",
           }}
@@ -392,13 +392,13 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               width: "20px",
               height: "20px",
               borderRadius: "50%",
-              background: "#c17f3e",
+              background: "var(--bl-c17f3e)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: "9px",
               fontWeight: "700",
-              color: "white",
+              color: "var(--bl-primary-ink)",
             }}
           >
             {mounted && firstName ? firstName[0].toUpperCase() : "?"}
