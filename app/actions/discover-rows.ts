@@ -21,6 +21,7 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
     }
     if (!res.ok) { let m = ""; try { m = (await res.text()).slice(0, 160) } catch {} DIAG.push(`${res.status} ${m}`); return [] }
     const data = await res.json()
+    DIAG.push(`ok ${res.status} items=${Array.isArray(data.items) ? data.items.length : "none"} total=${data.totalItems} q=${String(params.q).slice(0, 40)}`)
     return Array.isArray(data.items) ? data.items : []
   } catch (e) { DIAG.push("throw " + String(e).slice(0, 100)); return [] }
 }
@@ -88,6 +89,6 @@ export async function fetchDiscoverCandidates(specs: Spec[]): Promise<Record<str
   const out: Record<string, Cand[]> = {}
   const list = (Array.isArray(specs) ? specs : []).slice(0, 6)
   await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] } }))
-  out.__diag = DIAG.slice(0, 5).map(d => ({ id: d, title: d, author: d, cover: d }))
+  out.__diag = DIAG.slice(0, 8).map(d => ({ id: d, title: d, author: d, cover: d }))
   return out
 }
