@@ -32,7 +32,7 @@ export function StartBookDialog({ book, onSave, onClose }: {
         <span>Started on</span>
         <input type="date" value={date} max={todayLocal()} disabled={saving} onChange={(e) => setDate(e.target.value)} className="border rounded px-2 py-1" />
       </label>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button variant="outline" disabled={saving} onClick={onClose}>Skip</Button>
         <Button disabled={saving} onClick={save}>{saving ? "Saving..." : "Save"}</Button>
