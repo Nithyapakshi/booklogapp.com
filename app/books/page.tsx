@@ -235,7 +235,6 @@ function DiscoverTab() {
     const t = setTimeout(async () => {
       try {
         const got = await fetchDiscoverCandidates(specs)
-        try { console.log("DISCOVER_DIAG", JSON.stringify((got as any).__diag || []), Object.entries(got).map(([k, v]: any) => k + ":" + (v?.length ?? 0)).join(",")) } catch {}
         if (cancelled) return
         setCandidates(got)
         if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
