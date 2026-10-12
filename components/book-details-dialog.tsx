@@ -26,6 +26,7 @@ interface BookDetailsDialogProps {
   open: boolean
   onClose: () => void
   mode?: "view" | "add"
+  latestEditionNotice?: boolean
   initialEdit?: boolean
 }
 
@@ -39,7 +40,7 @@ const statusLabels = {
   onHold: "On Hold",
 }
 
-export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false }: BookDetailsDialogProps) {
+export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false, latestEditionNotice = false }: BookDetailsDialogProps) {
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -129,6 +130,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
           <div className="w-full md:w-2/3">
             {mode === "add" ? (
               <div className="space-y-4">
+                {latestEditionNotice && <div className="rounded-md bg-amber-50 border-l-2 border-amber-600 px-3 py-2 text-sm text-amber-900"><span className="font-medium">Latest available edition</span><br />May differ from your copy.</div>}
                 {/* Add book description */}
                 {book?.description && (
                   <div className="mb-4">
