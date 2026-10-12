@@ -12,8 +12,7 @@ async function lookup(query: string): Promise<any[]> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
-      if (res.ok) { const data = await res.json(); console.info("ISBN_PREVIEW_DIAG", JSON.stringify({ status: res.status, count: data.items?.length || 0, records: (data.items || []).map((item: any) => ({ id: item.id, title: item.volumeInfo?.title, identifiers: item.volumeInfo?.industryIdentifiers })) })); return Array.isArray(data.items) ? data.items : [] }
-      console.info("ISBN_PREVIEW_DIAG", JSON.stringify({ status: res.status }))
+      if (res.ok) { const data = await res.json(); return Array.isArray(data.items) ? data.items : [] }
       if (res.status !== 429 && res.status < 500) throw new Error("Lookup unavailable")
     } catch { if (attempt === 2) throw new Error("Lookup unavailable") }
     if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
