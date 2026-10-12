@@ -50,10 +50,10 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
     <>
       {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
       <div
-        className="flex items-center gap-4 bg-white rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
+        className="flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setDialogOpen(true)}
       >
-        <div className="w-10 h-14 flex-shrink-0 bg-gray-200 rounded overflow-hidden">
+        <div className="w-10 h-14 flex-shrink-0 bg-muted rounded overflow-hidden">
           {book.cover ? (
             <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
           ) : (
@@ -62,16 +62,16 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
-          <p className="text-xs text-gray-500 truncate" style={sans}>{book.author}</p>
+          <p className="text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
           {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
           {book.genre && (
             <span style={{
               display: "inline-block",
               fontSize: "10px",
               fontWeight: 500,
-              color: "#8a5a1e",
-              background: "#f5ede0",
-              border: "0.5px solid #d4a96a",
+              color: "var(--bl-8a5a1e)",
+              background: "var(--bl-f5ede0)",
+              border: "0.5px solid var(--bl-d4a96a)",
               borderRadius: "10px",
               padding: "2px 7px",
               marginTop: "3px",
@@ -89,7 +89,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             style={{
               display: "block",
               fontSize: "11px",
-              color: "#c17f3e",
+              color: "var(--bl-c17f3e)",
               fontWeight: 500,
               textDecoration: "none",
               marginTop: "5px",
@@ -105,7 +105,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             {[1, 2, 3, 4, 5].map((star) => (
               <span
                 key={star}
-                className={`cursor-pointer text-base md:text-lg ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
+                className={`cursor-pointer text-base md:text-lg ${star <= rating ? "text-amber-400" : "text-muted-foreground/40"}`}
                 onClick={() => handleStarClick(star)}
               >
                 ★
@@ -116,25 +116,25 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
 
         <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
-            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+            className="p-1 rounded hover:bg-accent text-muted-foreground"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             •••
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-1 w-44 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50" style={sans}>
-              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
-              {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
-              {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
-              {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
-              {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" title="Moves this book into My Recommendations" onClick={() => moveBook("recommended")}>&#9733; Move to Recommendations</div>}
-              {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
+            <div className="absolute right-0 mt-1 w-44 bg-card rounded-md shadow-lg border border-border py-1 z-50" style={sans}>
+              <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
+              {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
+              {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}
+              {book.status !== "completed"   && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("completed")}>Move to Completed</div>}
+              {book.status !== "recommended" && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" title="Moves this book into My Recommendations" onClick={() => moveBook("recommended")}>&#9733; Move to Recommendations</div>}
+              {book.status !== "onHold"      && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("onHold")}>Move to On Hold</div>}
               <div
-                className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                style={{ color: "#c17f3e" }}
+                className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
+                style={{ color: "var(--bl-c17f3e)" }}
                 onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
               >Find on Amazon</div>
-              <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer text-red-500" onClick={async () => { setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId); setDropdownOpen(false) } catch { setWriteError("Book was not removed. Please try again.") } }}>Remove</div>
+              <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer text-red-500" onClick={async () => { setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId); setDropdownOpen(false) } catch { setWriteError("Book was not removed. Please try again.") } }}>Remove</div>
             </div>
           )}
         </div>
@@ -242,20 +242,20 @@ function DiscoverTab() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {/* Prompt panel */}
-      <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.25rem" }}>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
+      <div style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem" }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
         <form onSubmit={handleSubmit}>
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="I enjoy literary fiction with strong character development..."
-            style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208", resize: "none", marginBottom: "0.625rem" }}
+            style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)", resize: "none", marginBottom: "0.625rem" }}
           />
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="submit"
               disabled={isLoading}
-              style={{ padding: "7px 16px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "12px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+              style={{ padding: "7px 16px", background: isLoading ? "var(--bl-d4a574)" : "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "7px", fontSize: "12px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
             >
               {isLoading ? "Generating..." : "Get Recommendations"}
             </button>
@@ -267,19 +267,19 @@ function DiscoverTab() {
       {(isLoading || error || recommendations) && <div style={{ overflow: "auto" }}>
         {isLoading ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
-            <div style={{ width: "32px", height: "32px", border: "2.5px solid #e0d5c4", borderTopColor: "#c17f3e", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <p style={{ marginTop: "0.875rem", fontSize: "13px", color: "#8a7560" }}>Analysing your preferences...</p>
+            <div style={{ width: "32px", height: "32px", border: "2.5px solid var(--bl-e0d5c4)", borderTopColor: "var(--bl-c17f3e)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <p style={{ marginTop: "0.875rem", fontSize: "13px", color: "var(--bl-8a7560)" }}>Analysing your preferences...</p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : error ? (
-          <div style={{ background: "#fdf2f2", border: "0.5px solid #e8c4c4", borderRadius: "10px", padding: "1.25rem" }}>
-            <p style={{ fontSize: "13px", color: "#a04040" }}>{error}</p>
+          <div style={{ background: "var(--bl-fdf2f2)", border: "0.5px solid var(--bl-e8c4c4)", borderRadius: "10px", padding: "1.25rem" }}>
+            <p style={{ fontSize: "13px", color: "var(--bl-a04040)" }}>{error}</p>
           </div>
         ) : recommendations ? (
           <div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "0.875rem" }}>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "#1a1208", fontWeight: "normal", margin: 0 }}>Your recommendations ({recommendations.length})</h2>
-              <button type="button" onClick={handleClearHistory} style={{ fontSize: "11px", color: "#8a7560", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>Clear</button>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: "normal", margin: 0 }}>Your recommendations ({recommendations.length})</h2>
+              <button type="button" onClick={handleClearHistory} style={{ fontSize: "11px", color: "var(--bl-8a7560)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>Clear</button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
               {recommendations.map((book, index) => (
@@ -291,30 +291,30 @@ function DiscoverTab() {
                     setSelectedBookInLibrary(!!match)
                     setDialogOpen(true)
                   }}
-                  style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "8px", display: "flex", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(193,127,62,0.10)")}
+                  style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "8px", display: "flex", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px var(--bl-selected-strong)")}
                   onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
                 >
-                  <div style={{ width: "70px", minWidth: "70px", height: "100px", background: "#f3ede3", overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ width: "70px", minWidth: "70px", height: "100px", background: "var(--bl-f3ede3)", overflow: "hidden", flexShrink: 0 }}>
                     {book.cover ? (
                       <img src={book.cover} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <div style={{ width: "100%", height: "100%", background: generateBookColor(book.title), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "1rem" }}>
+                      <div style={{ width: "100%", height: "100%", background: generateBookColor(book.title), display: "flex", alignItems: "center", justifyContent: "center", color: "var(--bl-primary-ink)", fontWeight: "bold", fontSize: "1rem" }}>
                         {(book.title.charAt(0) + book.author.split(" ")[0].charAt(0)).toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div style={{ padding: "0.75rem 1rem", flex: 1 }}>
-                    <h3 style={{ fontSize: "13px", fontWeight: "500", color: "#1a1208", marginBottom: "2px" }}>{book.title}</h3>
-                    <p style={{ fontSize: "11px", color: "#c17f3e", marginBottom: "5px" }}>by {book.author}</p>
+                    <h3 style={{ fontSize: "13px", fontWeight: "500", color: "var(--bl-1a1208)", marginBottom: "2px" }}>{book.title}</h3>
+                    <p style={{ fontSize: "11px", color: "var(--bl-c17f3e)", marginBottom: "5px" }}>by {book.author}</p>
                     {(() => {
                       const match = findInLibrary(book.id, book.title, book.author)
                       if (!match) return null
                       return (
                         <span style={{
                           display: "inline-block", fontSize: "10px", fontWeight: 500,
-                          color: "#8a5a1e", background: "#f5ede0",
-                          border: "0.5px solid #c17f3e", borderRadius: "10px",
+                          color: "var(--bl-8a5a1e)", background: "var(--bl-f5ede0)",
+                          border: "0.5px solid var(--bl-c17f3e)", borderRadius: "10px",
                           padding: "2px 8px", marginBottom: "4px",
                           fontFamily: "'DM Sans', sans-serif",
                         }}>
@@ -322,7 +322,7 @@ function DiscoverTab() {
                         </span>
                       )
                     })()}
-                    <p style={{ fontSize: "11px", color: "#6b5c42", lineHeight: "1.55" }}>{book.description}</p>
+                    <p style={{ fontSize: "11px", color: "var(--bl-6b5c42)", lineHeight: "1.55" }}>{book.description}</p>
                   </div>
                 </div>
               ))}
@@ -332,20 +332,20 @@ function DiscoverTab() {
                 type="button"
                 onClick={handleShowMore}
                 disabled={isLoadingMore}
-                style={{ padding: "8px 20px", background: "transparent", color: "#c17f3e", border: "0.5px solid #c17f3e", borderRadius: "7px", fontSize: "12px", fontWeight: "600", cursor: isLoadingMore ? "not-allowed" : "pointer", opacity: isLoadingMore ? 0.6 : 1, fontFamily: "DM Sans, sans-serif" }}
+                style={{ padding: "8px 20px", background: "transparent", color: "var(--bl-c17f3e)", border: "0.5px solid var(--bl-c17f3e)", borderRadius: "7px", fontSize: "12px", fontWeight: "600", cursor: isLoadingMore ? "not-allowed" : "pointer", opacity: isLoadingMore ? 0.6 : 1, fontFamily: "DM Sans, sans-serif" }}
               >
                 {isLoadingMore ? "Finding more..." : "Show me more"}
               </button>
             </div>
           </div>
         ) : (
-          <div style={{ background: "#f3ede3", border: "0.5px solid #e0d5c4", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
+          <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" opacity="0.3" />
-              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.18" />
-              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.1" />
+              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.3" />
+              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.18" />
+              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.1" />
             </svg>
-            <p style={{ fontSize: "12px", color: "#8a7560", lineHeight: "1.65", marginTop: "0.75rem", maxWidth: "240px" }}>
+            <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65", marginTop: "0.75rem", maxWidth: "240px" }}>
               Describe what you enjoy and click "Get Recommendations" to see personalised suggestions.
             </p>
           </div>
@@ -374,9 +374,9 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
     whiteSpace: "nowrap",
     cursor: "pointer",
     fontFamily: "'DM Sans', sans-serif",
-    background: selected === g ? "#f5ede0" : "transparent",
-    color: selected === g ? "#8a5a1e" : "#8a7560",
-    border: selected === g ? "1px solid #c17f3e" : "0.5px solid #d4c5a9",
+    background: selected === g ? "var(--bl-f5ede0)" : "transparent",
+    color: selected === g ? "var(--bl-8a5a1e)" : "var(--bl-8a7560)",
+    border: selected === g ? "1px solid var(--bl-c17f3e)" : "0.5px solid var(--bl-d4c5a9)",
     flexShrink: 0,
   })
   const morePillStyle: React.CSSProperties = {
@@ -387,16 +387,16 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
     whiteSpace: "nowrap",
     cursor: "pointer",
     fontFamily: "'DM Sans', sans-serif",
-    background: "#e8e0d5",
-    color: "#5a4a38",
-    border: "0.5px solid #c8b89a",
+    background: "var(--bl-e8e0d5)",
+    color: "var(--bl-5a4a38)",
+    border: "0.5px solid var(--bl-c8b89a)",
     flexShrink: 0,
   }
   return (
     <>
       {/* Desktop: wrap + More */}
-      <div className="hidden md:flex flex-wrap gap-2 items-center" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px" }}>
-        <span title="Genres come from the books in your library" style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", marginRight: "2px" }}>Genre:</span>
+      <div className="hidden md:flex flex-wrap gap-2 items-center" style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", paddingTop: "10px", marginBottom: "12px" }}>
+        <span title="Genres come from the books in your library" style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", marginRight: "2px" }}>Genre:</span>
         {visibleGenres.map(g => (
           <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
         ))}
@@ -407,8 +407,8 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
         )}
       </div>
       {/* Mobile: horizontal scroll */}
-      <div className="md:hidden flex gap-2 overflow-x-auto pb-1 items-center" style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "10px", marginBottom: "12px", scrollbarWidth: "none" }}>
-        <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>Genre:</span>
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-1 items-center" style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", paddingTop: "10px", marginBottom: "12px", scrollbarWidth: "none" }}>
+        <span style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>Genre:</span>
         {genres.map(g => (
           <span key={g} style={pillStyle(g)} onClick={() => onSelect(g)}>{g}</span>
         ))}
@@ -533,8 +533,8 @@ function BooksLibraryContent() {
 
   const viewToggle = (
     <div className="flex items-center gap-1">
-      <button onClick={() => toggleView("grid")} className={`p-2 rounded ${viewMode === "grid" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} title="Grid view"><LayoutGrid size={15} /></button>
-      <button onClick={() => toggleView("list")} className={`p-2 rounded ${viewMode === "list" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`} title="List view"><List size={15} /></button>
+      <button onClick={() => toggleView("grid")} className={`p-2 rounded ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted"}`} title="Grid view"><LayoutGrid size={15} /></button>
+      <button onClick={() => toggleView("list")} className={`p-2 rounded ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted"}`} title="List view"><List size={15} /></button>
     </div>
   )
 
@@ -566,25 +566,25 @@ function BooksLibraryContent() {
 
     const btnBase: React.CSSProperties = {
       width: "28px", height: "28px", borderRadius: "6px",
-      border: "0.5px solid #e0d5c4", background: "transparent",
+      border: "0.5px solid var(--bl-e0d5c4)", background: "transparent",
       display: "flex", alignItems: "center", justifyContent: "center",
       cursor: "pointer", fontSize: "11px", fontFamily: "'DM Sans', sans-serif",
-      color: "#6b5c42",
+      color: "var(--bl-6b5c42)",
     }
-    const btnActive: React.CSSProperties = { ...btnBase, background: "#c17f3e", color: "#fff", border: "0.5px solid #c17f3e", fontWeight: 600 }
+    const btnActive: React.CSSProperties = { ...btnBase, background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "0.5px solid var(--bl-c17f3e)", fontWeight: 600 }
     const btnDisabled: React.CSSProperties = { ...btnBase, opacity: 0.35, cursor: "default" }
 
     const sizeSelector = (
       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-        <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>Per page</span>
+        <span style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>Per page</span>
         <select
           value={pageSize === "all" ? "all" : String(pageSize)}
           onChange={e => handlePageSizeChange(e.target.value)}
           style={{
             fontSize: "11px", fontFamily: "'DM Sans', sans-serif",
-            border: "0.5px solid #e0d5c4", borderRadius: "6px",
-            padding: "3px 20px 3px 7px", background: "#faf7f2",
-            color: "#1a1208", cursor: "pointer", appearance: "none",
+            border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "6px",
+            padding: "3px 20px 3px 7px", background: "var(--bl-faf7f2)",
+            color: "var(--bl-1a1208)", cursor: "pointer", appearance: "none",
             backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a7560'/%3E%3C/svg%3E\")",
             backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center",
           }}
@@ -598,11 +598,11 @@ function BooksLibraryContent() {
     )
 
     return (
-      <div style={{ borderTop: "0.5px solid #e0d5c4", marginTop: "16px", paddingTop: "12px" }}>
+      <div style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", marginTop: "16px", paddingTop: "12px" }}>
         {/* Mobile: info + selector row, then page buttons centered */}
         <div className="md:hidden">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif" }}>{start}–{end} of {filteredBooks.length}</span>
+            <span style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif" }}>{start}–{end} of {filteredBooks.length}</span>
             {sizeSelector}
           </div>
           {showPages && (
@@ -610,7 +610,7 @@ function BooksLibraryContent() {
               <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
               {pageButtons().map((p, i) =>
                 p === null
-                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "#8a7560", padding: "0 2px" }}>…</span>
+                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "var(--bl-8a7560)", padding: "0 2px" }}>…</span>
                   : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
               )}
               <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
@@ -619,13 +619,13 @@ function BooksLibraryContent() {
         </div>
         {/* Desktop: single row */}
         <div className="hidden md:flex" style={{ alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "11px", color: "#8a7560", fontFamily: "'DM Sans', sans-serif", flex: 1 }}>Showing {start}–{end} of {filteredBooks.length}</span>
+          <span style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", flex: 1 }}>Showing {start}–{end} of {filteredBooks.length}</span>
           {showPages && (
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
               {pageButtons().map((p, i) =>
                 p === null
-                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "#8a7560", padding: "0 2px" }}>…</span>
+                  ? <span key={"e"+i} style={{ fontSize: "11px", color: "var(--bl-8a7560)", padding: "0 2px" }}>…</span>
                   : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
               )}
               <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
@@ -652,21 +652,21 @@ function BooksLibraryContent() {
   )
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#faf7f2" }}>
+    <div className="flex min-h-screen" style={{ background: "var(--bl-faf7f2)" }}>
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
-      <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "#f7f4ef" }}>
+      <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "var(--bl-f7f4ef)" }}>
         <div className="px-8 py-8 w-full">
           {loadError && (
-            <div role="alert" className="mb-4 rounded-lg border px-4 py-3 text-sm" style={{ background: "#fdf3e7", borderColor: "#e8c9a0", color: "#6b4a1f" }}>
+            <div role="alert" className="mb-4 rounded-lg border px-4 py-3 text-sm" style={{ background: "var(--bl-fdf3e7)", borderColor: "var(--bl-e8c9a0)", color: "var(--bl-6b4a1f)" }}>
               We could not load your library just now. Your books are safe. <button type="button" onClick={reloadBooks} className="underline font-medium">Try again</button>
             </div>
           )}
 
           {/* Page title + share button */}
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold" style={{ ...serif, color: "#2d2416" }}>
+            <h1 className="text-2xl font-bold" style={{ ...serif, color: "var(--bl-2d2416)" }}>
               {pageTitle}
             </h1>
             {sidebarTab !== "discover" && <button
@@ -677,17 +677,17 @@ function BooksLibraryContent() {
                 alignItems: "center",
                 gap: "6px",
                 background: "transparent",
-                border: "0.5px solid #c17f3e",
+                border: "0.5px solid var(--bl-c17f3e)",
                 borderRadius: "7px",
                 cursor: "pointer",
                 fontSize: "12px",
-                color: "#c17f3e",
+                color: "var(--bl-c17f3e)",
                 fontWeight: "600",
                 fontFamily: "'DM Sans', sans-serif",
                 flexShrink: 0,
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c17f3e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--bl-c17f3e)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
               </svg>
@@ -710,8 +710,8 @@ function BooksLibraryContent() {
                       className="cursor-pointer px-4 py-2 rounded-full text-sm transition-colors flex-shrink-0"
                       style={{
                         ...sans,
-                        background: activeTab === tab.name ? "#c17f3e" : "#ede6dc",
-                        color:      activeTab === tab.name ? "white"   : "#6b5c4e",
+                        background: activeTab === tab.name ? "var(--bl-c17f3e)" : "var(--bl-ede6dc)",
+                        color:      activeTab === tab.name ? "var(--bl-primary-ink)" : "var(--bl-6b5c4e)",
                         fontWeight: activeTab === tab.name ? "600"     : "500",
                       }}
                     >
@@ -728,7 +728,7 @@ function BooksLibraryContent() {
                   onChange={e => setListSearch(e.target.value)}
                   placeholder="Filter this list by title or author..."
                   aria-label="Filter this list by title or author"
-                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#fff", color: "#1a1208", fontFamily: "'DM Sans', sans-serif" }}
+                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-fff)", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }}
                 />
               </div>
               <GenreFilterRow
@@ -750,7 +750,7 @@ function BooksLibraryContent() {
                 <BookSearch />
               </div>
               <div className="flex items-center justify-between mb-3">
-                <span className="px-4 py-2 rounded-full text-sm" style={{ ...sans, background: "#c17f3e", color: "white", fontWeight: "600" }}>
+                <span className="px-4 py-2 rounded-full text-sm" style={{ ...sans, background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", fontWeight: "600" }}>
                   My Recommendations ({recommendedCount})
                 </span>
                 {viewToggle}
@@ -762,7 +762,7 @@ function BooksLibraryContent() {
                   onChange={e => setListSearch(e.target.value)}
                   placeholder="Filter this list by title or author..."
                   aria-label="Filter this list by title or author"
-                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#fff", color: "#1a1208", fontFamily: "'DM Sans', sans-serif" }}
+                  style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-fff)", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }}
                 />
               </div>
               <GenreFilterRow
