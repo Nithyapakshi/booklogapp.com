@@ -57,14 +57,16 @@ test("rated row skips the seed book's own author", () => {
   const rows = assembleRows([r], { [r.key]: [...cand(6, "Frank Herbert", "h"), ...cand(5, "Ursula Le Guin", "u")] }, lib, [])
   assert.ok(rows[0].books.every(b => b.author === "Ursula Le Guin"))
 })
-test("dismissals remove the book; two from one author remove the author; rows can fall below 4 and hide", () => {
+test("dismissals remove the book; three from one author remove the author; rows can fall below 4 and hide", () => {
   const specs = buildRowSpecs(lib), g = specs.find(s => s.kind === "genre")
   const list = cand(6, "Alma Brown", "p")
   const d1 = [{ key: bookKey(list[0].title, list[0].author), author: "Alma Brown" }]
   assert.strictEqual(assembleRows([g], { [g.key]: list }, lib, d1)[0].books.length, 5)
   const d2 = [...d1, { key: bookKey(list[1].title, "Alma Brown"), author: "Alma Brown" }]
-  assert.ok(blockedAuthors(d2).has("alma brown") || blockedAuthors(d2).size === 1)
-  assert.strictEqual(assembleRows([g], { [g.key]: list }, lib, d2).length, 0)
+  assert.strictEqual(blockedAuthors(d2).size, 0)
+  const d3 = [...d2, { key: bookKey(list[2].title, "Alma Brown"), author: "Alma Brown" }]
+  assert.ok(blockedAuthors(d3).has("alma brown"))
+  assert.strictEqual(assembleRows([g], { [g.key]: list }, lib, d3).length, 0)
   assert.deepStrictEqual(loadDismissals("not json"), [])
 })
 test("top pick comes from the first row that keeps 4 books without it", () => {
