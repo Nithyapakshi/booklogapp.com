@@ -48,7 +48,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
 
   return (
     <>
-      {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
+      {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
         className="flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setDialogOpen(true)}
