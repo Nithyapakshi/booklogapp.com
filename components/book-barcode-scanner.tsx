@@ -80,7 +80,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
   return <>
     <button type="button" onClick={openScanner} aria-label="Scan book barcode" title="Scan book barcode" className="md:hidden absolute right-0 top-0 bottom-0 w-11 border-l rounded-r-lg flex items-center justify-center" style={{ color: "#a66b2b", background: "#f7eee2", borderColor: "#e8dccd" }}><Barcode size={22} /></button>
     <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
-      <DialogContent className="max-w-[390px] max-h-[90dvh] overflow-y-auto rounded-t-2xl sm:rounded-xl bg-white" aria-describedby="scan-description">
+      <DialogContent className="max-w-[390px] max-h-[90dvh] overflow-y-auto max-md:top-auto max-md:bottom-0 max-md:translate-y-0 rounded-t-2xl sm:rounded-xl bg-white" aria-describedby="scan-description">
         <DialogHeader>
           <DialogTitle style={{ fontFamily: "Georgia, serif", fontWeight: 400 }}>Scan a book</DialogTitle>
           <DialogDescription id="scan-description">Point your camera at the ISBN barcode on the back cover.</DialogDescription>
