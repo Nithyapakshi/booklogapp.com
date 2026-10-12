@@ -30,7 +30,7 @@ export function StartBookDialog({ book, onSave, onClose }: {
       </DialogHeader>
       <label className="flex items-center justify-between gap-3 text-sm">
         <span>Started on</span>
-        <input type="date" value={date} max={todayLocal()} disabled={saving} onChange={(e) => setDate(e.target.value)} className="border rounded px-2 py-1" />
+        <input type="date" value={date} max={todayLocal()} disabled={saving} onChange={(e) => setDate(e.target.value)} className="bg-background text-foreground border border-input rounded px-2 py-1" />
       </label>
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}
       <div className="flex justify-end gap-2">
