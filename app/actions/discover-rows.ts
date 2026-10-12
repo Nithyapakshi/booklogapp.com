@@ -10,7 +10,6 @@ const norm = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u036f]
 const base = (v: string) => norm(String(v || "").split(":")[0].replace(/\([^)]*\)/g, "")).replace(/^(the|a|an) /, "")
 const JUNK = /\b(summary|study guide|analysis|workbook|box set|boxed set|collection|omnibus|companion|sparknotes|cliffsnotes|trivia|journal|notebook|coloring|colouring|screenplay|criticism|essays on|conversations with|reader's guide|large print)\b/i
 
-const DIAG: string[] = []
 async function gbooks(params: Record<string, string>): Promise<any[]> {
   const key = process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const url = `https://www.googleapis.com/books/v1/volumes?${new URLSearchParams({ ...params, langRestrict: "en", printType: "books", ...(key ? { key } : {}) })}`
@@ -19,11 +18,10 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
     for (let a = 1; a < 4 && (res.status === 503 || res.status === 429 || res.status >= 500); a++) {
       await new Promise(r => setTimeout(r, 400 * a)); res = await fetch(url, { cache: "no-store" })
     }
-    if (!res.ok) { let m = ""; try { m = (await res.text()).slice(0, 160) } catch {} DIAG.push(`${res.status} ${m}`); return [] }
+    if (!res.ok) return []
     const data = await res.json()
-    DIAG.push(`ok ${res.status} items=${Array.isArray(data.items) ? data.items.length : "none"} total=${data.totalItems} q=${String(params.q).slice(0, 40)}`)
     return Array.isArray(data.items) ? data.items : []
-  } catch (e) { DIAG.push("throw " + String(e).slice(0, 100)); return [] }
+  } catch { return [] }
 }
 
 function secure(u: string) { return (u || "").replace(/^http:\/\//, "https://").replace("&edge=curl", "") }
@@ -89,6 +87,5 @@ export async function fetchDiscoverCandidates(specs: Spec[]): Promise<Record<str
   const out: Record<string, Cand[]> = {}
   const list = (Array.isArray(specs) ? specs : []).slice(0, 6)
   await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] } }))
-  out.__diag = DIAG.slice(0, 8).map(d => ({ id: d, title: d, author: d, cover: d }))
   return out
 }
