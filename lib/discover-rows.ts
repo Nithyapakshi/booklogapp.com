@@ -73,11 +73,11 @@ export function libraryHasBook(c: { id?: string; title: string; author: string }
 export function loadDismissals(raw: string | null): Dismissed[] {
   try { const v = JSON.parse(raw || "[]"); return Array.isArray(v) ? v.filter((d: any) => d && typeof d.key === "string").map((d: any) => ({ key: d.key, author: String(d.author || "") })) : [] } catch { return [] }
 }
-// Dismissing 2+ books by one author drops that author from every row.
+// Dismissing 3+ books by one author drops that author from every row.
 export function blockedAuthors(dismissed: Dismissed[]): Set<string> {
   const n = new Map<string, number>()
   for (const d of dismissed) { const k = authorKey(d.author); if (k) n.set(k, (n.get(k) || 0) + 1) }
-  return new Set([...n.entries()].filter(([, c]) => c >= 2).map(([k]) => k))
+  return new Set([...n.entries()].filter(([, c]) => c >= 3).map(([k]) => k))
 }
 
 export function assembleRows(specs: RowSpec[], candidates: Record<string, Candidate[]>, library: LibBook[], dismissed: Dismissed[], extraSeen: string[] = []): DiscoverRow[] {
