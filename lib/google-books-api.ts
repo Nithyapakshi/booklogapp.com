@@ -40,7 +40,7 @@ function cleanText(text: string): string {
   }
 }
 
-function normaliseGenre(categories: string[] | undefined): string {
+export function normaliseGenre(categories: string[] | undefined): string {
   if (!categories || categories.length === 0) return "General"
   const raw = categories[0].toLowerCase()
   if (raw.includes("fiction") && !raw.includes("non")) return "Fiction"
