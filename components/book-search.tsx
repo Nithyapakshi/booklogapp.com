@@ -113,7 +113,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-muted-foreground"
               aria-label="Clear search"
             >
               <svg
@@ -133,7 +133,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
             </button>
           )}
         </div>
-        <Button type="submit" className="flex items-center gap-2" style={{ background: "#c17f3e", color: "#fff", border: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: "600", fontSize: "13px", borderRadius: "8px", padding: "8px 16px" }}>
+        <Button type="submit" className="flex items-center gap-2" style={{ background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: "600", fontSize: "13px", borderRadius: "8px", padding: "8px 16px" }}>
           <Search className="h-4 w-4" />
           Search
         </Button>
@@ -142,15 +142,15 @@ const handleBookSelect = async (book: BookSearchResult) => {
 
 {searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError} <Link href="/books/add" className="underline">Add manually instead</Link>.</p>}
 {isLoading && query.length >= 2 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg px-4 py-3 text-sm text-gray-500" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg px-4 py-3 text-sm text-muted-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Searching...
         </div>
       )}
-      {!isLoading && results.length > 0 && query.length >= 2 && (        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-96 overflow-y-auto">
+      {!isLoading && results.length > 0 && query.length >= 2 && (        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-96 overflow-y-auto">
           {results.map((book) => (
             <div
               key={book.id}
-              className="flex items-center p-3 hover:bg-gray-100 cursor-pointer"
+              className="flex items-center p-3 hover:bg-accent cursor-pointer"
               onClick={() => handleBookSelect(book)}
             >
               {book.cover ? (
@@ -162,31 +162,31 @@ const handleBookSelect = async (book: BookSearchResult) => {
                     // Simple fallback for failed images
                     const target = e.currentTarget
                     target.onerror = null
-                    target.style.backgroundColor = "#e5e7eb"
+                    target.style.backgroundColor = "var(--bl-e5e7eb)"
                     target.style.display = "flex"
                     target.style.alignItems = "center"
                     target.style.justifyContent = "center"
-                    target.style.color = "#6b7280"
+                    target.style.color = "var(--bl-6b7280)"
                     target.style.fontSize = "10px"
                     target.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
                   }}
                 />
               ) : (
-                <div className="w-10 h-14 bg-gray-200 flex items-center justify-center text-gray-500 text-[10px] mr-3">
+                <div className="w-10 h-14 bg-muted flex items-center justify-center text-muted-foreground text-[10px] mr-3">
                   No Cover
                 </div>
               )}
               <div>
                 <div className="font-medium">{book.title}</div>
-                <div className="text-sm text-gray-600">{book.author}</div>
+                <div className="text-sm text-muted-foreground">{book.author}</div>
                 {(() => {
                   const match = findInLibrary(book.id, book.title, book.author)
                   if (!match) return null
                   return (
                     <span style={{
                       display: "inline-block", fontSize: "10px", fontWeight: 500,
-                      color: "#8a5a1e", background: "#f5ede0",
-                      border: "0.5px solid #c17f3e", borderRadius: "10px",
+                      color: "var(--bl-8a5a1e)", background: "var(--bl-f5ede0)",
+                      border: "0.5px solid var(--bl-c17f3e)", borderRadius: "10px",
                       padding: "2px 8px", marginTop: "4px",
                       fontFamily: "'DM Sans', sans-serif",
                     }}>
