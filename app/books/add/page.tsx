@@ -57,7 +57,7 @@ export default function AddBookPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Add New Book</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 rounded-[10px] border border-border bg-white p-6">
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-[10px] border border-border bg-card p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="title">Book Title</Label>
@@ -71,7 +71,7 @@ export default function AddBookPage() {
 
             <div className="space-y-2">
               <Label htmlFor="status">Reading Status</Label>
-              <select id="status" value={bookData.status} onChange={e => handleSelectChange("status", e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+              <select id="status" value={bookData.status} onChange={e => handleSelectChange("status", e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 <option value="reading">Currently Reading</option>
                 <option value="queued">Want to Read</option>
                 <option value="completed">Completed</option>
@@ -82,16 +82,16 @@ export default function AddBookPage() {
 
           <p className="text-sm text-muted-foreground">We will look up the cover and description for you after you add it.</p>
 
-          {near && <div role="alert" className="rounded-md border p-4 bg-amber-50">
+          {near && <div role="alert" className="rounded-md border p-4 bg-amber-50 dark:bg-muted">
             <p>This looks like a book you already have: {near.title} by {near.author}.</p>
             <button type="button" className="underline mr-4" onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}>Add anyway</button>
             <Link className="underline" href={`/books?book=${encodeURIComponent(near.id)}`}>View existing book</Link>
           </div>}
-          {duplicate && <div role="alert" className="rounded-md border p-4 bg-amber-50">
+          {duplicate && <div role="alert" className="rounded-md border p-4 bg-amber-50 dark:bg-muted">
             <p>Already in your library: {duplicate.title} ({({reading: "Reading", queued: "Queued", completed: "Completed", recommended: "Recommendations", onHold: "On Hold"} as Record<string, string>)[duplicate.status] || duplicate.status})</p>
             <Link className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`}>View existing book</Link>
           </div>}
-          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
               <Link href="/books">Cancel</Link>

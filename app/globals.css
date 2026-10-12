@@ -5,6 +5,52 @@
 @layer base {
   /* BookLog warm theme: default for every page. Cream background, amber primary. New pages inherit it. */
   :root {
+    --bl-faf7f2: #faf7f2;
+    --bl-1a1208: #1a1208;
+    --bl-2d2416: #2d2416;
+    --bl-fff: #fff;
+    --bl-8a7560: #8a7560;
+    --bl-6b5c42: #6b5c42;
+    --bl-6b5c4e: #6b5c4e;
+    --bl-8a7060: #8a7060;
+    --bl-a8927a: #a8927a;
+    --bl-b8a898: #b8a898;
+    --bl-c17f3e: #c17f3e;
+    --bl-e0d5c4: #e0d5c4;
+    --bl-d4c5a9: #d4c5a9;
+    --bl-ede6dc: #ede6dc;
+    --bl-e8e0d5: #e8e0d5;
+    --bl-f5ede0: #f5ede0;
+    --bl-f3ede3: #f3ede3;
+    --bl-f0e8da: #f0e8da;
+    --bl-f7f4ef: #f7f4ef;
+    --bl-f0ebe2: #f0ebe2;
+    --bl-ddd5c8: #ddd5c8;
+    --bl-d4a574: #d4a574;
+    --bl-d4a96a: #d4a96a;
+    --bl-e0c9a8: #e0c9a8;
+    --bl-c8b89a: #c8b89a;
+    --bl-8a5a1e: #8a5a1e;
+    --bl-7a5530: #7a5530;
+    --bl-5a4a38: #5a4a38;
+    --bl-6b4a1f: #6b4a1f;
+    --bl-fdf3e7: #fdf3e7;
+    --bl-fef9f0: #fef9f0;
+    --bl-fdf0e3: #fdf0e3;
+    --bl-e8c9a0: #e8c9a0;
+    --bl-b85c5c: #b85c5c;
+    --bl-a04040: #a04040;
+    --bl-c0392b: #c0392b;
+    --bl-fdf2f2: #fdf2f2;
+    --bl-e8c4c4: #e8c4c4;
+    --bl-e0c8c8: #e0c8c8;
+    --bl-e5e7eb: #e5e7eb;
+    --bl-6b7280: #6b7280;
+    --bl-ccc: #ccc;
+    --bl-888: #888;
+    --bl-primary-ink: #fff;
+    --bl-selected: rgba(193,127,62,0.08);
+    --bl-selected-strong: rgba(193,127,62,0.10);
     --background: 38 44% 96%;
     --foreground: 36 53% 6%;
 
@@ -37,33 +83,71 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.5% 48%;
+    --bl-faf7f2: #29231e;
+    --bl-1a1208: #f4ebde;
+    --bl-2d2416: #f4ebde;
+    --bl-fff: #382f27;
+    --bl-8a7560: #c4b6a4;
+    --bl-6b5c42: #c4b6a4;
+    --bl-6b5c4e: #c4b6a4;
+    --bl-8a7060: #c4b6a4;
+    --bl-a8927a: #c4b6a4;
+    --bl-b8a898: #c4b6a4;
+    --bl-c17f3e: #dfa05d;
+    --bl-e0d5c4: #594b3f;
+    --bl-d4c5a9: #695747;
+    --bl-ede6dc: #594b3f;
+    --bl-e8e0d5: #594b3f;
+    --bl-f5ede0: #3b3027;
+    --bl-f3ede3: #3b3027;
+    --bl-f0e8da: #3b3027;
+    --bl-f7f4ef: #29231e;
+    --bl-f0ebe2: #3b3027;
+    --bl-ddd5c8: #695747;
+    --bl-d4a574: #866445;
+    --bl-d4a96a: #dfa05d;
+    --bl-e0c9a8: #715235;
+    --bl-c8b89a: #c4b6a4;
+    --bl-8a5a1e: #dfa05d;
+    --bl-7a5530: #dfa05d;
+    --bl-5a4a38: #c4b6a4;
+    --bl-6b4a1f: #dfa05d;
+    --bl-fdf3e7: #443225;
+    --bl-fef9f0: #443225;
+    --bl-fdf0e3: #443225;
+    --bl-e8c9a0: #715235;
+    --bl-b85c5c: #f0a3a3;
+    --bl-a04040: #f0a3a3;
+    --bl-c0392b: #f0a3a3;
+    --bl-fdf2f2: #43282a;
+    --bl-e8c4c4: #855356;
+    --bl-e0c8c8: #855356;
+    --bl-e5e7eb: #3b3027;
+    --bl-6b7280: #c4b6a4;
+    --bl-ccc: #695747;
+    --bl-888: #c4b6a4;
+    --bl-primary-ink: #23190d;
+    --bl-selected: rgba(223,160,93,0.12);
+    --bl-selected-strong: rgba(223,160,93,0.16);
+    --background: 27.27 15.49% 13.92%;
+    --foreground: 35.45 50.00% 91.37%;
+    --card: 28.24 17.89% 18.63%;
+    --card-foreground: 35.45 50.00% 91.37%;
+    --popover: 28.24 17.89% 18.63%;
+    --popover-foreground: 35.45 50.00% 91.37%;
+    --primary: 30.92 67.01% 61.96%;
+    --primary-foreground: 32.73 45.83% 9.41%;
+    --secondary: 27.00 20.41% 19.22%;
+    --secondary-foreground: 35.45 50.00% 91.37%;
+    --muted: 27.00 20.41% 19.22%;
+    --muted-foreground: 33.75 21.33% 70.59%;
+    --accent: 25.16 29.52% 20.59%;
+    --accent-foreground: 35.45 50.00% 91.37%;
+    --destructive: 356.13 48.82% 50.20%;
+    --destructive-foreground: 0.00 100.00% 97.25%;
+    --border: 27.69 17.11% 29.80%;
+    --input: 28.24 19.32% 34.51%;
+    --ring: 30.92 67.01% 61.96%;
   }
 }
 

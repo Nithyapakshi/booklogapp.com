@@ -82,7 +82,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        {writeError && <p role="alert" className="text-sm text-red-600">{writeError}</p>}
+        {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
         {near && <p role="alert">This looks like a book you already have: {near.title} by {near.author}. <button type="button" className="underline" onClick={() => handleAddBook(true)}>Add anyway</button> <a className="underline" href={`/books?book=${encodeURIComponent(near.id)}`} onClick={onClose}>View existing book</a></p>}
         {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
         <DialogHeader>
@@ -105,12 +105,12 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                   // If image fails, replace with a colored div
                   const target = e.currentTarget
                   target.onerror = null // Prevent infinite loop
-                  target.style.backgroundColor = "#e5e7eb" // Light gray background
+                  target.style.backgroundColor = "var(--bl-e5e7eb)" // Light gray background
                   target.style.display = "flex"
                   target.style.alignItems = "center"
                   target.style.justifyContent = "center"
                   target.style.height = "250px"
-                  target.style.color = "#6b7280"
+                  target.style.color = "var(--bl-6b7280)"
                   target.style.fontSize = "14px"
                   target.style.fontWeight = "500"
                   target.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" // Transparent 1x1 gif
@@ -119,7 +119,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
               />
             ) : (
               // If no cover URL, show a placeholder div
-              <div className="w-full h-[250px] bg-gray-200 rounded-md shadow-md flex items-center justify-center text-gray-500 text-sm font-medium">
+              <div className="w-full h-[250px] bg-muted rounded-md shadow-md flex items-center justify-center text-muted-foreground text-sm font-medium">
                 No Cover Available
               </div>
             )}
@@ -133,11 +133,11 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                 {book?.description && (
                   <div className="mb-4">
                     <h3 className="font-medium mb-2">Description</h3>
-                    <p className={showFullDescription ? "text-sm text-gray-600 leading-relaxed" : "text-sm text-gray-600 leading-relaxed line-clamp-3"}>{book.description}</p>
+                    <p className={showFullDescription ? "text-sm text-muted-foreground leading-relaxed" : "text-sm text-muted-foreground leading-relaxed line-clamp-3"}>{book.description}</p>
                     {book.description && book.description.length > 200 && (
                       <button
                         onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="text-blue-500 text-xs mt-1 hover:underline"
+                        className="text-primary text-xs mt-1 hover:underline"
                       >
                         {showFullDescription ? "Show less" : "Show more"}
                       </button>
@@ -153,7 +153,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                     id="status"
                     value={status}
                     onChange={(e) => setStatus(e.target.value as BookStatus)}
-                    className="w-full px-3 py-2 border rounded-md bg-white"
+                    className="w-full px-3 py-2 border rounded-md bg-card"
                   >
                     <option value="reading">Currently Reading</option>
                     <option value="queued">Want to Read</option>
@@ -170,28 +170,28 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
-                  <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.title || ""}</p>
+                  <label className="block text-sm font-medium text-foreground">Title</label>
+                  <p className="px-3 py-2 border rounded-md bg-muted">{book?.title || ""}</p>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Author</label>
-                  <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.author || ""}</p>
+                  <label className="block text-sm font-medium text-foreground">Author</label>
+                  <p className="px-3 py-2 border rounded-md bg-muted">{book?.author || ""}</p>
                 </div>
                 {book?.publishedYear && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Published Year</label>
-                    <p className="px-3 py-2 border rounded-md bg-gray-50">{book?.publishedYear}</p>
+                    <label className="block text-sm font-medium text-foreground">Published Year</label>
+                    <p className="px-3 py-2 border rounded-md bg-muted">{book?.publishedYear}</p>
                   </div>
                 )}
                 {book?.description && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                    <div className="text-sm text-gray-600 leading-relaxed">
+                    <label className="block text-sm font-medium text-foreground">Description</label>
+                    <div className="text-sm text-muted-foreground leading-relaxed">
                       <p className={showFullDescription ? "" : "line-clamp-3"}>{book.description}</p>
                       {book.description && book.description.length > 200 && (
                         <button
                           onClick={() => setShowFullDescription(!showFullDescription)}
-                          className="text-blue-500 text-xs mt-1 hover:underline"
+                          className="text-primary text-xs mt-1 hover:underline"
                         >
                           {showFullDescription ? "Show less" : "Show more"}
                         </button>
@@ -200,19 +200,19 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Notes</label>
-                  <textarea placeholder="Add your personal notes..." value={noteText} onChange={e => setNoteText(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-white text-sm resize-none h-24" />
-                  <p className="text-xs text-gray-500">Only you can see these notes.</p>
+                  <label className="block text-sm font-medium text-foreground">Notes</label>
+                  <textarea placeholder="Add your personal notes..." value={noteText} onChange={e => setNoteText(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-card text-sm resize-none h-24" />
+                  <p className="text-xs text-muted-foreground">Only you can see these notes.</p>
                   <Button size="sm" onClick={async () => {
                     if (!book) return
                     setWriteError(null)
                     try { await updateNote(book.id, noteText); setSaved(true) }
                     catch { setSaved(false); setWriteError("Note was not saved. Please try again.") }
                   }}>Save Note</Button>
-                  {saved && <span className="text-xs text-green-600">Saved</span>}
+                  {saved && <span className="text-xs text-green-600 dark:text-green-300">Saved</span>}
                 </div>
                 {(book?.status === "queued" || book?.status === "recommended") && (
-                  <div style={{ borderTop: "0.5px solid #e0d5c4", paddingTop: "12px", marginTop: "4px" }}>
+                  <div style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", paddingTop: "12px", marginTop: "4px" }}>
                     <a
                       href={amazonUrl}
                       target="_blank"
@@ -222,7 +222,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                         alignItems: "center",
                         gap: "4px",
                         fontSize: "13px",
-                        color: "#c17f3e",
+                        color: "var(--bl-c17f3e)",
                         fontWeight: 500,
                         textDecoration: "none",
                         fontFamily: "'DM Sans', sans-serif",

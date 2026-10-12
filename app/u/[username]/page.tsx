@@ -30,14 +30,14 @@ export default async function PublicProfilePage({ params }: Props) {
   // 2. Private / not found state
   if (!profile || profile.profile_visibility !== "public") {
     return (
-      <div style={{ minHeight: "100vh", background: "#faf7f2", ...sans }}>
+      <div style={{ minHeight: "100vh", background: "var(--bl-faf7f2)", ...sans }}>
         <Header />
         <div style={{ maxWidth: 480, margin: "80px auto", textAlign: "center", padding: "0 24px" }}>
           <div style={{ fontSize: 36, marginBottom: 16 }}>🔒</div>
-          <p style={{ ...serif, fontSize: 20, color: "#6b5c42", marginBottom: 8 }}>
+          <p style={{ ...serif, fontSize: 20, color: "var(--bl-6b5c42)", marginBottom: 8 }}>
             This profile is private
           </p>
-          <p style={{ fontSize: 14, color: "#a8927a" }}>
+          <p style={{ fontSize: 14, color: "var(--bl-a8927a)" }}>
             This reader hasn't shared their library yet.
           </p>
         </div>
@@ -76,22 +76,22 @@ export default async function PublicProfilePage({ params }: Props) {
   ].filter(t => t.books.length > 0)
 
   return (
-    <div style={{ minHeight: "100vh", background: "#faf7f2", ...sans }}>
+    <div style={{ minHeight: "100vh", background: "var(--bl-faf7f2)", ...sans }}>
       <Header />
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px 48px" }}>
 
         {/* Profile header */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
           <div style={{
-            width: 52, height: 52, borderRadius: "50%", background: "#c17f3e",
+            width: 52, height: 52, borderRadius: "50%", background: "var(--bl-c17f3e)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            ...serif, fontSize: 20, color: "#faf7f2", flexShrink: 0
+            ...serif, fontSize: 20, color: "var(--bl-faf7f2)", flexShrink: 0
           }}>
             {initial}
           </div>
           <div>
-            <p style={{ ...serif, fontSize: 20, color: "#1a1208", margin: 0 }}>{displayName}</p>
-            <p style={{ fontSize: 12, color: "#8a7560", margin: "2px 0 0" }}>@{username}</p>
+            <p style={{ ...serif, fontSize: 20, color: "var(--bl-1a1208)", margin: 0 }}>{displayName}</p>
+            <p style={{ fontSize: 12, color: "var(--bl-8a7560)", margin: "2px 0 0" }}>@{username}</p>
           </div>
         </div>
 
@@ -100,9 +100,9 @@ export default async function PublicProfilePage({ params }: Props) {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "0.5px solid #e0d5c4", padding: "16px 24px", display: "flex", justifyContent: "space-between", maxWidth: 900, margin: "0 auto" }}>
-        <span style={{ fontSize: 11, color: "#a8927a" }}>Shared via BookLog</span>
-        <span style={{ ...serif, fontSize: 11, color: "#c17f3e" }}>booklogapp.com</span>
+      <div style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", padding: "16px 24px", display: "flex", justifyContent: "space-between", maxWidth: 900, margin: "0 auto" }}>
+        <span style={{ fontSize: 11, color: "var(--bl-a8927a)" }}>Shared via BookLog</span>
+        <span style={{ ...serif, fontSize: 11, color: "var(--bl-c17f3e)" }}>booklogapp.com</span>
       </div>
     </div>
   )
@@ -110,24 +110,24 @@ export default async function PublicProfilePage({ params }: Props) {
 
 function Header() {
   return (
-    <div style={{ background: "#f3ede3", borderBottom: "0.5px solid #e0d5c4", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div style={{ background: "var(--bl-f3ede3)", borderBottom: "0.5px solid var(--bl-e0d5c4)", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <div style={{ width: 14, height: 3, background: "#c17f3e", borderRadius: 1, opacity: 1 }} />
-          <div style={{ width: 14, height: 3, background: "#c17f3e", borderRadius: 1, opacity: 0.62 }} />
-          <div style={{ width: 14, height: 3, background: "#c17f3e", borderRadius: 1, opacity: 0.32 }} />
+          <div style={{ width: 14, height: 3, background: "var(--bl-c17f3e)", borderRadius: 1, opacity: 1 }} />
+          <div style={{ width: 14, height: 3, background: "var(--bl-c17f3e)", borderRadius: 1, opacity: 0.62 }} />
+          <div style={{ width: 14, height: 3, background: "var(--bl-c17f3e)", borderRadius: 1, opacity: 0.32 }} />
         </div>
-        <span style={{ ...serif, fontSize: 16, color: "#1a1208" }}>BookLog</span>
+        <span style={{ ...serif, fontSize: 16, color: "var(--bl-1a1208)" }}>BookLog</span>
       </Link>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <Link href="/login" style={{
-          fontSize: 12, color: "#c17f3e", border: "0.5px solid #c17f3e",
+          fontSize: 12, color: "var(--bl-c17f3e)", border: "0.5px solid var(--bl-c17f3e)",
           borderRadius: 4, padding: "5px 12px", textDecoration: "none", ...sans
         }}>
           Sign in
         </Link>
         <Link href="/signup" style={{
-          fontSize: 12, color: "#faf7f2", background: "#c17f3e",
+          fontSize: 12, color: "var(--bl-faf7f2)", background: "var(--bl-c17f3e)",
           borderRadius: 4, padding: "5px 12px", textDecoration: "none", ...sans
         }}>
           Sign up

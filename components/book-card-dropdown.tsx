@@ -46,32 +46,32 @@ export function BookCardDropdown({ book, isOpen, onClose, onMove, anchorRect }: 
   const content = (
     <div
       ref={dropdownRef}
-      className="bg-white rounded-md shadow-lg border border-gray-200 py-1 w-40"
+      className="bg-card rounded-md shadow-lg border border-border py-1 w-40"
       style={style}
       onClick={(e) => e.stopPropagation()}
     >
       {book.status !== "reading" && (
-        <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("reading")}>
+        <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => onMove("reading")}>
           Move to Reading
         </div>
       )}
       {book.status !== "queued" && (
-        <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("queued")}>
+        <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => onMove("queued")}>
           Move to Queued
         </div>
       )}
       {book.status !== "completed" && (
-        <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("completed")}>
+        <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => onMove("completed")}>
           Move to Completed
         </div>
       )}
       {book.status !== "recommended" && (
-        <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("recommended")}>
+        <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => onMove("recommended")}>
           &#9733; Move to Recommendations
         </div>
       )}
       {book.status !== "onHold" && (
-        <div className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer" onClick={() => onMove("onHold")}>
+        <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => onMove("onHold")}>
           Move to On Hold
         </div>
       )}

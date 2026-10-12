@@ -76,24 +76,24 @@ export default function AiRecommendationsPage() {
     <div className="container mx-auto py-8" style={{ fontFamily: "DM Sans, sans-serif" }}>
 
       {/* Back link */}
-      <Link href="/books" className="flex items-center mb-6" style={{ color: "#c17f3e", fontSize: "13px", textDecoration: "none" }}>
+      <Link href="/books" className="flex items-center mb-6" style={{ color: "var(--bl-c17f3e)", fontSize: "13px", textDecoration: "none" }}>
         <ArrowLeft className="mr-1 h-4 w-4" />
         Back to Books
       </Link>
 
-      <h1 style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#1a1208", fontWeight: "normal", marginBottom: "1.5rem" }}>
+      <h1 style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "1.5rem" }}>
         Discover Books
       </h1>
 
       {/* API key warning */}
       {error && error.includes("OpenAI API key") && (
-        <div style={{ background: "#fef9f0", border: "0.5px solid #e0c9a8", borderLeft: "3px solid #c17f3e", padding: "12px 16px", marginBottom: "1.5rem", borderRadius: "7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontSize: "13px", color: "#7a5530" }}>
+        <div style={{ background: "var(--bl-fef9f0)", border: "0.5px solid var(--bl-e0c9a8)", borderLeft: "3px solid var(--bl-c17f3e)", padding: "12px 16px", marginBottom: "1.5rem", borderRadius: "7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: "13px", color: "var(--bl-7a5530)" }}>
             <strong>Note:</strong> {error} To get AI-powered recommendations, please add your OpenAI API key.
           </p>
           <button
             onClick={() => setShowSetupInstructions(!showSetupInstructions)}
-            style={{ fontSize: "12px", color: "#c17f3e", background: "none", border: "none", cursor: "pointer", marginLeft: "1rem", whiteSpace: "nowrap" }}
+            style={{ fontSize: "12px", color: "var(--bl-c17f3e)", background: "none", border: "none", cursor: "pointer", marginLeft: "1rem", whiteSpace: "nowrap" }}
           >
             {showSetupInstructions ? "Hide instructions" : "Show instructions"}
           </button>
@@ -110,11 +110,11 @@ export default function AiRecommendationsPage() {
 
         {/* Left: prompt panel */}
         <div className="lg:col-span-1">
-          <div style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "1.5rem" }}>
-            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "17px", color: "#1a1208", fontWeight: "normal", marginBottom: "8px" }}>
+          <div style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.5rem" }}>
+            <h2 style={{ fontFamily: "Georgia, serif", fontSize: "17px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "8px" }}>
               Tell us what you like
             </h2>
-            <p style={{ fontSize: "13px", color: "#8a7560", lineHeight: "1.65", marginBottom: "1.25rem" }}>
+            <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", lineHeight: "1.65", marginBottom: "1.25rem" }}>
               Describe the types of books you enjoy, authors you like, or themes you're interested in.
             </p>
 
@@ -124,12 +124,12 @@ export default function AiRecommendationsPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="I enjoy science fiction with strong character development, especially books like Dune and The Three-Body Problem..."
                 className="min-h-[150px] mb-4"
-                style={{ fontSize: "13px", border: "0.5px solid #d4c5a9", borderRadius: "7px", background: "#faf7f2", color: "#1a1208" }}
+                style={{ fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)" }}
               />
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{ width: "100%", padding: "10px", background: isLoading ? "#d4a574" : "#c17f3e", color: "#fff", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
+                style={{ width: "100%", padding: "10px", background: isLoading ? "var(--bl-d4a574)" : "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "7px", fontSize: "13px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
               >
                 {isLoading ? "Generating..." : "Get Recommendations"}
               </button>
@@ -141,18 +141,18 @@ export default function AiRecommendationsPage() {
         <div className="lg:col-span-2">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-64">
-              <div style={{ width: "36px", height: "36px", border: "2.5px solid #e0d5c4", borderTopColor: "#c17f3e", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              <p style={{ marginTop: "1rem", fontSize: "13px", color: "#8a7560" }}>Analysing your preferences...</p>
+              <div style={{ width: "36px", height: "36px", border: "2.5px solid var(--bl-e0d5c4)", borderTopColor: "var(--bl-c17f3e)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <p style={{ marginTop: "1rem", fontSize: "13px", color: "var(--bl-8a7560)" }}>Analysing your preferences...</p>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : error && !error.includes("OpenAI API key") ? (
-            <div style={{ background: "#fdf2f2", border: "0.5px solid #e8c4c4", borderRadius: "10px", padding: "1.5rem" }}>
-              <h3 style={{ fontSize: "14px", fontWeight: "500", color: "#a04040", marginBottom: "6px" }}>Error</h3>
-              <p style={{ fontSize: "13px", color: "#a04040" }}>{error}</p>
+            <div style={{ background: "var(--bl-fdf2f2)", border: "0.5px solid var(--bl-e8c4c4)", borderRadius: "10px", padding: "1.5rem" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: "500", color: "var(--bl-a04040)", marginBottom: "6px" }}>Error</h3>
+              <p style={{ fontSize: "13px", color: "var(--bl-a04040)" }}>{error}</p>
             </div>
           ) : recommendations ? (
             <div>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "17px", color: "#1a1208", fontWeight: "normal", marginBottom: "1rem" }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "17px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "1rem" }}>
                 Your recommendations
               </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
@@ -160,11 +160,11 @@ export default function AiRecommendationsPage() {
                   <div
                     key={index}
                     onClick={() => handleBookSelect(book)}
-                    style={{ background: "#fff", border: "0.5px solid #e0d5c4", borderRadius: "10px", overflow: "hidden", display: "flex", cursor: "pointer", transition: "box-shadow 0.15s" }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(193,127,62,0.10)")}
+                    style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", overflow: "hidden", display: "flex", cursor: "pointer", transition: "box-shadow 0.15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px var(--bl-selected-strong)")}
                     onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
                   >
-                    <div style={{ width: "90px", minWidth: "90px", height: "130px", background: "#f3ede3", overflow: "hidden", flexShrink: 0 }}>
+                    <div style={{ width: "90px", minWidth: "90px", height: "130px", background: "var(--bl-f3ede3)", overflow: "hidden", flexShrink: 0 }}>
                       {book.cover ? (
                         <img
                           src={book.cover}
@@ -194,11 +194,11 @@ export default function AiRecommendationsPage() {
                       )}
                     </div>
                     <div style={{ padding: "1rem", flex: 1 }}>
-                      <h3 style={{ fontSize: "14px", fontWeight: "500", color: "#1a1208", marginBottom: "3px" }}>{book.title}</h3>
-                      <p style={{ fontSize: "12px", color: "#c17f3e", marginBottom: "6px" }}>by {book.author}</p>
-                      <p style={{ fontSize: "12px", color: "#6b5c42", lineHeight: "1.6" }}>{book.description}</p>
+                      <h3 style={{ fontSize: "14px", fontWeight: "500", color: "var(--bl-1a1208)", marginBottom: "3px" }}>{book.title}</h3>
+                      <p style={{ fontSize: "12px", color: "var(--bl-c17f3e)", marginBottom: "6px" }}>by {book.author}</p>
+                      <p style={{ fontSize: "12px", color: "var(--bl-6b5c42)", lineHeight: "1.6" }}>{book.description}</p>
                       {book.publishedYear && (
-                        <p style={{ fontSize: "11px", color: "#a8927a", marginTop: "6px" }}>Published {book.publishedYear}</p>
+                        <p style={{ fontSize: "11px", color: "var(--bl-a8927a)", marginTop: "6px" }}>Published {book.publishedYear}</p>
                       )}
                     </div>
                   </div>
@@ -206,13 +206,13 @@ export default function AiRecommendationsPage() {
               </div>
             </div>
           ) : (
-            <div style={{ background: "#f3ede3", border: "0.5px solid #e0d5c4", borderRadius: "10px", padding: "3rem 2rem", textAlign: "center" }}>
+            <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "3rem 2rem", textAlign: "center" }}>
               <svg width="36" height="36" viewBox="0 0 28 28" fill="none" style={{ margin: "0 auto 1rem" }}>
-                <rect x="3" y="17" width="22" height="5" rx="1.5" fill="#c17f3e" opacity="0.4" />
-                <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="#c17f3e" opacity="0.25" />
-                <rect x="3" y="4" width="12" height="5" rx="1.5" fill="#c17f3e" opacity="0.15" />
+                <rect x="3" y="17" width="22" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.4" />
+                <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.25" />
+                <rect x="3" y="4" width="12" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.15" />
               </svg>
-              <p style={{ fontSize: "13px", color: "#8a7560", lineHeight: "1.65" }}>
+              <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
                 Describe what you enjoy and click "Get Recommendations" to see personalised book suggestions.
               </p>
             </div>
