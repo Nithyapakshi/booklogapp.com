@@ -32,7 +32,7 @@ test('appearance is in Settings, not another main-screen control', () => {
  assert.doesNotMatch(read('app/books/page.tsx'),/ThemePreference|setTheme/)
 })
 test('shared dropdown and book dialogs use themed surfaces rather than white', () => {
- for(const p of ['components/book-details-dialog.tsx','components/book-card.tsx','components/book-search.tsx','components/ui/dropdown-menu.tsx']) {
+ for(const p of ['components/book-details-dialog.tsx','components/book-card.tsx','components/book-search.tsx','components/ui/dropdown-menu.tsx','components/ui/dialog.tsx','app/books/add/page.tsx']) {
   assert.doesNotMatch(read(p),/bg-white|hover:bg-gray-100/)
  }
 })
