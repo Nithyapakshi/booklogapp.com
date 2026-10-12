@@ -101,7 +101,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
   return (
     <div className="relative">
       <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
-        <div className="flex-1 relative">
+        <div className="w-full sm:w-auto sm:flex-1 relative">
           <input
             type="text"
             placeholder="Search for books or authors..."
