@@ -170,22 +170,22 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
+                  <label className="block text-sm font-medium text-foreground">Title</label>
                   <p className="px-3 py-2 border rounded-md bg-muted">{book?.title || ""}</p>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Author</label>
+                  <label className="block text-sm font-medium text-foreground">Author</label>
                   <p className="px-3 py-2 border rounded-md bg-muted">{book?.author || ""}</p>
                 </div>
                 {book?.publishedYear && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Published Year</label>
+                    <label className="block text-sm font-medium text-foreground">Published Year</label>
                     <p className="px-3 py-2 border rounded-md bg-muted">{book?.publishedYear}</p>
                   </div>
                 )}
                 {book?.description && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <label className="block text-sm font-medium text-foreground">Description</label>
                     <div className="text-sm text-muted-foreground leading-relaxed">
                       <p className={showFullDescription ? "" : "line-clamp-3"}>{book.description}</p>
                       {book.description && book.description.length > 200 && (
@@ -200,7 +200,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <label className="block text-sm font-medium text-foreground">Notes</label>
                   <textarea placeholder="Add your personal notes..." value={noteText} onChange={e => setNoteText(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-card text-sm resize-none h-24" />
                   <p className="text-xs text-muted-foreground">Only you can see these notes.</p>
                   <Button size="sm" onClick={async () => {
