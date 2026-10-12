@@ -96,10 +96,10 @@ export default function FeedbackPage() {
         ) : (
           <div style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "20px 24px" }}>
             <label style={{ display: "block", fontSize: "12px", color: "var(--bl-6b5c42)", fontWeight: "600", marginBottom: "4px" }}>Your message</label>
-            <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={4000} rows={6} placeholder="Tell me what's on your mind..."
+            <textarea className="dark:bg-background dark:placeholder:text-muted-foreground" value={message} onChange={e => setMessage(e.target.value)} maxLength={4000} rows={6} placeholder="Tell me what's on your mind..."
               style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "6px", fontSize: "13px", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif", marginBottom: "14px", resize: "vertical" }} />
             <label style={{ display: "block", fontSize: "12px", color: "var(--bl-6b5c42)", fontWeight: "600", marginBottom: "4px" }}>Reply to</label>
-            <input value={replyTo} onChange={e => setReplyTo(e.target.value)} type="email"
+            <input className="dark:bg-background" value={replyTo} onChange={e => setReplyTo(e.target.value)} type="email"
               style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "6px", fontSize: "13px", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif", marginBottom: "4px" }} />
             <p style={{ fontSize: "11px", color: "var(--bl-a8927a)", margin: "0 0 16px" }}>I'll answer here. Change it if you prefer another email.</p>
             {error && <p role="alert" style={{ fontSize: "12px", color: "var(--bl-c0392b)", margin: "0 0 12px" }}>{error}</p>}
