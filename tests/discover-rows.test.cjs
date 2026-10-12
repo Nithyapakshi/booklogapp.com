@@ -86,3 +86,4 @@ test("wiring: server action never writes, dialog reason is not saved with the bo
   assert.match(d, /createBook\(book, status\)/)
   assert.match(fs.readFileSync("app/actions/ai-recommendations.ts", "utf8"), /count: number = 5/)
 })
+// discover rows tests end
