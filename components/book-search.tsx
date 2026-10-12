@@ -107,7 +107,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
             placeholder="Search for books or authors..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10"
+            className="w-full bg-background text-foreground placeholder:text-muted-foreground border border-input rounded-lg px-4 py-2 pr-10"
           />
           {query && (
             <button
@@ -137,10 +137,10 @@ const handleBookSelect = async (book: BookSearchResult) => {
           <Search className="h-4 w-4" />
           Search
         </Button>
-        <Link href="/books/add" className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-amber-800">Add manually</Link>
+        <Link href="/books/add" className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-primary">Add manually</Link>
       </form>
 
-{searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError} <Link href="/books/add" className="underline">Add manually instead</Link>.</p>}
+{searchError && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-300">{searchError} <Link href="/books/add" className="underline">Add manually instead</Link>.</p>}
 {isLoading && query.length >= 2 && (
         <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg px-4 py-3 text-sm text-muted-foreground" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Searching...
