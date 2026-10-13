@@ -10,6 +10,9 @@ const norm = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u036f]
 const base = (v: string) => norm(String(v || "").split(":")[0].replace(/\([^)]*\)/g, "")).replace(/^(the|a|an) /, "")
 const JUNK = /\b(summary|study guide|analysis|workbook|box set|boxed set|collection|omnibus|companion|sparknotes|cliffsnotes|trivia|journal|notebook|coloring|colouring|screenplay|criticism|essays on|conversations with|reader's guide|large print)\b/i
 
+// Preview-only diagnostics (server log). Never active in production.
+const DEBUG = process.env.VERCEL_ENV === "preview"
+
 async function gbooks(params: Record<string, string>): Promise<any[]> {
   const key = process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const url = `https://www.googleapis.com/books/v1/volumes?${new URLSearchParams({ ...params, langRestrict: "en", printType: "books", ...(key ? { key } : {}) })}`
@@ -18,10 +21,14 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
     for (let a = 1; a < 4 && (res.status === 503 || res.status === 429 || res.status >= 500); a++) {
       await new Promise(r => setTimeout(r, 400 * a)); res = await fetch(url, { cache: "no-store" })
     }
-    if (!res.ok) return []
+    if (!res.ok) {
+      if (DEBUG) console.error("DISCOVER_GB", res.status, key ? "keyed" : "no-key", params.q, (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 200))
+      return []
+    }
     const data = await res.json()
+    if (DEBUG) console.error("DISCOVER_GB", res.status, key ? "keyed" : "no-key", params.q, "items=" + (Array.isArray(data.items) ? data.items.length : 0))
     return Array.isArray(data.items) ? data.items : []
-  } catch { return [] }
+  } catch (e) { if (DEBUG) console.error("DISCOVER_GB threw", params.q, e instanceof Error ? e.message : String(e)); return [] }
 }
 
 function secure(u: string) { return (u || "").replace(/^http:\/\//, "https://").replace("&edge=curl", "") }
