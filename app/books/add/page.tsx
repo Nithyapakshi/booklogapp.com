@@ -76,6 +76,7 @@ export default function AddBookPage() {
                 <option value="queued">Want to Read</option>
                 <option value="completed">Completed</option>
                 <option value="onHold">On Hold</option>
+                <option value="recommended">Recommended</option>
               </select>
             </div>
           </div>
