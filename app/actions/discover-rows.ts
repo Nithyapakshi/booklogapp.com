@@ -10,9 +10,6 @@ const norm = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u036f]
 const base = (v: string) => norm(String(v || "").split(":")[0].replace(/\([^)]*\)/g, "")).replace(/^(the|a|an) /, "")
 const JUNK = /\b(summary|study guide|analysis|workbook|box set|boxed set|collection|omnibus|companion|sparknotes|cliffsnotes|trivia|journal|notebook|coloring|colouring|screenplay|criticism|essays on|conversations with|reader's guide|large print)\b/i
 
-// Preview-only diagnostics (server log). Never active in production.
-const DEBUG = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
-
 const cache = new Map<string, any[]>()
 const GB_TRIES = 6
 
@@ -54,7 +51,6 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
       lastStatus = String(res.status)
       if (res.ok) {
         const data = await res.json(); const items = Array.isArray(data.items) ? data.items : []
-        if (DEBUG) console.error("DISCOVER_GB", res.status, "attempt " + (a + 1), params.q, "items=" + items.length)
         cache.set(ck, items); return items
       }
       if (res.status !== 429 && res.status < 500) break
@@ -62,7 +58,6 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
     if (a < GB_TRIES - 1) await new Promise(r => setTimeout(r, 500 * (a + 1)))
   }
   const ol = await openLibrary(params)
-  if (DEBUG) console.error("DISCOVER_GB failed", lastStatus, params.q, "openlibrary items=" + ol.length)
   if (ol.length) cache.set(ck, ol)
   return ol
 }
