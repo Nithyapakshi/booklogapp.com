@@ -52,21 +52,60 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
     async function start() {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera unavailable")
-        const { BrowserMultiFormatReader } = await import("@zxing/browser")
-        if (cancelled || !video.current) return
-        const reader = new BrowserMultiFormatReader()
-        const scan = await reader.decodeFromConstraints({ audio: false, video: { facingMode: { ideal: "environment" } } }, video.current, (result, _error, scanControls) => {
-          if (cancelled || working.current || !result) return
-          const value = validBookISBN(result.getText())
+        const constraints: MediaStreamConstraints = { audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] } }
+        const onText = (text: string, stopScan: () => void) => {
+          const value = validBookISBN(text)
           if (!value) { setError("That isn't a valid book ISBN. Scan the barcode on the back cover or enter the ISBN."); return }
-          scanControls.stop()
+          stopScan()
           void resolve(value)
+        }
+        // Native detector (Chrome on Android) is far better at small, slightly blurry EAN-13 codes than the JS decoder.
+        const BD = (window as unknown as { BarcodeDetector?: any }).BarcodeDetector
+        let native: any = null
+        try {
+          if (BD) {
+            const formats: string[] = BD.getSupportedFormats ? await BD.getSupportedFormats() : ["ean_13"]
+            if (formats.includes("ean_13")) native = new BD({ formats: ["ean_13", "ean_8"].filter(f => formats.includes(f)) })
+          }
+        } catch { native = null }
+        if (native) {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints)
+          if (cancelled || !video.current) { stream.getTracks().forEach(t => t.stop()); return }
+          video.current.srcObject = stream
+          await video.current.play()
+          let timer: ReturnType<typeof setInterval> | null = null
+          let busyDetect = false
+          const halt = () => { if (timer) clearInterval(timer); timer = null }
+          timer = setInterval(async () => {
+            if (cancelled || working.current || busyDetect || !video.current || video.current.readyState < 2) return
+            busyDetect = true
+            try {
+              const found = await native.detect(video.current)
+              if (found?.length && !cancelled && !working.current) onText(String(found[0].rawValue ?? ""), halt)
+            } catch { /* keep trying */ } finally { busyDetect = false }
+          }, 200)
+          if (cancelled || working.current) { halt(); return }
+          controls.current = { stop: halt }
+          setStarting(false)
+          return
+        }
+        const { BrowserMultiFormatReader } = await import("@zxing/browser")
+        const { DecodeHintType, BarcodeFormat } = await import("@zxing/library")
+        if (cancelled || !video.current) return
+        const hints = new Map<any, any>()
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13, BarcodeFormat.EAN_8])
+        hints.set(DecodeHintType.TRY_HARDER, true)
+        const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 })
+        const scan = await reader.decodeFromConstraints(constraints, video.current, (result, _error, scanControls) => {
+          if (cancelled || working.current || !result) return
+          onText(result.getText(), () => scanControls.stop())
         })
         if (cancelled || working.current) { scan.stop(); return }
         controls.current = scan
         setStarting(false)
-      } catch {
-        if (!cancelled) { stop(); setStarting(false); setManual(true); setError("Camera unavailable. Enter the ISBN, search by title, or add manually.") }
+      } catch (err) {
+        const denied = (err as { name?: string })?.name === "NotAllowedError"
+        if (!cancelled) { stop(); setStarting(false); setManual(true); setError(denied ? "Camera permission is blocked. Allow the camera for this site in your browser settings, or enter the ISBN." : "Camera unavailable. Enter the ISBN, search by title, or add manually.") }
       }
     }
     void start()
