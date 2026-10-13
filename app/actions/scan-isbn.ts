@@ -73,7 +73,11 @@ export async function resolveScannedISBN(input: string): Promise<ISBNLookup> {
   }
   try {
     const exact = exactItems.filter(item => item.id && item.volumeInfo?.industryIdentifiers?.some((id: any) => typeof id.identifier === "string" && sameISBN(isbn, id.identifier)))
-    if (!exact.length) return { ok: false, error: dbg("No match for this ISBN. Search by title or add manually.") }
+    if (!exact.length) {
+      // Google has no record of this ISBN. Try the free Open Library record before giving up.
+      const ol = await openLibraryByISBN(isbn)
+      return ol ? { ok: true, book: ol } : { ok: false, error: dbg("No match for this ISBN. Search by title or add manually.") }
+    }
     const seed = mapBook(exact[0])
     if (matchingEditions(seed, exact.map(mapBook)).length !== exact.length) return { ok: false, error: "This ISBN returned conflicting book details. Search by title or add manually." }
     if (!matchingEditions(seed, [seed]).length) return { ok: false, error: "This ISBN has incomplete book details. Search by title or add manually." }
