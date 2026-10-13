@@ -192,9 +192,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           return next
         })
         // Dates are asked only at the two moments they happen: finishing (Reading to Recommended) and starting (into Reading).
-        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, where: "Recommendations" })
+        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Recommendations" })
         else if (status === "recommended") setRatingPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0 })
-        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedAt })
+        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
         return "moved" as const
       }
 
@@ -209,9 +209,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         [status]: [...prev[status], { ...existingBook!, status }],
       }))
       // Dates are asked only when they happen, never invented: finishing (Reading to Completed) and starting (into Reading).
-      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, where: "Completed" })
-      else if (status === "completed" && (existingStatus === "queued" || existingStatus === "onHold")) setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, where: "Completed", direct: true })
-      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedAt })
+      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed" })
+      else if (status === "completed" && (existingStatus === "queued" || existingStatus === "onHold")) setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed", direct: true })
+      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
       return "moved" as const
 
     } else {
