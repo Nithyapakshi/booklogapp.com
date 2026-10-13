@@ -5,6 +5,10 @@ import { isNewerEdition, normaliseGenre, type BookSearchResult } from "@/lib/goo
 
 export type ISBNLookup = { ok: true; book: BookSearchResult } | { ok: false; error: string }
 
+// Preview-only diagnostics: shows the real Google Books status in the error text. Never active in production.
+const DEBUG = process.env.VERCEL_ENV === "preview"
+let lastGB = ""
+
 async function lookup(query: string): Promise<any[]> {
   const key = process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const params = new URLSearchParams({ q: query, maxResults: "40", printType: "books", orderBy: "relevance" })
@@ -12,9 +16,11 @@ async function lookup(query: string): Promise<any[]> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
-      if (res.ok) { const data = await res.json(); return Array.isArray(data.items) ? data.items : [] }
+      if (DEBUG) lastGB = `${res.status} ${key ? "keyed" : "no-key"} attempt ${attempt + 1}`
+      if (res.ok) { const data = await res.json(); if (DEBUG) lastGB += ` items=${Array.isArray(data.items) ? data.items.length : 0} totalItems=${data.totalItems}`; return Array.isArray(data.items) ? data.items : [] }
+      if (DEBUG) { try { lastGB += ` body=${(await res.text()).replace(/\s+/g, " ").slice(0, 160)}` } catch {} }
       if (res.status !== 429 && res.status < 500) throw new Error("Lookup unavailable")
-    } catch { if (attempt === 2) throw new Error("Lookup unavailable") }
+    } catch (e) { if (DEBUG) lastGB += ` threw=${e instanceof Error ? e.message : String(e)}`; if (attempt === 2) throw new Error("Lookup unavailable") }
     if (attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
   }
   throw new Error("Lookup unavailable")
@@ -31,12 +37,15 @@ function mapBook(item: any): BookSearchResult {
   }
 }
 
+const dbg = (m: string) => (DEBUG && lastGB ? `${m} [debug: ${lastGB}]` : m)
+
 export async function resolveScannedISBN(input: string): Promise<ISBNLookup> {
+  lastGB = ""
   const isbn = validBookISBN(input)
   if (!isbn) return { ok: false, error: "Enter a valid 10- or 13-digit book ISBN." }
   try {
     const exact = (await lookup(`isbn:${isbn}`)).filter(item => item.id && item.volumeInfo?.industryIdentifiers?.some((id: any) => typeof id.identifier === "string" && sameISBN(isbn, id.identifier)))
-    if (!exact.length) return { ok: false, error: "No match for this ISBN. Search by title or add manually." }
+    if (!exact.length) return { ok: false, error: dbg("No match for this ISBN. Search by title or add manually.") }
     const seed = mapBook(exact[0])
     if (matchingEditions(seed, exact.map(mapBook)).length !== exact.length) return { ok: false, error: "This ISBN returned conflicting book details. Search by title or add manually." }
     if (!matchingEditions(seed, [seed]).length) return { ok: false, error: "This ISBN has incomplete book details. Search by title or add manually." }
@@ -44,12 +53,12 @@ export async function resolveScannedISBN(input: string): Promise<ISBNLookup> {
     const items = await lookup(`intitle:"${clean(seed.title.split(":")[0])}" inauthor:"${clean(seed.author)}"`)
     const language = exact[0].volumeInfo?.language
     const candidates = matchingEditions(seed, items.filter(item => item.id && (!language || item.volumeInfo?.language === language)).map(mapBook))
-    if (!candidates.length) return { ok: false, error: "Could not confirm the latest edition. Search by title or try again later." }
+    if (!candidates.length) return { ok: false, error: dbg("Could not confirm the latest edition. Search by title or try again later.") }
     // Keep the identified record in the candidates. Select editions using the existing search policy.
     const all = [seed, ...candidates]
     const best = all.reduce((a, b) => isNewerEdition(b, a, Number(!!b.description), Number(!!a.description)) ? b : a)
     return { ok: true, book: best }
   } catch {
-    return { ok: false, error: "Book lookup is unavailable. Try again later or add manually." }
+    return { ok: false, error: dbg("Book lookup is unavailable. Try again later or add manually.") }
   }
 }
