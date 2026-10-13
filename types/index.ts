@@ -13,6 +13,8 @@ export interface Book {
   autoCompleted?: boolean
   startedAt?: string
   finishedAt?: string
+  startedPrecision?: "day" | "month"
+  finishedPrecision?: "day" | "month"
 }
 
 export interface BookSearchResult {
