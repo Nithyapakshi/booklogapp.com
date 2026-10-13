@@ -5,10 +5,6 @@ import { isNewerEdition, normaliseGenre, type BookSearchResult } from "@/lib/goo
 
 export type ISBNLookup = { ok: true; book: BookSearchResult } | { ok: false; error: string }
 
-// Preview-only diagnostics: shows the real Google Books status in the error text. Never active in production.
-const DEBUG = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
-let lastGB = ""
-
 const GB_TRIES = 6
 const cache = new Map<string, any[]>()
 
@@ -22,10 +18,9 @@ async function lookup(query: string): Promise<any[]> {
   for (let attempt = 0; attempt < GB_TRIES; attempt++) {
     try {
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
-      if (DEBUG) lastGB = `${res.status} ${key ? "keyed" : "no-key"} attempt ${attempt + 1}`
       if (res.ok) { const data = await res.json(); const items = Array.isArray(data.items) ? data.items : []; cache.set(query, items); return items }
       if (res.status !== 429 && res.status < 500) throw new Error("Lookup unavailable")
-    } catch (e) { if (DEBUG) lastGB += ` threw=${e instanceof Error ? e.message : String(e)}`; if (attempt === GB_TRIES - 1) throw new Error("Lookup unavailable") }
+    } catch { if (attempt === GB_TRIES - 1) throw new Error("Lookup unavailable") }
     if (attempt < GB_TRIES - 1) await new Promise(r => setTimeout(r, 500 * (attempt + 1)))
   }
   throw new Error("Lookup unavailable")
@@ -44,7 +39,6 @@ async function openLibraryByISBN(isbn: string): Promise<BookSearchResult | null>
     const subjects: string[] = Array.isArray(d.subjects) ? d.subjects.map((x: any) => x?.name).filter(Boolean) : []
     const cover = d.cover?.medium || d.cover?.large || ""
     const year = Number.parseInt(String(d.publish_date || "").match(/\d{4}/)?.[0] || "", 10)
-    if (DEBUG) lastGB += " | openlibrary fallback used"
     return { id: `ol-${isbn}`, title, author, cover: String(cover).replace(/^http:/, "https:"), description: "", publishedYear: Number.isFinite(year) ? year : undefined, genre: normaliseGenre(subjects) }
   } catch { return null }
 }
@@ -60,23 +54,20 @@ function mapBook(item: any): BookSearchResult {
   }
 }
 
-const dbg = (m: string) => (DEBUG && lastGB ? `${m} [debug: ${lastGB}]` : m)
-
 export async function resolveScannedISBN(input: string): Promise<ISBNLookup> {
-  lastGB = ""
   const isbn = validBookISBN(input)
   if (!isbn) return { ok: false, error: "Enter a valid 10- or 13-digit book ISBN." }
   let exactItems: any[]
   try { exactItems = await lookup(`isbn:${isbn}`) } catch {
     const ol = await openLibraryByISBN(isbn)
-    return ol ? { ok: true, book: ol } : { ok: false, error: dbg("Book lookup is unavailable. Try again later or add manually.") }
+    return ol ? { ok: true, book: ol } : { ok: false, error: "Book lookup is unavailable. Try again later or add manually." }
   }
   try {
     const exact = exactItems.filter(item => item.id && item.volumeInfo?.industryIdentifiers?.some((id: any) => typeof id.identifier === "string" && sameISBN(isbn, id.identifier)))
     if (!exact.length) {
       // Google has no record of this ISBN. Try the free Open Library record before giving up.
       const ol = await openLibraryByISBN(isbn)
-      return ol ? { ok: true, book: ol } : { ok: false, error: dbg("No match for this ISBN. Search by title or add manually.") }
+      return ol ? { ok: true, book: ol } : { ok: false, error: "No match for this ISBN. Search by title or add manually." }
     }
     const seed = mapBook(exact[0])
     if (matchingEditions(seed, exact.map(mapBook)).length !== exact.length) return { ok: false, error: "This ISBN returned conflicting book details. Search by title or add manually." }
@@ -85,12 +76,12 @@ export async function resolveScannedISBN(input: string): Promise<ISBNLookup> {
     const items = await lookup(`intitle:"${clean(seed.title.split(":")[0])}" inauthor:"${clean(seed.author)}"`)
     const language = exact[0].volumeInfo?.language
     const candidates = matchingEditions(seed, items.filter(item => item.id && (!language || item.volumeInfo?.language === language)).map(mapBook))
-    if (!candidates.length) return { ok: false, error: dbg("Could not confirm the latest edition. Search by title or try again later.") }
+    if (!candidates.length) return { ok: false, error: "Could not confirm the latest edition. Search by title or try again later." }
     // Keep the identified record in the candidates. Select editions using the existing search policy.
     const all = [seed, ...candidates]
     const best = all.reduce((a, b) => isNewerEdition(b, a, Number(!!b.description), Number(!!a.description)) ? b : a)
     return { ok: true, book: best }
   } catch {
-    return { ok: false, error: dbg("Book lookup is unavailable. Try again later or add manually.") }
+    return { ok: false, error: "Book lookup is unavailable. Try again later or add manually." }
   }
 }
