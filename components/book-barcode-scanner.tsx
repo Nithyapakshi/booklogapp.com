@@ -16,6 +16,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [diag, setDiag] = useState("")
   const video = useRef<HTMLVideoElement>(null)
   const controls = useRef<{ stop: () => void } | null>(null)
   const working = useRef(false)
@@ -53,6 +54,13 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera unavailable")
         const constraints: MediaStreamConstraints = { audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] } }
+        const report = async (mode: string) => {
+          const track = (video.current?.srcObject as MediaStream | null)?.getVideoTracks()[0]
+          if (!track) return
+          try { await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }) } catch { /* not supported */ }
+          const st = track.getSettings() as MediaTrackSettings & { focusMode?: string }
+          setDiag(`${mode} ${st.width ?? "?"}x${st.height ?? "?"} focus:${st.focusMode ?? "n/a"}`)
+        }
         const onText = (text: string, stopScan: () => void) => {
           const value = validBookISBN(text)
           if (!value) { setError("That isn't a valid book ISBN. Scan the barcode on the back cover or enter the ISBN."); return }
@@ -87,6 +95,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
           if (cancelled || working.current) { halt(); return }
           controls.current = { stop: halt }
           setStarting(false)
+          void report("native")
           return
         }
         const { BrowserMultiFormatReader } = await import("@zxing/browser")
@@ -103,6 +112,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
         if (cancelled || working.current) { scan.stop(); return }
         controls.current = scan
         setStarting(false)
+        void report("js")
       } catch (err) {
         const denied = (err as { name?: string })?.name === "NotAllowedError"
         if (!cancelled) { stop(); setStarting(false); setManual(true); setError(denied ? "Camera permission is blocked. Allow the camera for this site in your browser settings, or enter the ISBN." : "Camera unavailable. Enter the ISBN, search by title, or add manually.") }
@@ -128,6 +138,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
           <video ref={video} muted playsInline autoPlay className="w-full h-full object-cover" aria-label="Book barcode camera preview" />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[85%] h-28 border-2 border-amber-200 rounded-lg" /></div>
           <p className="absolute bottom-3 left-0 right-0 text-center text-xs text-white">{starting ? "Starting camera..." : "Keep the barcode inside the guide."}</p>
+          {diag && <p className="absolute top-2 left-0 right-0 text-center text-[10px] text-white/70">{diag}</p>}
         </div>}
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         {busy && <p role="status" className="text-sm text-stone-600">Looking up the latest available edition...</p>}
