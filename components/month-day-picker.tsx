@@ -30,11 +30,11 @@ export function MonthDayPicker({ label, value, precision, onChange, disabled }: 
   return <fieldset className="space-y-1">
     <legend className="text-sm">{label}</legend>
     <div className="flex flex-wrap items-center gap-2">
-      <select aria-label={`${label} month`} className={cls} disabled={disabled} value={month || ""} onChange={(e) => emit(year || thisYear, Number(e.target.value), day, precision)}>
+      <select aria-label={`${label} month`} className={cls} disabled={disabled} value={month || ""} onChange={(e) => emit(year || thisYear, Number(e.target.value), day, parts ? precision : "month")}>
         <option value="">Month</option>
         {MONTH_NAMES.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}
       </select>
-      <select aria-label={`${label} year`} className={cls} disabled={disabled} value={year || ""} onChange={(e) => emit(Number(e.target.value), month || 1, day, precision)}>
+      <select aria-label={`${label} year`} className={cls} disabled={disabled} value={year || ""} onChange={(e) => emit(Number(e.target.value), month || 1, day, parts ? precision : "month")}>
         <option value="">Year</option>
         {years.map((y) => <option key={y} value={y}>{y}</option>)}
       </select>
