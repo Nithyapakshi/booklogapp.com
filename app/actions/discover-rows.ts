@@ -13,22 +13,58 @@ const JUNK = /\b(summary|study guide|analysis|workbook|box set|boxed set|collect
 // Preview-only diagnostics (server log). Never active in production.
 const DEBUG = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
 
+const cache = new Map<string, any[]>()
+const GB_TRIES = 6
+
+// Free fallback used only when Google Books keeps failing: Open Library search, mapped to the same item shape.
+// Rows still need a cover, so books without one are dropped later by toCand, same as with Google.
+async function openLibrary(params: Record<string, string>): Promise<any[]> {
+  try {
+    const q = params.q || ""
+    const author = q.match(/inauthor:"([^"]+)"/)?.[1], title = q.match(/intitle:"([^"]+)"/)?.[1], subject = q.match(/subject:"([^"]+)"/)?.[1]
+    if (!author && !title && !subject) return []
+    const limit = Math.min(Number(params.maxResults) || 20, 40), offset = Number(params.startIndex) || 0
+    const u = new URLSearchParams({ limit: String(limit), offset: String(offset), language: "eng", fields: "key,title,author_name,cover_i,first_publish_year,subject,ratings_count,edition_count" })
+    if (author) u.set("author", author); if (title) u.set("title", title); if (subject) u.set("subject", subject)
+    const res = await fetch(`https://openlibrary.org/search.json?${u}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (Array.isArray(data.docs) ? data.docs : []).map((d: any) => ({
+      id: `ol:${d.key}`,
+      volumeInfo: {
+        title: d.title, authors: d.author_name, language: "en", ratingsCount: d.ratings_count || 0,
+        publishedDate: d.first_publish_year ? String(d.first_publish_year) : undefined,
+        categories: Array.isArray(d.subject) && d.subject[0] ? [String(d.subject[0])] : undefined,
+        imageLinks: d.cover_i ? { thumbnail: `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` } : undefined,
+      },
+    })).filter((x: any) => x.volumeInfo.title && Array.isArray(x.volumeInfo.authors) && x.volumeInfo.authors.length)
+  } catch { return [] }
+}
+
 async function gbooks(params: Record<string, string>): Promise<any[]> {
   const key = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const url = `https://www.googleapis.com/books/v1/volumes?${new URLSearchParams({ ...params, langRestrict: "en", printType: "books", ...(key ? { key } : {}) })}`
-  try {
-    let res = await fetch(url, { cache: "no-store" })
-    for (let a = 1; a < 4 && (res.status === 503 || res.status === 429 || res.status >= 500); a++) {
-      await new Promise(r => setTimeout(r, 400 * a)); res = await fetch(url, { cache: "no-store" })
-    }
-    if (!res.ok) {
-      if (DEBUG) console.error("DISCOVER_GB", res.status, key ? "keyed" : "no-key", params.q, (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 200))
-      return []
-    }
-    const data = await res.json()
-    if (DEBUG) console.error("DISCOVER_GB", res.status, key ? "keyed" : "no-key", params.q, "items=" + (Array.isArray(data.items) ? data.items.length : 0))
-    return Array.isArray(data.items) ? data.items : []
-  } catch (e) { if (DEBUG) console.error("DISCOVER_GB threw", params.q, e instanceof Error ? e.message : String(e)); return [] }
+  const ck = JSON.stringify(params)
+  const hit = cache.get(ck); if (hit) return hit
+  let lastStatus = "none"
+  // Google Books answers 503 at random. Retry with a growing wait before giving up.
+  for (let a = 0; a < GB_TRIES; a++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" })
+      lastStatus = String(res.status)
+      if (res.ok) {
+        const data = await res.json(); const items = Array.isArray(data.items) ? data.items : []
+        if (DEBUG) console.error("DISCOVER_GB", res.status, "attempt " + (a + 1), params.q, "items=" + items.length)
+        cache.set(ck, items); return items
+      }
+      if (res.status !== 429 && res.status < 500) break
+    } catch (e) { lastStatus = e instanceof Error ? e.message : String(e) }
+    if (a < GB_TRIES - 1) await new Promise(r => setTimeout(r, 500 * (a + 1)))
+  }
+  const ol = await openLibrary(params)
+  if (DEBUG) console.error("DISCOVER_GB failed", lastStatus, params.q, "openlibrary items=" + ol.length)
+  if (ol.length) cache.set(ck, ol)
+  return ol
 }
 
 function secure(u: string) { return (u || "").replace(/^http:\/\//, "https://").replace("&edge=curl", "") }
