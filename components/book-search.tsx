@@ -107,10 +107,10 @@ const handleBookSelect = async (book: BookSearchResult) => {
         <div className="flex-1 relative min-w-0 max-md:basis-full">
           <input
             type="text"
-            placeholder="Search for books or authors..."
+            placeholder="Search books or authors"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-[5.5rem] md:pr-10"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-[5.5rem] md:pr-10 max-md:py-3 max-md:text-base"
           />
           {query && (
             <button
@@ -135,13 +135,13 @@ const handleBookSelect = async (book: BookSearchResult) => {
               </svg>
             </button>
           )}
-          <BookBarcodeScanner onSearch={() => { document.querySelector<HTMLInputElement>('input[placeholder="Search for books or authors..."]')?.focus() }} onBook={book => { const owned = findInLibrary(book.id, book.title, book.author); setSelectedBook((owned ?? book) as BookSearchResult); setSelectedBookInLibrary(!!owned); setFromScan(!owned); setDialogOpen(true) }} />
+          <BookBarcodeScanner onSearch={() => { document.querySelector<HTMLInputElement>('input[placeholder="Search books or authors"]')?.focus() }} onBook={book => { const owned = findInLibrary(book.id, book.title, book.author); setSelectedBook((owned ?? book) as BookSearchResult); setSelectedBookInLibrary(!!owned); setFromScan(!owned); setDialogOpen(true) }} />
         </div>
         <Button type="submit" className="flex items-center gap-2" style={{ background: "#c17f3e", color: "#fff", border: "none", fontFamily: "'DM Sans', sans-serif", fontWeight: "600", fontSize: "13px", borderRadius: "8px", padding: "8px 16px" }}>
           <Search className="h-4 w-4" />
-          Search
+          <span className="max-md:sr-only">Search</span>
         </Button>
-        <Link href="/books/add" className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-amber-800">Add manually</Link>
+        <Link href="/books/add" className="inline-flex items-center rounded-lg border px-3 py-2 text-sm text-amber-800 max-md:px-2 max-md:py-1.5 max-md:text-xs">Add manually</Link>
       </form>
 
 {searchError && <p role="alert" className="mt-2 text-sm text-red-600">{searchError} <Link href="/books/add" className="underline">Add manually instead</Link>.</p>}
