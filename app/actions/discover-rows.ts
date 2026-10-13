@@ -1,4 +1,4 @@
-"use server"
+// Runs in the browser (client-side) so Google Books sees the same key path as normal search.
 
 // Fetches candidate books for the personalised Discover rows. The row logic (who qualifies, library
 // filtering, dedupe, minimum size) lives in lib/discover-rows.ts. This only talks to Google Books and
@@ -11,10 +11,10 @@ const base = (v: string) => norm(String(v || "").split(":")[0].replace(/\([^)]*\
 const JUNK = /\b(summary|study guide|analysis|workbook|box set|boxed set|collection|omnibus|companion|sparknotes|cliffsnotes|trivia|journal|notebook|coloring|colouring|screenplay|criticism|essays on|conversations with|reader's guide|large print)\b/i
 
 // Preview-only diagnostics (server log). Never active in production.
-const DEBUG = process.env.VERCEL_ENV === "preview"
+const DEBUG = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
 
 async function gbooks(params: Record<string, string>): Promise<any[]> {
-  const key = process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
+  const key = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const url = `https://www.googleapis.com/books/v1/volumes?${new URLSearchParams({ ...params, langRestrict: "en", printType: "books", ...(key ? { key } : {}) })}`
   try {
     let res = await fetch(url, { cache: "no-store" })
