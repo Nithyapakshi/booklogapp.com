@@ -1,4 +1,4 @@
-"use server"
+// Runs in the browser (client-side) so Google Books sees the same key path as normal search.
 
 import { validBookISBN, sameISBN, matchingEditions } from "@/lib/isbn"
 import { isNewerEdition, normaliseGenre, type BookSearchResult } from "@/lib/google-books-api"
@@ -6,11 +6,11 @@ import { isNewerEdition, normaliseGenre, type BookSearchResult } from "@/lib/goo
 export type ISBNLookup = { ok: true; book: BookSearchResult } | { ok: false; error: string }
 
 // Preview-only diagnostics: shows the real Google Books status in the error text. Never active in production.
-const DEBUG = process.env.VERCEL_ENV === "preview"
+const DEBUG = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
 let lastGB = ""
 
 async function lookup(query: string): Promise<any[]> {
-  const key = process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
+  const key = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY
   const params = new URLSearchParams({ q: query, maxResults: "40", printType: "books", orderBy: "relevance" })
   if (key) params.set("key", key)
   for (let attempt = 0; attempt < 3; attempt++) {
