@@ -93,3 +93,26 @@ test("genre words inside named topics do not bypass the subject guard",async()=>
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:"Random",author:"Someone",description:"A novel about spies",on_topic:true}]))
  try{for(const q of ["books about Dark Matter","books about Bezos fiction"]){assert.deepStrictEqual(await mod.getAIBookRecommendations(q),[])}}finally{restore()}
 })
+
+test('translated work title still accepts exact English edition',async()=>{
+ const f=async u=>String(u).includes('googleapis')?json({},429):json({docs:[{title:'Los detectives salvajes',author_name:['Roberto Bolaño'],editions:{docs:[{title:'The Savage Detectives',language:['eng'],cover_i:15210203}]}}]})
+ const {mod,restore}=load(f,JSON.stringify([{title:'The Savage Detectives',author:'Roberto Bolaño',on_topic:true}]))
+ try{assert.strictEqual((await mod.getAIBookRecommendations('taste'))[0].cover,'https://covers.openlibrary.org/b/id/15210203-M.jpg')}finally{restore()}
+})
+test('canonical author aliases bind Cyrillic display name',async()=>{
+ const f=async u=>{u=String(u);if(u.includes('googleapis'))return json({},429);if(u.includes('/authors/OL22242A'))return json({name:'Фёдор Достоевский',alternate_names:['Fyodor Dostoevsky']});return json({docs:[{key:'/works/OL272063W',title:'The Brothers Karamazov',author_name:['Фёдор Достоевский'],author_key:['OL22242A'],editions:{docs:[{title:'The Brothers Karamazov',language:['eng'],cover_i:14889143}]}}]})}
+ const {mod,restore}=load(f,JSON.stringify([{title:'The Brothers Karamazov',author:'Fyodor Dostoevsky',on_topic:true}]))
+ try{assert.strictEqual((await mod.getAIBookRecommendations('taste'))[0].cover,'https://covers.openlibrary.org/b/id/14889143-M.jpg')}finally{restore()}
+})
+test('bounded editions scan finds covered English edition beyond first hit',async()=>{
+ const f=async u=>{u=String(u);if(u.includes('googleapis'))return json({},429);if(u.includes('/editions.json'))return json({entries:[{title:'The Idiot',languages:[{key:'/languages/spa'}],covers:[1]},{title:'The Idiot',languages:[{key:'/languages/eng'}],covers:[14985202],authors:[{key:'/authors/OL22242A'}]}]});if(u.includes('/authors/OL22242A'))return json({name:'Fyodor Dostoevsky'});return json({docs:[{key:'/works/OL20906897W',title:'The Idiot',author_name:['Fyodor Dostoevsky'],author_key:['OL22242A'],editions:{docs:[{title:'The Idiot',language:['eng']}]}}]})}
+ const {mod,restore}=load(f,JSON.stringify([{title:'The Idiot',author:'Fyodor Dostoevsky',on_topic:true}]))
+ try{assert.strictEqual((await mod.getAIBookRecommendations('taste'))[0].cover,'https://covers.openlibrary.org/b/id/14985202-M.jpg')}finally{restore()}
+})
+test('edition author overrides work author and title-only collision is rejected',async()=>{
+ const f=async u=>{u=String(u);if(u.includes('googleapis'))return json({},429);if(u.includes('/authors/OL1A'))return json({name:'Elif Batuman'});if(u.includes('/editions.json'))return json({entries:[{title:'The Idiot',languages:[{key:'/languages/eng'}],covers:[123],authors:[{key:'/authors/OL1A'}]}]});return json({docs:[{key:'/works/OL1W',title:'The Idiot',author_name:['Fyodor Dostoevsky'],editions:{docs:[]}}]})}
+ const {mod,restore}=load(f,JSON.stringify([{title:'The Idiot',author:'Fyodor Dostoevsky',on_topic:true}]))
+ try{assert.strictEqual((await mod.getAIBookRecommendations('taste'))[0].cover,'')}finally{restore()}
+})
+
+test('book detail modal omits the unwanted reason banner',()=>{assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'../components/book-details-dialog.tsx'),'utf8'),/Why this book:/)})
