@@ -54,25 +54,68 @@ async function googleBookCover(title: string, author: string): Promise<{ cover: 
 
 const normText = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
 
-// Free fallback when Google has no cover or its quota is used up. Only accepts a hit whose title and author match.
+// Free fallback. Identity is checked on an English edition, not the work's canonical title.
 async function openLibraryCover(title: string, author: string): Promise<string> {
-  try {
-    const q = `title:"${title.replace(/"/g, "")}" author:"${author.replace(/"/g, "")}" language:eng`
-    const u = new URLSearchParams({ q, lang: "en", limit: "5", fields: "key,title,author_name,editions,editions.key,editions.title,editions.language,editions.cover_i" })
-    const res = await fetch(`https://openlibrary.org/search.json?${u}`, { signal: AbortSignal.timeout(2500) })
-    if (!res.ok) return ""
-    const docs: any[] = (await res.json()).docs || []
-    const base = (v: string) => normText(String(v || "").split(":")[0].replace(/\([^)]*\)/g, ""))
-    const wantAuthors = normText(author).split(" ").filter((w) => w.length > 2)
-    for (const d of docs) {
-      if (base(d.title) !== base(title) || !wantAuthors.length || !wantAuthors.every(w => normText((d.author_name || []).join(" ")).split(" ").includes(w))) continue
-      const edition = (d.editions?.docs || []).find((e: any) => e.cover_i && base(e.title) === base(title) && Array.isArray(e.language) && e.language.includes("eng"))
-      if (edition) return `https://covers.openlibrary.org/b/id/${edition.cover_i}-M.jpg`
-    }
-    return ""
-  } catch {
-    return ""
+  const deadline = Date.now() + 4000
+  let requests = 0
+  const authorCache = new Map<string, Promise<boolean>>()
+  const base = (v: string) => normText(String(v || '').split(':')[0].replace(/\([^)]*\)/g, ''))
+  const authorWords = normText(author).split(' ').filter(w => w.length > 2)
+  const matchesAuthor = (v: string) => authorWords.length > 0 && authorWords.every(w => normText(v).split(' ').includes(w))
+  const read = async (path: string): Promise<any | null> => {
+    if (++requests > 12 || Date.now() >= deadline) return null
+    try {
+      const res = await fetch(`https://openlibrary.org${path}`, {signal: AbortSignal.timeout(Math.max(1, deadline - Date.now()))})
+      return res.ok ? await res.json() : null
+    } catch { return null }
   }
+  const authorIdMatches = (key: string): Promise<boolean> => {
+    if (!/^\/authors\/OL\d+A$/.test(key)) return Promise.resolve(false)
+    if (!authorCache.has(key)) authorCache.set(key, read(`${key}.json`).then(a => !!a && [a.name, ...(Array.isArray(a.alternate_names) ? a.alternate_names : [])].some(n => typeof n === 'string' && matchesAuthor(n))))
+    return authorCache.get(key)!
+  }
+  const editionCover = async (e: any, d: any): Promise<string> => {
+    if (!e || base(e.title) !== base(title)) return ''
+    const languages = Array.isArray(e.languages) ? e.languages.map((l: any) => l?.key?.split('/').pop()) : e.language
+    const cover = Array.isArray(e.covers) ? e.covers.find((n: any) => Number.isSafeInteger(n) && n > 0) : e.cover_i
+    if (!Array.isArray(languages) || !languages.includes('eng') || !Number.isSafeInteger(cover) || cover <= 0) return ''
+    // A full edition's author IDs take precedence over a work-level display name.
+    if (Array.isArray(e.authors) && e.authors.length > 0) {
+      const ids = e.authors.slice(0, 4).map((a: any) => a?.key || a?.author?.key)
+      if (!(await Promise.all(ids.map(authorIdMatches))).some(Boolean)) return ''
+    } else if (!(d.author_name || []).some(matchesAuthor)) {
+      const ids = (d.author_key || []).slice(0, 4).map((k: string) => `/authors/${k}`)
+      if (!(await Promise.all(ids.map(authorIdMatches))).some(Boolean)) return ''
+    }
+    return `https://covers.openlibrary.org/b/id/${cover}-M.jpg`
+  }
+  const fields = 'key,title,author_name,author_key,editions,editions.key,editions.title,editions.language,editions.cover_i'
+  const inspect = async (docs: any[]): Promise<string> => {
+    for (const d of docs.slice(0, 5)) {
+      for (const e of (d.editions?.docs || []).slice(0, 5)) {
+        const cover = await editionCover(e, d)
+        if (cover) return cover
+      }
+      // The search embeds only its first edition. Look beyond it only after binding the author.
+      const known = (d.author_name || []).some(matchesAuthor) || (await Promise.all((d.author_key || []).slice(0, 4).map((k: string) => authorIdMatches(`/authors/${k}`)))).some(Boolean)
+      if (!known || !/^\/works\/OL\d+W$/.test(d.key)) continue
+      const editions = await read(`${d.key}/editions.json?limit=100`)
+      for (const e of (editions?.entries || []).slice(0, 100)) {
+        const cover = await editionCover(e, d)
+        if (cover) return cover
+      }
+    }
+    return ''
+  }
+  try {
+    const q = `title:"${title.replace(/"/g, '')}" author:"${author.replace(/"/g, '')}" language:eng`
+    const exact = await read(`/search.json?${new URLSearchParams({q, lang:'en', limit:'5', fields})}`)
+    const found = await inspect(exact?.docs || [])
+    if (found) return found
+    // A transliterated author can be absent from search's display name. Resolve aliases by ID.
+    const broad = await read(`/search.json?${new URLSearchParams({title, lang:'en', limit:'5', fields})}`)
+    return await inspect(broad?.docs || [])
+  } catch { return '' }
 }
 
 async function getBookCoverUrl(title: string, author: string): Promise<{ cover: string; googleId: string }> {
