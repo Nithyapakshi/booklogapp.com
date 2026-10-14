@@ -132,11 +132,6 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
             {mode === "add" ? (
               <div className="space-y-4">
                 {latestEditionNotice && <div className="rounded-md bg-amber-50 border-l-2 border-amber-600 px-3 py-2 text-sm text-amber-900"><span className="font-medium">Latest available edition</span><br />May differ from your copy.</div>}
-                {reason && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                    <span className="font-medium">Why this book: </span>{reason}
-                  </div>
-                )}
                 {/* Add book description */}
                 {book?.description && (
                   <div className="mb-4">
