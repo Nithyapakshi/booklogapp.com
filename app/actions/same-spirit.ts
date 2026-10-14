@@ -6,25 +6,15 @@ import type { Candidate } from '@/lib/discover-rows'
 
 type Seed = {key:string;seedTitle?:string;seedAuthor?:string}
 type Catalog = Candidate & {description:string}
-async function catalog(title: string, author: string): Promise<Catalog | null> {
-  try {
-    if (!title || !author || title.length>250 || author.length>250) return null
-    const q = new URLSearchParams({q:`intitle:"${title.replace(/"/g,'')}" inauthor:"${author.replace(/"/g,'')}"`,maxResults:'10',langRestrict:'en',printType:'books',key:process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY || ''})
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${q}`,{signal:AbortSignal.timeout(2500)})
-    if (!response.ok) return null
-    const base = (t:string) => normalize(String(t).split(':')[0])
-    const words = normalize(author).split(' ').filter(w=>w.length>2)
-    const items = (await response.json()).items || []
-    const item = items.find((it:any)=>base(it.volumeInfo?.title)===base(title) && words.every(w=>normalize((it.volumeInfo.authors||[]).join(' ')).split(' ').includes(w)) && it.volumeInfo.language==='en' && it.volumeInfo.description)
-    if (!item) return null
-    const v=item.volumeInfo
-    return {id:String(item.id),title:String(v.title),author:(v.authors||[]).join(', '),cover:String(v.imageLinks?.thumbnail || '').replace(/^http:/,'https:'),description:String(v.description).replace(/<[^>]+>/g,' ').slice(0,2000),genre:(v.categories||[])[0]}
-  } catch {return null}
+// TEST ONLY: synthetic catalog data. Never merge.
+async function catalog(title:string,author:string):Promise<Catalog|null>{
+ if (/mismatch/i.test(title))return null
+ return {id:'fixture:'+title,title,author,cover:'https://covers.openlibrary.org/b/id/8858487-M.jpg',description:'Grief and isolation follow families across generations.',genre:'Fixture'}
 }
 
 export async function getSameSpiritCandidates(accessToken:string,requested:Seed[]):Promise<Record<string,Candidate[]>> {
   const out:Record<string,Candidate[]>={}
-  if (process.env.VERCEL_ENV==='preview') return out
+  if (process.env.VERCEL_ENV!=='preview') throw new Error('Fixture preview only')
   // Validate from the user's authenticated database, never trust client-supplied eligibility.
   const {db,userId}=await authenticatedClient(accessToken)
   const {data,error}=await db.from('books').select('title,author').eq('user_id',userId).eq('self_rating',5)
