@@ -44,3 +44,5 @@ The empty-state copy now avoids promising Ask AI results while the shared budget
 ## Live preview database proof
 
 Exact migration applied to the separate preview Supabase project. Disabled refusal, live claim/reserve/settle/publish, direct anon table/schema denial and daily-cap refusal verified. Test writes rolled back; no retained test reservations/cache. Production remains unchanged. Paid real-quality checks are still pending.
+
+Paid preview testing requires BOOKLOG_AI_PREVIEW_TEST=enabled, staged only on this review branch. Other previews remain disabled. Preview live test budget is capped at $0.04 new charges with at most two calls; no production activation.
