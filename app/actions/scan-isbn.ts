@@ -6,6 +6,7 @@ import { isNewerEdition, normaliseGenre, type BookSearchResult } from "@/lib/goo
 export type ISBNLookup = { ok: true; book: BookSearchResult } | { ok: false; error: string }
 
 const GB_TRIES = 6
+// Only non-empty answers are remembered: an empty answer may be a flaky Google response and must be retried.
 const cache = new Map<string, any[]>()
 
 async function lookup(query: string): Promise<any[]> {
@@ -18,7 +19,7 @@ async function lookup(query: string): Promise<any[]> {
   for (let attempt = 0; attempt < GB_TRIES; attempt++) {
     try {
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
-      if (res.ok) { const data = await res.json(); const items = Array.isArray(data.items) ? data.items : []; cache.set(query, items); return items }
+      if (res.ok) { const data = await res.json(); const items = Array.isArray(data.items) ? data.items : []; if (items.length) cache.set(query, items); return items }
       if (res.status !== 429 && res.status < 500) throw new Error("Lookup unavailable")
     } catch { if (attempt === GB_TRIES - 1) throw new Error("Lookup unavailable") }
     if (attempt < GB_TRIES - 1) await new Promise(r => setTimeout(r, 500 * (attempt + 1)))
