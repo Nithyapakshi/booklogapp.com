@@ -66,7 +66,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
           <p className="text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
-          {readingDatesLabel(book.startedAt, book.finishedAt) && <p className="text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt)}</p>}
+          {readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision) && <p className="text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision)}</p>}
           {book.genre && (
             <span style={{
               display: "inline-block",

@@ -11,7 +11,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { RecommendationRatingDialog } from "@/components/recommendation-rating-dialog"
 import { FinishBookDialog } from "@/components/finish-book-dialog"
 import { StartBookDialog } from "@/components/start-book-dialog"
-import { isValidDate } from "@/lib/reading-dates"
+import { isValidDate, toPrecision, type DatePrecision } from "@/lib/reading-dates"
 
 export type BookStatus = "reading" | "queued" | "completed" | "recommended" | "onHold"
 
@@ -31,6 +31,7 @@ export type BookSaveResult = { outcome: "added" | "edited" | "duplicate"; books:
 type BookContextType = {
   createBook: (book: any, status: BookStatus) => Promise<BookSaveResult>
   editBook: (id: string, details: {title: string; author: string; cover?: string}) => Promise<BookSaveResult>
+  saveDates: (bookId: string, dates: { startedAt?: string | null; startedPrecision?: DatePrecision; finishedAt?: string | null; finishedPrecision?: DatePrecision }) => Promise<void>
   moveBook: (book: any, status: BookStatus) => Promise<"added" | "duplicate" | "moved">
   books: Record<BookStatus, Book[]>
   addBook: (book: any, status: BookStatus) => Promise<'added' | 'duplicate' | 'moved'>
@@ -60,7 +61,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [reloadTick, setReloadTick] = useState(0)
   const reloadBooks = useCallback(() => setReloadTick(t => t + 1), [])
   const [ratingPrompt, setRatingPrompt] = useState<{ id: string; title: string; rating: number } | null>(null)
-  const [finishPrompt, setFinishPrompt] = useState<{ id: string; title: string; rating: number; finishedAt?: string; where: "Completed" | "Recommendations" } | null>(null)
+  const [finishPrompt, setFinishPrompt] = useState<{ id: string; title: string; rating: number; finishedAt?: string; where: "Completed" | "Recommendations"; direct?: boolean } | null>(null)
   const [startPrompt, setStartPrompt] = useState<{ id: string; title: string; startedAt?: string } | null>(null)
 
   // Load books from Supabase when userId is available
@@ -118,6 +119,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
               genre: row.genre ?? undefined,
               startedAt: isValidDate(row.started_at) ? row.started_at : undefined,
               finishedAt: isValidDate(row.finished_at) ? row.finished_at : undefined,
+              startedPrecision: toPrecision(row.started_precision),
+              finishedPrecision: toPrecision(row.finished_precision),
               ...(row.auto_completed ? { autoCompleted: true } : {}),
             } as Book)
           }
@@ -184,14 +187,14 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           for (const key of Object.keys(next) as BookStatus[]) next[key] = next[key].filter(b => b.id !== existingBook!.id)
           for (const row of data) {
             const key = row.status as BookStatus
-            next[key] = [...next[key], { ...existingBook!, status: key, rowId: row.row_id, autoCompleted: row.auto_completed, startedAt: isValidDate(row.started_at) ? row.started_at : undefined, finishedAt: isValidDate(row.finished_at) ? row.finished_at : undefined } as Book]
+            next[key] = [...next[key], { ...existingBook!, status: key, rowId: row.row_id, autoCompleted: row.auto_completed, startedAt: isValidDate(row.started_at) ? row.started_at : undefined, finishedAt: isValidDate(row.finished_at) ? row.finished_at : undefined, startedPrecision: toPrecision(row.started_precision), finishedPrecision: toPrecision(row.finished_precision) } as Book]
           }
           return next
         })
         // Dates are asked only at the two moments they happen: finishing (Reading to Recommended) and starting (into Reading).
-        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, where: "Recommendations" })
+        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Recommendations" })
         else if (status === "recommended") setRatingPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0 })
-        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedAt })
+        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
         return "moved" as const
       }
 
@@ -206,8 +209,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         [status]: [...prev[status], { ...existingBook!, status }],
       }))
       // Dates are asked only when they happen, never invented: finishing (Reading to Completed) and starting (into Reading).
-      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, where: "Completed" })
-      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedAt })
+      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed" })
+      else if (status === "completed" && (existingStatus === "queued" || existingStatus === "onHold")) setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed", direct: true })
+      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
       return "moved" as const
 
     } else {
@@ -385,10 +389,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     })
   }, [userId])
 
-  const saveFinish = useCallback(async (bookId: string, rating: number, finishedAt: string, where: "Completed" | "Recommendations") => {
+  const saveFinish = useCallback(async (bookId: string, rating: number, finishedAt: string, where: "Completed" | "Recommendations", precision: DatePrecision = "day") => {
     if (!userId || !isValidDate(finishedAt)) throw new Error("Invalid finish date")
     const supabase = createClientSupabaseClient()
-    const patch: Record<string, unknown> = { finished_at: finishedAt }
+    const patch: Record<string, unknown> = { finished_at: finishedAt, finished_precision: precision }
     if (rating) patch.self_rating = rating
     // Reading to Recommended leaves a Completed copy as well, so both rows get the day. Otherwise only the Completed row does.
     let q = supabase.from("books").update(patch).eq("id", bookId).eq("user_id", userId)
@@ -403,7 +407,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     setBooks((prev) => {
       const updated = { ...prev }
       for (const s of Object.keys(updated) as BookStatus[]) {
-        updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, ...(rating ? { selfRating: rating } : {}), ...(where === "Recommendations" || s === "completed" ? { finishedAt } : {}) } : b)
+        updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, ...(rating ? { selfRating: rating } : {}), ...(where === "Recommendations" || s === "completed" ? { finishedAt, finishedPrecision: precision } : {}) } : b)
       }
       return updated
     })
@@ -412,12 +416,42 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const saveStart = useCallback(async (bookId: string, startedAt: string) => {
     if (!userId || !isValidDate(startedAt)) throw new Error("Invalid start date")
     const supabase = createClientSupabaseClient()
-    const { data, error } = await supabase.from("books").update({ started_at: startedAt }).eq("id", bookId).eq("user_id", userId).select("id")
+    const { data, error } = await supabase.from("books").update({ started_at: startedAt, started_precision: "day" }).eq("id", bookId).eq("user_id", userId).select("id")
     if (error) throw error
     if (!data?.length) throw new Error("Not saved")
     setBooks((prev) => {
       const updated = { ...prev }
-      for (const s of Object.keys(updated) as BookStatus[]) updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, startedAt } : b)
+      for (const s of Object.keys(updated) as BookStatus[]) updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, startedAt, startedPrecision: "day" as DatePrecision } : b)
+      return updated
+    })
+  }, [userId])
+
+  // Edit Details: set, change or clear the start and finish dates (day or month precision). Applies to every list copy of the book.
+  const saveDates = useCallback(async (bookId: string, dates: { startedAt?: string | null; startedPrecision?: DatePrecision; finishedAt?: string | null; finishedPrecision?: DatePrecision }) => {
+    if (!userId) throw new Error("Not signed in")
+    const patch: Record<string, unknown> = {}
+    if (dates.startedAt !== undefined) {
+      if (dates.startedAt !== null && !isValidDate(dates.startedAt)) throw new Error("Invalid start date")
+      patch.started_at = dates.startedAt
+      patch.started_precision = dates.startedAt === null ? "day" : dates.startedPrecision ?? "day"
+    }
+    if (dates.finishedAt !== undefined) {
+      if (dates.finishedAt !== null && !isValidDate(dates.finishedAt)) throw new Error("Invalid finish date")
+      patch.finished_at = dates.finishedAt
+      patch.finished_precision = dates.finishedAt === null ? "day" : dates.finishedPrecision ?? "day"
+    }
+    if (!Object.keys(patch).length) return
+    const supabase = createClientSupabaseClient()
+    const { data, error } = await supabase.from("books").update(patch).eq("id", bookId).eq("user_id", userId).select("id")
+    if (error) throw error
+    if (!data?.length) throw new Error("Not saved")
+    setBooks((prev) => {
+      const updated = { ...prev }
+      for (const st of Object.keys(updated) as BookStatus[]) updated[st] = updated[st].map((b) => b.id !== bookId ? b : {
+        ...b,
+        ...(dates.startedAt !== undefined ? { startedAt: dates.startedAt ?? undefined, startedPrecision: (dates.startedAt === null ? "day" : dates.startedPrecision ?? "day") as DatePrecision } : {}),
+        ...(dates.finishedAt !== undefined ? { finishedAt: dates.finishedAt ?? undefined, finishedPrecision: (dates.finishedAt === null ? "day" : dates.finishedPrecision ?? "day") as DatePrecision } : {}),
+      })
       return updated
     })
   }, [userId])
@@ -426,10 +460,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating }}>
+    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, saveDates, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating }}>
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
-      {finishPrompt && !ratingPrompt && <FinishBookDialog key={finishPrompt.id} book={finishPrompt} onSave={(rating, date) => saveFinish(finishPrompt.id, rating, date, finishPrompt.where)} onClose={() => setFinishPrompt(null)} />}
+      {finishPrompt && !ratingPrompt && <FinishBookDialog key={finishPrompt.id} book={finishPrompt} direct={finishPrompt.direct} onSave={(rating, date, precision) => saveFinish(finishPrompt.id, rating, date, finishPrompt.where, precision)} onClose={() => setFinishPrompt(null)} />}
       {startPrompt && !ratingPrompt && !finishPrompt && <StartBookDialog key={startPrompt.id} book={startPrompt} onSave={(date) => saveStart(startPrompt.id, date)} onClose={() => setStartPrompt(null)} />}
     </BookContext.Provider>
   )
