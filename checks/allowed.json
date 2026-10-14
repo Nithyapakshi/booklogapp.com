@@ -1,5 +1,5 @@
 {
-  "_note": "Approved by Pakshiraj. Read from the BASE branch by the checks, so a PR cannot approve itself. Change only in a separate PR he merges.",
+  "_note": "Seeded automatically from the code as it stood on 2026-10-14 (everything already used). Pakshiraj has not yet reviewed this list. The checks read it from the main branch, so a change cannot approve itself; change it only in a separate PR he merges.",
   "dependencies": [
     "@anthropic-ai/sdk",
     "@hookform/resolvers",
