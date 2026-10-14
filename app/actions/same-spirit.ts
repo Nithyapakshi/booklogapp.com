@@ -24,7 +24,7 @@ async function catalog(title: string, author: string): Promise<Catalog | null> {
 
 export async function getSameSpiritCandidates(accessToken:string,requested:Seed[]):Promise<Record<string,Candidate[]>> {
   const out:Record<string,Candidate[]>={}
-  if (process.env.VERCEL_ENV==='preview') return out
+  if (process.env.VERCEL_ENV==='preview' && process.env.BOOKLOG_AI_PREVIEW_TEST!=='enabled') return out
   // Validate from the user's authenticated database, never trust client-supplied eligibility.
   const {db,userId}=await authenticatedClient(accessToken)
   const {data,error}=await db.from('books').select('title,author').eq('user_id',userId).eq('self_rating',5)
