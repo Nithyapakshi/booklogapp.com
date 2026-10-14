@@ -27,6 +27,7 @@ interface BookDetailsDialogProps {
   onClose: () => void
   mode?: "view" | "add"
   initialEdit?: boolean
+  reason?: string
 }
 
 type BookStatus = "reading" | "queued" | "completed" | "recommended" | "onHold"
@@ -39,7 +40,7 @@ const statusLabels = {
   onHold: "On Hold",
 }
 
-export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false }: BookDetailsDialogProps) {
+export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false, reason }: BookDetailsDialogProps) {
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -129,6 +130,11 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
           <div className="w-full md:w-2/3">
             {mode === "add" ? (
               <div className="space-y-4">
+                {reason && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    <span className="font-medium">Why this book: </span>{reason}
+                  </div>
+                )}
                 {/* Add book description */}
                 {book?.description && (
                   <div className="mb-4">
