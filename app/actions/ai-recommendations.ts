@@ -84,7 +84,7 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
 export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5, accessToken: string = "") {
   const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
-    if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
+    if (process.env.VERCEL_ENV === "preview" && process.env.BOOKLOG_AI_PREVIEW_TEST !== "enabled") throw new Error("AI recommendations are disabled in the test preview.")
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
     }
