@@ -13,14 +13,19 @@ const normText = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u0
 // Free fallback when Google has no cover or its quota is used up. Only accepts a hit whose title and author match.
 async function openLibraryCover(title: string, author: string): Promise<string> {
   try {
-    const u = new URLSearchParams({ title, author, limit: "5", fields: "title,author_name,cover_i" })
+    const q = `title:"${title.replace(/"/g, "")}" author:"${author.replace(/"/g, "")}" language:eng`
+    const u = new URLSearchParams({ q, lang: "en", limit: "5", fields: "title,author_name,editions,editions.title,editions.language,editions.cover_i" })
     const res = await fetch(`https://openlibrary.org/search.json?${u}`, { signal: AbortSignal.timeout(2500) })
     if (!res.ok) return ""
     const docs: any[] = (await res.json()).docs || []
     const base = (v: string) => normText(String(v || "").split(":")[0].replace(/\([^)]*\)/g, ""))
     const wantAuthors = normText(author).split(" ").filter((w) => w.length > 2)
-    const hit = docs.find((d) => d.cover_i && base(d.title) === base(title) && (!wantAuthors.length || wantAuthors.every((w) => normText((d.author_name || []).join(" ")).split(" ").includes(w))))
-    return hit ? `https://covers.openlibrary.org/b/id/${hit.cover_i}-M.jpg` : ""
+    for (const d of docs) {
+      if (base(d.title) !== base(title) || !wantAuthors.length || !wantAuthors.every(w => normText((d.author_name || []).join(" ")).split(" ").includes(w))) continue
+      const edition = (d.editions?.docs || []).find((e: any) => e.cover_i && base(e.title) === base(title) && Array.isArray(e.language) && e.language.includes("eng"))
+      if (edition) return `https://covers.openlibrary.org/b/id/${edition.cover_i}-M.jpg`
+    }
+    return ""
   } catch {
     return ""
   }
