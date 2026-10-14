@@ -16,7 +16,7 @@ const json = (o, status = 200) => ({ ok: status < 400, status, json: async () =>
 
 test("falls back to Open Library cover when Google is over its daily quota, without retrying Google", async () => {
   let google = 0
-  const f = async (u) => { u = String(u); if (u.includes("googleapis")) { google++; return json({}, 429) } return json({ docs: [{ title: "Shoe Dog", author_name: ["Phil Knight"], cover_i: 8858487 }] }) }
+  const f = async (u) => { u = String(u); if (u.includes("googleapis")) { google++; return json({}, 429) } return json({ docs: [{ title: "Shoe Dog", author_name: ["Phil Knight"], editions: {docs: [{title:"Shoe Dog", language:["eng"],cover_i:8858487}]} }] }) }
   const { mod, restore } = load(f, JSON.stringify([{ title: "Shoe Dog", author: "Phil Knight", description: "d", genre: "Memoir", on_topic: true }]))
   const out = await mod.getAIBookRecommendations("x", [], 5); restore()
   assert.strictEqual(google, 1, "one Google call per book, no retries on 429")
@@ -24,7 +24,7 @@ test("falls back to Open Library cover when Google is over its daily quota, with
 })
 
 test("does not accept an Open Library cover for a different book", async () => {
-  const f = async (u) => String(u).includes("googleapis") ? json({}, 429) : json({ docs: [{ title: "Something Else", author_name: ["Other Person"], cover_i: 1 }] })
+  const f = async (u) => String(u).includes("googleapis") ? json({}, 429) : json({ docs: [{ title: "Something Else", author_name: ["Other Person"], editions: {docs: [{title:"Something Else",language:["eng"],cover_i:1}]} }] })
   const { mod, restore } = load(f, JSON.stringify([{ title: "Shoe Dog", author: "Phil Knight", description: "d", genre: "g", on_topic: true }]))
   const out = await mod.getAIBookRecommendations("x", [], 5); restore()
   assert.strictEqual(out[0].cover, "")
@@ -67,11 +67,16 @@ test("taste query remains valid without literal phrase in each description", asy
 })
 
 test("same first name is not an author match for fallback cover", async () => {
-  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({}, 429) : json({docs: [{title: "Shoe Dog", author_name: ["Phil Smith"], cover_i: 1}]}), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
+  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({}, 429) : json({docs: [{title: "Shoe Dog", author_name: ["Phil Smith"], editions: {docs: [{title:"Something Else",language:["eng"],cover_i:1}]}}]}), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
   try { assert.strictEqual((await mod.getAIBookRecommendations("taste", [], 5))[0].cover, "") } finally { restore() }
 })
 
 test("unrelated first Google hit cannot bypass matching", async () => {
-  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({ items: [{ id: "wrong", volumeInfo: { title: "Different Book", authors: ["Phil Smith"], imageLinks: {thumbnail: "https://example.com/wrong.jpg"} } }] }) : json({ docs: [{title: "Shoe Dog", author_name: ["Phil Knight"], cover_i: 8858487}] }), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
+  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({ items: [{ id: "wrong", volumeInfo: { title: "Different Book", authors: ["Phil Smith"], imageLinks: {thumbnail: "https://example.com/wrong.jpg"} } }] }) : json({ docs: [{title: "Shoe Dog", author_name: ["Phil Knight"], editions: {docs: [{title:"Shoe Dog", language:["eng"],cover_i:8858487}]}}] }), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
   try { const b = (await mod.getAIBookRecommendations("taste", [], 5))[0]; assert.strictEqual(b.cover, "https://covers.openlibrary.org/b/id/8858487-M.jpg"); assert.ok(!b.id.includes("wrong")) } finally { restore() }
+})
+
+test("work-level or foreign edition cover is never accepted", async () => {
+ const {mod,restore}=load(async u=>String(u).includes("googleapis")?json({},429):json({docs:[{title:"Shoe Dog",author_name:["Phil Knight"],cover_i:1,editions:{docs:[{title:"Shoe Dog",language:["spa"],cover_i:2}]}}]}),JSON.stringify([{title:"Shoe Dog",author:"Phil Knight",on_topic:true}]))
+ try {assert.strictEqual((await mod.getAIBookRecommendations("taste",[],5))[0].cover,"")} finally {restore()}
 })
