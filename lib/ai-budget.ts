@@ -29,9 +29,9 @@ export async function budgetedMessage(input: {accessToken:string,purpose:Purpose
   const {userId} = await authenticatedClient(input.accessToken)
   // Length bound is only a preliminary guard. Provider counting sets the exact token budget.
   if (input.system.length + input.prompt.length > 16000) throw new Error('Please shorten this request')
-  const client = new Anthropic({apiKey: process.env.ANTHROPIC_API_KEY, maxRetries:0, timeout:40000})
+  const client = new Anthropic({apiKey: process.env.ANTHROPIC_API_KEY, maxRetries:0, timeout:35000})
   const messages: Anthropic.MessageParam[] = [{role:'user',content:input.prompt}]
-  const counted = await client.messages.countTokens({model:MODEL,system:input.system,messages})
+  const counted = await client.messages.countTokens({model:MODEL,system:input.system,messages},{timeout:8000})
   if (counted.input_tokens < 1 || counted.input_tokens > MAX_INPUT) throw new Error('Please shorten this request')
   const id = input.claimId || randomUUID()
   const outputLimit = input.purpose === 'ask' ? 2048 : 4096
