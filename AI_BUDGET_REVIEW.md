@@ -14,7 +14,9 @@ Quality rule: exact catalog title/author and English language, descriptions for 
 
 - Local full suite142/142 and type check pass.
 - Local isolated PGlite SQL proof: wrong secret/direct table denial, claim ownership/expiry, reservation-seed binding, payload bounds, baseline/cap refusal, idempotent settlement, unknown reservation retained, recording in-flight usage while disabled.
-- Queued reservation checks pass on PGlite's single connection. That is NOT true multi-connection concurrency proof.
+- Real disposable PostgreSQL14:20 independent concurrent connections correctly enforce daily/month/provider-period budgets; one6000 reservation accepted against10000 allowance,19 denied, ledger6000. Cache claim likewise has one winner and19 busy.
+- Day/month rollover fixtures retain unresolved reservations, require fresh month baseline, and keep old-month calls in a spanning provider-period budget. Anon table denial/wrong-secret checks also pass on real Postgres.
+- These are local database proofs, not deployment or baseline verification on Supabase.
 
 ## Gates before becoming mergeable
 
