@@ -1,0 +1,32 @@
+# AI budget and same-spirit rows: review only
+
+DO NOT MERGE OR RUN THIS MIGRATION YET.
+
+Draft code uses the dedicated server-only RPC secret, never a service-role key. Migration leaves the configuration disabled and creates no credential. No production or preview database/environment changes have been made.
+
+All paid Ask AI and same-spirit requests authenticate the user, count final input tokens, atomically reserve worst-case cost, then settle actual usage. Unknown failed calls retain the full reservation. Automatic SDK retries are disabled. Input cap4096 tokens; Ask output2048, same-spirit output4096. Haiku4.5 pinned at $1/M input and $5/M output. Internal limits $0.45/day and $13.50/month, plus $13.50 per verified provider period and a40/day count backstop. Provider baseline and UTC-month baseline are separate. A missing/expired baseline fails closed.
+
+Same-spirit only replaces five-star seed rows. Existing free author/genre rows remain. Server verifies seed ownership and rating, shares only catalog candidates, batches up to two misses, and binds cache publishing to paid reservation seed keys. Seven-day shared cache; 120s claim; one-hour failure cooldown. Browser filters own library/dismissals/dedupes as before. Empty/weak/failing rows hide; no generic popularity fallback.
+
+Quality rule: exact catalog title/author and English language, descriptions for both seed and candidate, tone/style true and a specific explanation, plus at least two substantive shared-theme words corroborated in BOTH catalog descriptions. Cover required for rows. This is a conservative textual check, not a guarantee of literary relevance. Current Google failures may hide many rows before any spending. Live model review is still needed.
+
+## Current proof
+
+- Local full suite142/142 and type check pass.
+- Local isolated PGlite SQL proof: wrong secret/direct table denial, claim ownership/expiry, reservation-seed binding, payload bounds, baseline/cap refusal, idempotent settlement, unknown reservation retained, recording in-flight usage while disabled.
+- Queued reservation checks pass on PGlite's single connection. That is NOT true multi-connection concurrency proof.
+
+## Gates before becoming mergeable
+
+1. Disposable PostgreSQL multi-connection concurrency and rollover/security validation.
+2. Preview proof including existing Search/Add/Discover/Ask AI and same-spirit fixture rows, both themes. No fixture override in production code. Preview currently disables paid model calls.
+3. Read current Anthropic spend, billing-period start/end, provider cap and auto-reload settings. Reconcile and seed daily/month/provider baselines without double-counting application ledger charges. Other uses of the same provider account are outside this app's caps.
+4. Owner reviews the SQL migration and explicitly approves new secret setup and production execution at push time.
+5. Migration applies before the code release, with fail-closed checks and rollback plan verified.
+6. Approved small live-quality test allowance; inspect actual same-spirit relevance before enabling broadly.
+
+This branch includes the taste-phrasing fix from #31, which separately awaits approval. No claim of typical calls/day is made: limits are maxima, not measured average usage.
+
+Pricing sources inspected:
+https://platform.claude.com/docs/en/models/haiku-4-5/overview
+https://platform.claude.com/docs/en/about-claude/pricing
