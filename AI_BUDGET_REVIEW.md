@@ -46,3 +46,11 @@ The empty-state copy now avoids promising Ask AI results while the shared budget
 Exact migration applied to the separate preview Supabase project. Disabled refusal, live claim/reserve/settle/publish, direct anon table/schema denial and daily-cap refusal verified. Test writes rolled back; no retained test reservations/cache. Production remains unchanged. Paid real-quality checks are still pending.
 
 Paid preview testing requires BOOKLOG_AI_PREVIEW_TEST=enabled, staged only on this review branch. Other previews remain disabled. Preview live test budget is capped at $0.04 new charges with at most two calls; no production activation.
+
+## Real paid preview result: HOLD
+
+2026-10-14: authenticated Ask AI successfully counted 295 input tokens, reserved 10535 microdollars and settled actual 3815 microdollars ($0.003815), without retries. Returned The Kiss Quotient with Sally Thorne as author; Penguin Random House confirms Helen Hoang. This title/author correctness failure is a release blocker, not successful quality proof.
+
+Same-spirit with The Secret History / Never Let Me Go produced no claims or reservations and no rows; its seed catalog precondition did not pass. Real same-spirit quality remains unproven. Preview disabled again, temporary seed books removed, original synthetic ratings restored. Ledger retained for cost accounting. Production unchanged and merge held.
+
+Publisher evidence: https://www.penguinrandomhouse.com/books/566902/the-kiss-quotient-by-helen-hoang/
