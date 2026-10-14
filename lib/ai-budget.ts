@@ -3,7 +3,7 @@ import 'server-only'
 const cache=new Map<string,any>(),claims=new Map<string,string>()
 export async function authenticatedClient(accessToken:string){
  if(!accessToken)throw new Error('No session')
- return {userId:'synthetic',db:{from:()=>({select:()=>({eq:()=>({eq:async()=>({data:[{title:'Fixture Seed One',author:'Fixture Author One'},{title:'Fixture Seed Two',author:'Fixture Author Two'},{title:'Fixture Cap One',author:'Fixture Author One'},{title:'Fixture Cap Two',author:'Fixture Author Two'},{title:'Fixture Thin One',author:'Fixture Author One'},{title:'Fixture Thin Two',author:'Fixture Author Two'}],error:null})})})})}}
+ return {userId:'synthetic',db:{from:(_table:string)=>({select:(_columns:string)=>({eq:(_field:string,_value:unknown)=>({eq:async(_field:string,_value:unknown)=>({data:[{title:'Fixture Seed One',author:'Fixture Author One'},{title:'Fixture Seed Two',author:'Fixture Author Two'},{title:'Fixture Cap One',author:'Fixture Author One'},{title:'Fixture Cap Two',author:'Fixture Author Two'},{title:'Fixture Thin One',author:'Fixture Author One'},{title:'Fixture Thin Two',author:'Fixture Author Two'}],error:null})})})})}}
 }
 export async function aiRpc(op:string,args:any):Promise<any>{
  if(process.env.VERCEL_ENV!=='preview')throw new Error('Fixture preview only')
