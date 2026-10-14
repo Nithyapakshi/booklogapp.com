@@ -32,10 +32,11 @@ async function googleBookCover(title: string, author: string): Promise<{ cover: 
       const matches = data.items.filter((it: any) => {
         const info = it.volumeInfo || {}
         const authors = norm((info.authors || []).join(" "))
-        return base(info.title) === wantTitle && (!wantAuthors.length || wantAuthors.some((w) => authors.includes(w)))
+        return base(info.title) === wantTitle && (!wantAuthors.length || wantAuthors.every((w) => authors.split(" ").includes(w)))
       })
       const year = (it: any) => Number.parseInt(String(it.volumeInfo?.publishedDate || "").slice(0, 4)) || 0
-      const pool = matches.length ? matches : [data.items[0]]
+      const pool = matches
+      if (!pool.length) return { cover: "", googleId: "" }
       const item = [...pool].sort((a: any, b: any) =>
         Number(!!b.volumeInfo?.imageLinks?.thumbnail) - Number(!!a.volumeInfo?.imageLinks?.thumbnail) || year(b) - year(a))[0]
       return {
@@ -62,7 +63,7 @@ async function openLibraryCover(title: string, author: string): Promise<string> 
     const docs: any[] = (await res.json()).docs || []
     const base = (v: string) => normText(String(v || "").split(":")[0].replace(/\([^)]*\)/g, ""))
     const wantAuthors = normText(author).split(" ").filter((w) => w.length > 2)
-    const hit = docs.find((d) => d.cover_i && base(d.title) === base(title) && (!wantAuthors.length || wantAuthors.some((w) => normText((d.author_name || []).join(" ")).includes(w))))
+    const hit = docs.find((d) => d.cover_i && base(d.title) === base(title) && (!wantAuthors.length || wantAuthors.every((w) => normText((d.author_name || []).join(" ")).split(" ").includes(w))))
     return hit ? `https://covers.openlibrary.org/b/id/${hit.cover_i}-M.jpg` : ""
   } catch {
     return ""
@@ -124,8 +125,16 @@ Do not include any text outside the JSON array.`,
       const jsonText = jsonMatch ? jsonMatch[0] : responseText
 
       // Drop anything the model itself marked as off-topic, and strip the flag before returning.
-      const recommendations = JSON.parse(jsonText)
-        .filter((b: any) => b && b.title && b.author && b.on_topic !== false)
+      const parsed = JSON.parse(jsonText)
+      if (!Array.isArray(parsed)) throw new Error("AI response is not a list")
+      // An explicit "about X" request must mention X in title or description as well.
+      // Taste/mood queries do not use this subject gate.
+      const subject = query.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
+      const subjectWords = subject ? normText(subject).split(" ").filter(w => !["the", "a", "an"].includes(w)) : []
+      const recommendations = parsed
+        .filter((b: any) => b && typeof b.title === "string" && typeof b.author === "string" && b.on_topic === true)
+        .filter((b: any) => !subjectWords.length || subjectWords.every(w => normText(`${b.title} ${b.description || ""}`).split(" ").includes(w)))
+        .slice(0, howMany)
         .map(({ on_topic, ...book }: any) => book)
 
       // Add IDs and fetch cover images for each book
