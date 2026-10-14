@@ -12,7 +12,8 @@ test("AI recommendation covers come from the newest edition of the same book", (
   const s = fs.readFileSync("app/actions/ai-recommendations.ts", "utf8")
   assert.match(s, /maxResults=10/)
   assert.match(s, /year\(b\) - year\(a\)/)
-  assert.match(s, /\[data\.items\[0\]\]/)
+  assert.match(s, /const pool = matches/)
+  assert.match(s, /if \(!pool\.length\) return/)
 })
 test("AI recommendation cover lookup retries Google Books 503s but not a 429 daily quota", () => {
   const s = fs.readFileSync("app/actions/ai-recommendations.ts", "utf8")
