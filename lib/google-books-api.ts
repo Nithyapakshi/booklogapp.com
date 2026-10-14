@@ -40,7 +40,7 @@ function cleanText(text: string): string {
   }
 }
 
-function normaliseGenre(categories: string[] | undefined): string {
+export function normaliseGenre(categories: string[] | undefined): string {
   if (!categories || categories.length === 0) return "General"
   const raw = categories[0].toLowerCase()
   if (raw.includes("fiction") && !raw.includes("non")) return "Fiction"
@@ -111,9 +111,30 @@ async function fetchWithRetry(url: string, attempts = 6): Promise<Response> {
     } catch (error) {
       if (i === attempts - 1) throw error
     }
-    await new Promise((r) => setTimeout(r, 300 * (i + 1)))
+    await new Promise((r) => setTimeout(r, 300 * (i + 1) + Math.floor(Math.random() * 200)))
   }
   return last as Response
+}
+
+// Free fallback used only when Google Books keeps failing: Open Library free-text search.
+async function openLibrarySearch(query: string): Promise<BookSearchResult[]> {
+  try {
+    const u = new URLSearchParams({ q: query, limit: "20", language: "eng", fields: "key,title,author_name,cover_i,first_publish_year,subject" })
+    const res = await fetch(`https://openlibrary.org/search.json?${u}`, { cache: "no-store", signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (Array.isArray(data.docs) ? data.docs : [])
+      .filter((d: any) => d?.title && Array.isArray(d.author_name) && d.author_name.length)
+      .map((d: any) => ({
+        id: `ol:${d.key}`,
+        title: String(d.title),
+        author: d.author_name.join(", "),
+        cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : "",
+        description: "",
+        publishedYear: d.first_publish_year ? Number(d.first_publish_year) : undefined,
+        genre: normaliseGenre(Array.isArray(d.subject) ? d.subject.slice(0, 1) : undefined),
+      }))
+  } catch { return [] }
 }
 
 // Function to search for books
@@ -153,6 +174,8 @@ export async function searchBooksRaw(query: string): Promise<BookSearchResult[]>
     }))
     return books
   } catch (error) {
+    const fallback = await openLibrarySearch(query)
+    if (fallback.length) return fallback
     throw error instanceof Error ? error : new Error("Book search failed")
   }
 }
