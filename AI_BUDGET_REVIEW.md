@@ -1,8 +1,8 @@
 # AI budget and same-spirit rows: review only
 
-DO NOT MERGE OR RUN THIS MIGRATION YET.
+Production rollout requested. Do not merge until live preview integration and real-quality checks pass.
 
-Draft code uses the dedicated server-only RPC secret, never a service-role key. Migration leaves the configuration disabled and creates no credential. No production or preview database/environment changes have been made.
+Draft code uses the dedicated server-only RPC secret, never a service-role key. Migration leaves the configuration disabled and creates no credential. Preview migration and secret setup are installed, disabled by default. Production remains unchanged.
 
 All paid Ask AI and same-spirit requests authenticate the user, count final input tokens, atomically reserve worst-case cost, then settle actual usage. Unknown failed calls retain the full reservation. Automatic SDK retries are disabled. Input cap4096 tokens; Ask output2048, same-spirit output4096. Haiku4.5 pinned at $1/M input and $5/M output. Internal limits $0.45/day and $13.50/month, plus $13.50 per verified provider period and a40/day count backstop. Provider baseline and UTC-month baseline are separate. A missing/expired baseline fails closed.
 
@@ -27,7 +27,7 @@ Quality rule: exact catalog title/author and English language, descriptions for 
 5. Migration applies before the code release, with fail-closed checks and rollback plan verified.
 6. Approved small live-quality test allowance; inspect actual same-spirit relevance before enabling broadly.
 
-This branch includes the taste-phrasing fix from #31, which separately awaits approval. No claim of typical calls/day is made: limits are maxima, not measured average usage.
+This branch includes the taste-phrasing fix from #31, already shipped. No claim of typical calls/day is made: limits are maxima, not measured average usage.
 
 Pricing sources inspected:
 https://platform.claude.com/docs/en/models/haiku-4-5/overview
@@ -40,3 +40,7 @@ Test-only draft #34 reached Ready. No provider calls or database writes: two six
 The fixture does not establish real recommendation quality, shared-cache RPC integration with Supabase, or live coverage. Disposable Postgres validates SQL separately. Live provider/catalog integration remains gated by budget baseline, migration review and approval.
 
 The empty-state copy now avoids promising Ask AI results while the shared budget is stopped. No production activation.
+
+## Live preview database proof
+
+Exact migration applied to the separate preview Supabase project. Disabled refusal, live claim/reserve/settle/publish, direct anon table/schema denial and daily-cap refusal verified. Test writes rolled back; no retained test reservations/cache. Production remains unchanged. Paid real-quality checks are still pending.
