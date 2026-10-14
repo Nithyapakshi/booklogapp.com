@@ -12,7 +12,7 @@ test("discover persists history per user and offers show-more and clear", () => 
   assert.match(s, /booklog\.discover:\$\{discoverUser\.id\}/)
   assert.match(s, /localStorage\.setItem\(discoverKey/)
   assert.match(s, /Show me more/)
-  assert.match(s, /getAIBookRecommendations\(prompt, seen\)/)
+  assert.match(s, /getAIBookRecommendations\(prompt, \[\.\.\.seen/)
 })
 test("lists can be filtered by title or author, genre row is labelled", () => {
   const s = read("app/books/page.tsx")
