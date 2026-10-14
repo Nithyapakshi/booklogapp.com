@@ -222,6 +222,7 @@ function DiscoverTab() {
   const specsSig = specsSignature(specs)
   const [candidates, setCandidates] = React.useState<Record<string, Candidate[]>>({})
   const [rowsLoading, setRowsLoading] = React.useState(false)
+  const [rowsTimedOut, setRowsTimedOut] = React.useState(false)
   const rowsCacheKey = discoverUser?.id ? `booklog.discover.rows:${discoverUser.id}` : ""
   React.useEffect(() => {
     if (!rowsCacheKey) return
@@ -231,17 +232,19 @@ function DiscoverTab() {
       if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 12 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
     } catch {}
     let cancelled = false
-    setRowsLoading(true)
+    setRowsLoading(true); setRowsTimedOut(false); setCandidates({})
+    // After 10 seconds without rows, stop waiting and point at the Ask AI box. Fetching carries on; rows still appear if they arrive.
+    const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        const got = await fetchDiscoverCandidates(specs)
+        const got = await fetchDiscoverCandidates(specs, (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
         if (cancelled) return
         setCandidates(got)
         if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
       } catch { if (!cancelled) setCandidates({}) }
-      finally { if (!cancelled) setRowsLoading(false) }
+      finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
     }, 400)
-    return () => { cancelled = true; clearTimeout(t) }
+    return () => { cancelled = true; clearTimeout(t); clearTimeout(limit) }
   }, [rowsCacheKey, specsSig])
 
   const aiKeys = (recommendations || []).map(r => bookKey(r.title, r.author))
@@ -378,10 +381,17 @@ function DiscoverTab() {
           onDismiss={(b) => dismissBook(b.title, b.author)} />
       ))}
 
-      {rowsLoading && shownRows.length === 0 && !topPick && (
+      {rowsLoading && !rowsTimedOut && shownRows.length === 0 && !topPick && (
         <p style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }}>Finding picks from your library...</p>
       )}
-      {!hasAnything && !rowsLoading && !isLoading && (
+      {!hasAnything && !isLoading && (!rowsLoading || rowsTimedOut) && specs.length > 0 && (
+        <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
+          <p role="status" style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
+            Picks from your library are not loading right now. Describe what you enjoy in the Ask AI box above and we will suggest books.
+          </p>
+        </div>
+      )}
+      {!hasAnything && !rowsLoading && !isLoading && specs.length === 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
             Describe what you enjoy above for AI recommendations. Picks based on your library show up here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
