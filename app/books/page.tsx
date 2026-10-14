@@ -397,14 +397,14 @@ function DiscoverTab() {
       {!hasAnything && !isLoading && (!rowsLoading || rowsTimedOut) && specs.length > 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p role="status" style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
-            Picks from your library are not loading right now. Describe what you enjoy in the Ask AI box above and we will suggest books.
+            No verified picks are available from your library right now.
           </p>
         </div>
       )}
       {!hasAnything && !rowsLoading && !isLoading && specs.length === 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
-            Describe what you enjoy above for AI recommendations. Picks based on your library show up here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
+            Picks based on your library can appear here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
           </p>
         </div>
       )}
