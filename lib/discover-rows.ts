@@ -39,29 +39,11 @@ export function primaryGenre(g?: string): string {
 }
 
 export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: number; maxRatedRows?: number } = {}): RowSpec[] {
-  const books = uniqueLibrary(rawBooks.filter(b => b.title && b.title.trim()))
-  const specs: RowSpec[] = []
-  // 1. Most-read authors (Completed + Currently Reading). Needs at least 2 books by the author.
-  const counts = new Map<string, { n: number; name: string }>()
-  for (const b of books) {
-    if (b.status !== "completed" && b.status !== "reading") continue
-    const k = authorKey(b.author); if (!k) continue
-    const c = counts.get(k) || { n: 0, name: b.author.trim() }; c.n += 1; counts.set(k, c)
-  }
-  const authors = [...counts.values()].filter(c => c.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, opts.maxAuthorRows ?? 2)
-  for (const a of authors) specs.push({ key: `author:${authorKey(a.name)}`, kind: "author", author: a.name, title: `Since you've read ${a.n} books by ${a.name}`, subtitle: "More from an author you read a lot", reason: `You've read ${a.n} books by ${a.name}.` })
-  // 2. 5-star books
-  const fives = books.filter(b => b.selfRating === 5).sort((a, b) => a.title.localeCompare(b.title)).slice(0, opts.maxRatedRows ?? 2)
-  for (const b of fives) specs.push({ key: `rated:${bookKey(b.title, b.author)}`, kind: "rated", seedTitle: b.title, seedAuthor: b.author, seedGenre: primaryGenre(b.genre), title: `Because you rated ${b.title} 5 stars`, subtitle: "In the same spirit", reason: `You rated ${b.title} 5 stars.` })
-  // 3. Biggest genre, real share of the library
-  const g = new Map<string, number>(); let withGenre = 0
-  for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
-  if (withGenre >= 5) {
-    const [name, n] = [...g.entries()].sort((a, b) => b[1] - a[1])[0]
-    const pct = Math.round((n / withGenre) * 100)
-    if (pct >= 40) specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: "Your biggest shelf", reason: `${pct}% of your library is ${name}.` })
-  }
-  return specs
+  // TEST ONLY: deterministic seeds, no account writes. Never merge.
+  return [
+    {key:'rated:fixture-one',kind:'rated',seedTitle:'Fixture Seed One',seedAuthor:'Fixture Author One',title:'Fixture only: same-spirit row one',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'},
+    {key:'rated:fixture-two',kind:'rated',seedTitle:'Fixture Seed Two',seedAuthor:'Fixture Author Two',title:'Fixture only: same-spirit row two',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'}
+  ]
 }
 
 export function libraryHasBook(c: { id?: string; title: string; author: string }, library: LibBook[]): boolean {
