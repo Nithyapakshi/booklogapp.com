@@ -272,7 +272,7 @@ function DiscoverTab() {
     setIsLoading(true)
     setError(null)
     try {
-      const results = await getAIBookRecommendations(prompt, [], 15)
+      const results = await getAIBookRecommendations(prompt, [], 8)
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
@@ -288,7 +288,7 @@ function DiscoverTab() {
     setError(null)
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
-      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 15)
+      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
       const merged = [...recommendations, ...fresh]
