@@ -58,7 +58,7 @@ const normText = (v: string) => (v || "").normalize("NFKD").replace(/[\u0300-\u0
 async function openLibraryCover(title: string, author: string): Promise<string> {
   try {
     const q = `title:"${title.replace(/"/g, "")}" author:"${author.replace(/"/g, "")}" language:eng`
-    const u = new URLSearchParams({ q, lang: "en", limit: "5", fields: "title,author_name,editions,editions.title,editions.language,editions.cover_i" })
+    const u = new URLSearchParams({ q, lang: "en", limit: "5", fields: "key,title,author_name,editions,editions.key,editions.title,editions.language,editions.cover_i" })
     const res = await fetch(`https://openlibrary.org/search.json?${u}`, { signal: AbortSignal.timeout(2500) })
     if (!res.ok) return ""
     const docs: any[] = (await res.json()).docs || []
