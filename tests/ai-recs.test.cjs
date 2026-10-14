@@ -83,7 +83,7 @@ test("work-level or foreign edition cover is never accepted", async () => {
 
 test("about dark literary fiction is a taste phrase, not a literal subject", async () => {
  const fixture=JSON.stringify([{title:"The Test Novel",author:"Synthetic Author",description:"A bleak story of friendship and survival.",on_topic:true}])
- for(const q of ["show me books about dark literary fiction","dark literary fiction"]){
+ for(const q of ["show me books about dark literary fiction","dark literary fiction","show me books about dark comedy","dark comedy","show me books about feel-good romance","feel-good romance","show me books about slow-burn thriller","slow-burn thriller"]){
   const {mod,restore}=load(async()=>json({},429),fixture)
   try{assert.strictEqual((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
  }
