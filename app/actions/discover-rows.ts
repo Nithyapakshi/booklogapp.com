@@ -103,27 +103,46 @@ async function seedCategories(title: string, author: string): Promise<string[]> 
   return cats
 }
 
+async function pagesOL(q: string, n = 2): Promise<any[]> {
+  const all: any[] = []
+  for (let i = 0; i < n; i++) all.push(...await openLibrary({ q, maxResults: "40", startIndex: String(i * 40) }))
+  return all
+}
+
 async function pages(q: string, n = 2): Promise<any[]> {
   const all: any[] = []
   for (let i = 0; i < n; i++) all.push(...await gbooks({ q, maxResults: "40", startIndex: String(i * 40) }))
   return all
 }
 
-async function candidatesFor(s: Spec): Promise<Cand[]> {
-  if (s.kind === "author" && s.author) return stripPop(oneEach(await pages(`inauthor:"${s.author.replace(/"/g, "")}"`), s.author))
+// Google can answer 200 with too few usable books (or none) while it is unhealthy. Below this many, ask Open Library too.
+const THIN = 8
+
+async function candidatesFrom(s: Spec, fetchPages: (q: string, n?: number) => Promise<any[]>): Promise<Cand[]> {
+  if (s.kind === "author" && s.author) return stripPop(oneEach(await fetchPages(`inauthor:"${s.author.replace(/"/g, "")}"`), s.author))
   if (s.kind === "rated" && s.seedTitle && s.seedAuthor) {
     const cats = await seedCategories(s.seedTitle, s.seedAuthor)
     const subject = cats[0] || s.seedGenre
     if (!subject) return []
-    return popular(oneEach(await pages(`subject:"${subject.replace(/"/g, "")}"`)))
+    return popular(oneEach(await fetchPages(`subject:"${subject.replace(/"/g, "")}"`)))
   }
-  if (s.kind === "genre" && s.genre) return popular(oneEach(await pages(`subject:"${s.genre.replace(/"/g, "")}"`)))
+  if (s.kind === "genre" && s.genre) return popular(oneEach(await fetchPages(`subject:"${s.genre.replace(/"/g, "")}"`)))
   return []
 }
 
-export async function fetchDiscoverCandidates(specs: Spec[]): Promise<Record<string, Cand[]>> {
+async function candidatesFor(s: Spec): Promise<Cand[]> {
+  let list = await candidatesFrom(s, pages)
+  if (list.length < THIN) {
+    const more = await candidatesFrom(s, pagesOL)
+    const seen = new Set(list.map(c => `${base(c.title)}|${norm(c.author).split(" ").slice(-1)[0]}`))
+    list = [...list, ...more.filter(c => !seen.has(`${base(c.title)}|${norm(c.author).split(" ").slice(-1)[0]}`))]
+  }
+  return list
+}
+
+export async function fetchDiscoverCandidates(specs: Spec[], onSpec?: (key: string, list: Cand[]) => void): Promise<Record<string, Cand[]>> {
   const out: Record<string, Cand[]> = {}
   const list = (Array.isArray(specs) ? specs : []).slice(0, 6)
-  await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] } }))
+  await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] }; try { onSpec?.(String(s.key), out[String(s.key)]) } catch {} }))
   return out
 }
