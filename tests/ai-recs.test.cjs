@@ -80,3 +80,16 @@ test("work-level or foreign edition cover is never accepted", async () => {
  const {mod,restore}=load(async u=>String(u).includes("googleapis")?json({},429):json({docs:[{title:"Shoe Dog",author_name:["Phil Knight"],cover_i:1,editions:{docs:[{title:"Shoe Dog",language:["spa"],cover_i:2}]}}]}),JSON.stringify([{title:"Shoe Dog",author:"Phil Knight",on_topic:true}]))
  try {assert.strictEqual((await mod.getAIBookRecommendations("taste",[],5))[0].cover,"")} finally {restore()}
 })
+
+test("about dark literary fiction is a taste phrase, not a literal subject", async () => {
+ const fixture=JSON.stringify([{title:"The Test Novel",author:"Synthetic Author",description:"A bleak story of friendship and survival.",on_topic:true}])
+ for(const q of ["show me books about dark literary fiction","dark literary fiction","show me books about dark comedy","dark comedy","show me books about feel-good romance","feel-good romance","show me books about slow-burn thriller","slow-burn thriller"]){
+  const {mod,restore}=load(async()=>json({},429),fixture)
+  try{assert.strictEqual((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
+ }
+})
+
+test("genre words inside named topics do not bypass the subject guard",async()=>{
+ const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:"Random",author:"Someone",description:"A novel about spies",on_topic:true}]))
+ try{for(const q of ["books about Dark Matter","books about Bezos fiction"]){assert.deepStrictEqual(await mod.getAIBookRecommendations(q),[])}}finally{restore()}
+})

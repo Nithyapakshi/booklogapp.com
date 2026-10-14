@@ -101,6 +101,7 @@ export async function getAIBookRecommendations(query: string, exclude: string[] 
           content: `Recommend up to ${howMany} books for the request below.
 
 How to read the request:
+- Mood/genre phrases such as "books about dark literary fiction" are taste requests, not named subjects.
 - If it names a person, company, event or topic ("books about X"), recommend only books that are directly ABOUT that subject (biographies, histories, accounts of it). Do not recommend books about other people or companies, even similar ones, and do not recommend what readers of such books also like.
 - If it describes a taste, mood or a book the reader liked, recommend books that truly match its themes, tone and style.
 - Return fewer books rather than padding the list with weak matches. Every book must be a real, published book.
@@ -135,7 +136,10 @@ Do not include any text outside the JSON array.`,
       // An explicit "about X" request must mention X in title or description as well.
       // Taste/mood queries do not use this subject gate.
       const subject = query.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
-      const subjectWords = subject ? normText(subject).split(" ").filter(w => !["the", "a", "an"].includes(w)) : []
+      // Genre and mood requests remain taste even when phrased "books about ...".
+      // Explicit subject requests still need a literal mention; this is a conservative guard.
+      const isTaste = !!subject && /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|comedy|humor|humour|sci fi|science fiction|magical realism)$/i.test(normText(subject))
+      const subjectWords = subject && !isTaste ? normText(subject).split(" ").filter(w => !["the", "a", "an"].includes(w)) : []
       const recommendations = parsed
         .filter((b: any) => b && typeof b.title === "string" && typeof b.author === "string" && b.on_topic === true)
         .filter((b: any) => !subjectWords.length || subjectWords.every(w => normText(`${b.title} ${b.description || ""}`).split(" ").includes(w)))
