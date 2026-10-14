@@ -79,42 +79,18 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
 export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5) {
   const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
-    if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
-    }
-
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: howMany > 5 ? 4096 : 1024,
-      system: "You are a literary expert who creates accurate book recommendations. You never pad a list with loosely related books.",
-      messages: [
-        {
-          role: "user",
-          content: `Recommend up to ${howMany} books for the request below.
-
-How to read the request:
-- If it names a person, company, event or topic ("books about X"), recommend only books that are directly ABOUT that subject (biographies, histories, accounts of it). Do not recommend books about other people or companies, even similar ones, and do not recommend what readers of such books also like.
-- If it describes a taste, mood or a book the reader liked, recommend books that truly match its themes, tone and style.
-- Return fewer books rather than padding the list with weak matches. Every book must be a real, published book.
-
-For each book give:
-- title
-- author
-- description (2-3 sentences max, well-written, capturing the essence of the book)
-- genre
-- on_topic: true only if the book is directly about the named subject, or genuinely matches the described taste; otherwise false
-
-Request: ${query}
-${exclude.length ? `\nDo not recommend any of these books, the user has already seen them: ${exclude.slice(0, 60).map((t) => String(t).slice(0, 120)).join('; ')}\n` : ''}
-
-Format the response as a JSON array of objects with title, author, description, genre and on_topic.
-Do not include any text outside the JSON array.`,
-        },
-      ],
-    })
+    // TEST-ONLY branch. This file must never merge to main.
+    if (process.env.VERCEL_ENV !== "preview") throw new Error("Fixture branch only runs in preview")
+    const fixture = /bezos/i.test(query) ? [
+      {title: "The Everything Store", author: "Brad Stone", description: "The story of Jeff Bezos and Amazon.", genre: "Business", on_topic: true},
+      {title: "Amazon Unbound", author: "Brad Stone", description: "Jeff Bezos builds Amazon into an empire.", genre: "Business", on_topic: true},
+      {title: "Steve Jobs", author: "Walter Isaacson", description: "The story of Apple's founder.", genre: "Biography", on_topic: true},
+      {title: "Shoe Dog", author: "Phil Knight", description: "The story of Nike's founder.", genre: "Memoir", on_topic: false}
+    ] : [
+      {title: "The Secret History", author: "Donna Tartt", description: "A bleak literary story of friendship, guilt and consequences.", genre: "Fiction", on_topic: true},
+      {title: "Never Let Me Go", author: "Kazuo Ishiguro", description: "A restrained literary story of friendship, memory and loss.", genre: "Fiction", on_topic: true}
+    ]
+    const message = {content: [{type: "text", text: JSON.stringify(fixture)}]}
 
     const responseText = message.content[0]?.type === "text" ? message.content[0].text : ""
 
