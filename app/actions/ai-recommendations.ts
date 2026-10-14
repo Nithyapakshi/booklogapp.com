@@ -48,7 +48,8 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
   }
 }
 
-export async function getAIBookRecommendations(query: string, exclude: string[] = []) {
+export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5) {
+  const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
     if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -59,12 +60,12 @@ export async function getAIBookRecommendations(query: string, exclude: string[] 
 
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
+      max_tokens: howMany > 5 ? 4096 : 1024,
       system: "You are a literary expert who creates detailed book recommendations with comprehensive summaries.",
       messages: [
         {
           role: "user",
-          content: `Based on the following preferences, recommend 5 books with these details:
+          content: `Based on the following preferences, recommend ${howMany} books with these details:
 - Title
 - Author
 - Description (2-3 sentences max, well-written, capturing the essence of the book)

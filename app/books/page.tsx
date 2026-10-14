@@ -18,6 +18,9 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
+import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
+import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
+import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -191,6 +194,67 @@ function DiscoverTab() {
 
   const findInLibrary = (id: string, title: string, author: string) => allMyBooks.find(b => sameBook(b, {id, title, author}))
 
+  const [selectedReason, setSelectedReason] = React.useState<string | undefined>(undefined)
+  const [desktop, setDesktop] = React.useState(true)
+  React.useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)")
+    const apply = () => setDesktop(mq.matches)
+    apply(); mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
+
+  // "Not interested" is remembered on this device and feeds every row (and the AI "show more").
+  const dismissKey = discoverUser?.id ? `booklog.discover.dismissed:${discoverUser.id}` : ""
+  const [dismissed, setDismissed] = React.useState<Dismissed[]>([])
+  React.useEffect(() => {
+    if (!dismissKey) return
+    try { setDismissed(loadDismissals(localStorage.getItem(dismissKey))) } catch {}
+  }, [dismissKey])
+  const dismissBook = (title: string, author: string) => {
+    const next = [...dismissed.filter(d => d.key !== bookKey(title, author)), { key: bookKey(title, author), author }].slice(-300)
+    setDismissed(next)
+    try { if (dismissKey) localStorage.setItem(dismissKey, JSON.stringify(next)) } catch {}
+  }
+
+  // Personalised rows: which rows qualify comes from the library; candidates come from Google Books (cached 12h per row set).
+  const libForRows = React.useMemo(() => allMyBooks.map(b => ({ id: b.id, title: b.title, author: b.author, status: b.status, selfRating: b.selfRating, genre: b.genre })), [allMyBooks])
+  const specs = React.useMemo(() => buildRowSpecs(libForRows), [libForRows])
+  const specsSig = specsSignature(specs)
+  const [candidates, setCandidates] = React.useState<Record<string, Candidate[]>>({})
+  const [rowsLoading, setRowsLoading] = React.useState(false)
+  const rowsCacheKey = discoverUser?.id ? `booklog.discover.rows:${discoverUser.id}` : ""
+  React.useEffect(() => {
+    if (!rowsCacheKey) return
+    if (specs.length === 0) { setCandidates({}); return }
+    try {
+      const saved = JSON.parse(localStorage.getItem(rowsCacheKey) || "null")
+      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 12 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
+    } catch {}
+    let cancelled = false
+    setRowsLoading(true)
+    const t = setTimeout(async () => {
+      try {
+        const got = await fetchDiscoverCandidates(specs)
+        if (cancelled) return
+        setCandidates(got)
+        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
+      } catch { if (!cancelled) setCandidates({}) }
+      finally { if (!cancelled) setRowsLoading(false) }
+    }, 400)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [rowsCacheKey, specsSig])
+
+  const aiKeys = (recommendations || []).map(r => bookKey(r.title, r.author))
+  const builtRows = React.useMemo(() => assembleRows(specs, candidates, libForRows, dismissed, aiKeys), [specs, candidates, libForRows, dismissed, recommendations])
+  const { pick: topPick, rows: shownRows } = desktop ? { pick: null, rows: builtRows } : takeTopPick(builtRows)
+  const openCandidate = (c: { id: string; title: string; author: string; cover?: string; description?: string; publishedYear?: number; genre?: string }, reason?: string) => {
+    const match = findInLibrary(c.id, c.title, c.author)
+    setSelectedBook(match ? { ...(c as any), ...match } : (c as any))
+    setSelectedBookInLibrary(!!match)
+    setSelectedReason(match ? undefined : reason)
+    setDialogOpen(true)
+  }
+
   const statusLabel: Record<string, string> = {
     reading:     "Reading",
     queued:      "Queued",
@@ -205,7 +269,7 @@ function DiscoverTab() {
     setIsLoading(true)
     setError(null)
     try {
-      const results = await getAIBookRecommendations(prompt)
+      const results = await getAIBookRecommendations(prompt, [], 15)
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
@@ -221,7 +285,7 @@ function DiscoverTab() {
     setError(null)
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
-      const more = await getAIBookRecommendations(prompt, seen)
+      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 15)
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
       const merged = [...recommendations, ...fresh]
@@ -239,119 +303,92 @@ function DiscoverTab() {
     saveDiscover(prompt, null)
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      {/* Prompt panel */}
-      <div style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem" }}>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
-        <form onSubmit={handleSubmit}>
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="I enjoy literary fiction with strong character development..."
-            style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)", resize: "none", marginBottom: "0.625rem" }}
-          />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="submit"
-              disabled={isLoading}
-              style={{ padding: "7px 16px", background: isLoading ? "var(--bl-d4a574)" : "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "7px", fontSize: "12px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "DM Sans, sans-serif" }}
-            >
-              {isLoading ? "Generating..." : "Get Recommendations"}
-            </button>
-          </div>
-        </form>
-      </div>
+  const submitBtn = (label: string) => (
+    <button type="submit" disabled={isLoading}
+      style={{ padding: "7px 16px", background: isLoading ? "var(--bl-d4a574)" : "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "7px", fontSize: "12px", fontWeight: "500", cursor: isLoading ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>
+      {isLoading ? "Generating..." : label}
+    </button>
+  )
+  const linkBtn: React.CSSProperties = { fontSize: 11, color: "var(--bl-8a7560)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "'DM Sans', sans-serif" }
+  const aiBooks = (recommendations || []).map(r => ({ id: r.id, title: r.title, author: r.author, cover: r.cover, badge: findInLibrary(r.id, r.title, r.author) ? "In library" : undefined }))
+  const hasAnything = !!recommendations || shownRows.length > 0 || !!topPick
 
-      {/* Results panel */}
-      {(isLoading || error || recommendations) && <div style={{ overflow: "auto" }}>
-        {isLoading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
-            <div style={{ width: "32px", height: "32px", border: "2.5px solid var(--bl-e0d5c4)", borderTopColor: "var(--bl-c17f3e)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <p style={{ marginTop: "0.875rem", fontSize: "13px", color: "var(--bl-8a7560)" }}>Analysing your preferences...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        ) : error ? (
-          <div style={{ background: "var(--bl-fdf2f2)", border: "0.5px solid var(--bl-e8c4c4)", borderRadius: "10px", padding: "1.25rem" }}>
-            <p style={{ fontSize: "13px", color: "var(--bl-a04040)" }}>{error}</p>
-          </div>
-        ) : recommendations ? (
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "0.875rem" }}>
-              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: "normal", margin: 0 }}>Your recommendations ({recommendations.length})</h2>
-              <button type="button" onClick={handleClearHistory} style={{ fontSize: "11px", color: "var(--bl-8a7560)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "DM Sans, sans-serif" }}>Clear</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-              {recommendations.map((book, index) => (
-                <div
-                  key={index}
-                  onClick={() => {
-                    const match = findInLibrary(book.id, book.title, book.author)
-                    setSelectedBook(match ? {...book, ...match} : book)
-                    setSelectedBookInLibrary(!!match)
-                    setDialogOpen(true)
-                  }}
-                  style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "8px", display: "flex", overflow: "hidden", cursor: "pointer", transition: "box-shadow 0.15s" }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 2px 12px var(--bl-selected-strong)")}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-                >
-                  <div style={{ width: "70px", minWidth: "70px", height: "100px", background: "var(--bl-f3ede3)", overflow: "hidden", flexShrink: 0 }}>
-                    {book.cover ? (
-                      <img src={book.cover} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", background: generateBookColor(book.title), display: "flex", alignItems: "center", justifyContent: "center", color: "var(--bl-primary-ink)", fontWeight: "bold", fontSize: "1rem" }}>
-                        {(book.title.charAt(0) + book.author.split(" ")[0].charAt(0)).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ padding: "0.75rem 1rem", flex: 1 }}>
-                    <h3 style={{ fontSize: "13px", fontWeight: "500", color: "var(--bl-1a1208)", marginBottom: "2px" }}>{book.title}</h3>
-                    <p style={{ fontSize: "11px", color: "var(--bl-c17f3e)", marginBottom: "5px" }}>by {book.author}</p>
-                    {(() => {
-                      const match = findInLibrary(book.id, book.title, book.author)
-                      if (!match) return null
-                      return (
-                        <span style={{
-                          display: "inline-block", fontSize: "10px", fontWeight: 500,
-                          color: "var(--bl-8a5a1e)", background: "var(--bl-f5ede0)",
-                          border: "0.5px solid var(--bl-c17f3e)", borderRadius: "10px",
-                          padding: "2px 8px", marginBottom: "4px",
-                          fontFamily: "'DM Sans', sans-serif",
-                        }}>
-                          In your library · {statusLabel[match.status] ?? match.status}
-                        </span>
-                      )
-                    })()}
-                    <p style={{ fontSize: "11px", color: "var(--bl-6b5c42)", lineHeight: "1.55" }}>{book.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
-              <button
-                type="button"
-                onClick={handleShowMore}
-                disabled={isLoadingMore}
-                style={{ padding: "8px 20px", background: "transparent", color: "var(--bl-c17f3e)", border: "0.5px solid var(--bl-c17f3e)", borderRadius: "7px", fontSize: "12px", fontWeight: "600", cursor: isLoadingMore ? "not-allowed" : "pointer", opacity: isLoadingMore ? 0.6 : 1, fontFamily: "DM Sans, sans-serif" }}
-              >
-                {isLoadingMore ? "Finding more..." : "Show me more"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect x="3" y="17" width="22" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.3" />
-              <rect x="3" y="10.5" width="17" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.18" />
-              <rect x="3" y="4" width="12" height="5" rx="1.5" fill="var(--bl-c17f3e)" opacity="0.1" />
-            </svg>
-            <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65", marginTop: "0.75rem", maxWidth: "240px" }}>
-              Describe what you enjoy and click "Get Recommendations" to see personalised suggestions.
-            </p>
-          </div>
-        )}
-      </div>}
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode={selectedBookInLibrary ? "view" : "add"} />
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+      {desktop ? (
+        <div style={{ background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem" }}>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "0.75rem" }}>Tell us what you like</h2>
+          <form onSubmit={handleSubmit}>
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="I enjoy literary fiction with strong character development..."
+              style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)", resize: "none", marginBottom: "0.625rem" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>{submitBtn("Get Recommendations")}</div>
+          </form>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} data-testid="ai-bar" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bl-fff)", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: 24, padding: "6px 6px 6px 14px" }}>
+          <span style={{ color: "var(--bl-c17f3e)" }}>✦</span>
+          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask for something specific..." style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 13, color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }} />
+          {submitBtn("Ask AI")}
+        </form>
+      )}
+
+      {isLoading && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "1rem 0" }}>
+          <div style={{ width: "22px", height: "22px", border: "2.5px solid var(--bl-e0d5c4)", borderTopColor: "var(--bl-c17f3e)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <p style={{ fontSize: "13px", color: "var(--bl-8a7560)" }}>Analysing your preferences...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+      {error && !isLoading && (
+        <div style={{ background: "var(--bl-fdf2f2)", border: "0.5px solid var(--bl-e8c4c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
+          <p style={{ fontSize: "13px", color: "var(--bl-a04040)" }}>{error}</p>
+        </div>
+      )}
+
+      {!isLoading && recommendations && recommendations.length > 0 && (
+        <DiscoverRowView
+          rowKey="ai" title="From your AI request" subtitle={`"${prompt.trim().slice(0, 80)}${prompt.trim().length > 80 ? "..." : ""}"`}
+          books={aiBooks} mobile={!desktop}
+          onOpen={(b) => { const r = recommendations.find(x => x.id === b.id && x.title === b.title); if (r) openCandidate(r, prompt.trim() ? `It matches what you asked for: "${prompt.trim().slice(0, 120)}".` : undefined) }}
+          onDismiss={(b) => {
+            dismissBook(b.title, b.author)
+            const next = recommendations.filter(x => !(x.id === b.id && x.title === b.title))
+            setRecommendations(next.length ? next : null); saveDiscover(prompt, next.length ? next : null)
+          }}
+          actions={<>
+            <button type="button" style={linkBtn} onClick={handleShowMore} disabled={isLoadingMore}>{isLoadingMore ? "Finding more..." : "Show me more"}</button>
+            <button type="button" style={linkBtn} onClick={handleClearHistory}>Clear</button>
+          </>}
+        />
+      )}
+
+      {topPick && (
+        <TopPickCard book={topPick} reason={topPick.reason}
+          onOpen={() => openCandidate(topPick, topPick.reason)}
+          onDismiss={() => dismissBook(topPick.title, topPick.author)} />
+      )}
+
+      {shownRows.map(r => (
+        <DiscoverRowView key={r.key} rowKey={r.key} title={r.title} subtitle={r.subtitle} books={r.books} mobile={!desktop}
+          onOpen={(b) => { const c = r.books.find(x => x.id === b.id && x.title === b.title); if (c) openCandidate(c, r.reason) }}
+          onDismiss={(b) => dismissBook(b.title, b.author)} />
+      ))}
+
+      {rowsLoading && shownRows.length === 0 && !topPick && (
+        <p style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }}>Finding picks from your library...</p>
+      )}
+      {!hasAnything && !rowsLoading && !isLoading && (
+        <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
+          <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
+            Describe what you enjoy above for AI recommendations. Picks based on your library show up here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
+          </p>
+        </div>
+      )}
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode={selectedBookInLibrary ? "view" : "add"} reason={selectedReason} />
     </div>
   )
 }
