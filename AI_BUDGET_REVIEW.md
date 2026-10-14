@@ -32,3 +32,11 @@ This branch includes the taste-phrasing fix from #31, which separately awaits ap
 Pricing sources inspected:
 https://platform.claude.com/docs/en/models/haiku-4-5/overview
 https://platform.claude.com/docs/en/about-claude/pricing
+
+## Preview fixture proof (not relevance proof)
+
+Test-only draft #34 reached Ready. No provider calls or database writes: two six-candidate rows rendered in light and dark, the deliberately unmatched catalog candidate was removed, client cache stored the verified candidates, and dismissal removed a card. Cap-exhausted rows and two-candidate rows both stayed hidden, with no popular fallback, in both themes. All fixture covers are deliberate stand-ins, not title/cover identity evidence.
+
+The fixture does not establish real recommendation quality, shared-cache RPC integration with Supabase, or live coverage. Disposable Postgres validates SQL separately. Live provider/catalog integration remains gated by budget baseline, migration review and approval.
+
+The empty-state copy now avoids promising Ask AI results while the shared budget is stopped. No production activation.
