@@ -33,7 +33,7 @@ test("does not accept an Open Library cover for a different book", async () => {
 test("drops books the model marks off-topic and strips the flag", async () => {
   const f = async () => json({}, 429)
   const { mod, restore } = load(f, JSON.stringify([
-    { title: "The Everything Store", author: "Brad Stone", description: "d", genre: "Business", on_topic: true },
+    { title: "The Everything Store", author: "Brad Stone", description: "An account of Jeff Bezos and Amazon.", genre: "Business", on_topic: true },
     { title: "Steve Jobs", author: "Walter Isaacson", description: "d", genre: "Biography", on_topic: false }]))
   const out = await mod.getAIBookRecommendations("show me books about Bezos", [], 8); restore()
   assert.deepStrictEqual(out.map((b) => b.title), ["The Everything Store"])
@@ -46,4 +46,32 @@ test("prompt constrains subject requests to books about the subject", async () =
   await mod.getAIBookRecommendations("books about Bezos", [], 8); restore()
   const p = seen[0].messages[0].content
   assert.match(p, /directly ABOUT that subject/); assert.match(p, /Return fewer books rather than padding/i)
+})
+
+
+test("explicit about-Bezos rejects another biography even if model labels it relevant", async () => {
+  const { mod, restore } = load(async () => json({}, 429), JSON.stringify([
+    { title: "Steve Jobs", author: "Walter Isaacson", description: "A biography of the Apple founder.", on_topic: true },
+    { title: "The Everything Store", author: "Brad Stone", description: "The story of Jeff Bezos and Amazon.", on_topic: true },
+    { title: "Amazon Unbound", author: "Brad Stone", description: "Jeff Bezos builds an empire.", on_topic: true },
+    { title: "Missing Flag", author: "Test", description: "Bezos" }
+  ]))
+  try { assert.deepStrictEqual((await mod.getAIBookRecommendations("show me books about Bezos", [], 8)).map(b => b.title), ["The Everything Store", "Amazon Unbound"]) } finally { restore() }
+})
+
+test("taste query remains valid without literal phrase in each description", async () => {
+  const { mod, restore } = load(async () => json({}, 429), JSON.stringify([
+    { title: "The Test Novel", author: "Synthetic Author", description: "A bleak story of friendship and survival.", on_topic: true }
+  ]))
+  try { assert.strictEqual((await mod.getAIBookRecommendations("dark literary fiction", [], 8)).length, 1) } finally { restore() }
+})
+
+test("same first name is not an author match for fallback cover", async () => {
+  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({}, 429) : json({docs: [{title: "Shoe Dog", author_name: ["Phil Smith"], cover_i: 1}]}), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
+  try { assert.strictEqual((await mod.getAIBookRecommendations("taste", [], 5))[0].cover, "") } finally { restore() }
+})
+
+test("unrelated first Google hit cannot bypass matching", async () => {
+  const { mod, restore } = load(async u => String(u).includes("googleapis") ? json({ items: [{ id: "wrong", volumeInfo: { title: "Different Book", authors: ["Phil Smith"], imageLinks: {thumbnail: "https://example.com/wrong.jpg"} } }] }) : json({ docs: [{title: "Shoe Dog", author_name: ["Phil Knight"], cover_i: 8858487}] }), JSON.stringify([{title: "Shoe Dog", author: "Phil Knight", on_topic: true}]))
+  try { const b = (await mod.getAIBookRecommendations("taste", [], 5))[0]; assert.strictEqual(b.cover, "https://covers.openlibrary.org/b/id/8858487-M.jpg"); assert.ok(!b.id.includes("wrong")) } finally { restore() }
 })
