@@ -162,6 +162,13 @@ begin
       payload_n:=p_args->'payload';
       if jsonb_typeof(payload_n) is distinct from 'array' or jsonb_array_length(payload_n)>12
          or octet_length(payload_n::text)>30000 then raise exception 'Invalid payload'; end if;
+      if exists(select 1 from jsonb_array_elements(payload_n) item where
+        jsonb_typeof(item) is distinct from 'object' or
+        jsonb_typeof(item->'id') is distinct from 'string' or length(item->>'id') not between 1 and 300 or
+        jsonb_typeof(item->'title') is distinct from 'string' or length(item->>'title') not between 1 and 250 or
+        jsonb_typeof(item->'author') is distinct from 'string' or length(item->>'author') not between 1 and 250 or
+        jsonb_typeof(item->'cover') is distinct from 'string' or length(item->>'cover') not between 1 and 2000 or
+        (item->>'cover') not like 'https://%') then raise exception 'Invalid candidate'; end if;
       update booklog_ai.cache set payload=payload_n,expires_at=now()+interval '7 days',claim=null,claimed_until=null,cooldown_until=null where key=k;
       return jsonb_build_object('ok',true);
     else
