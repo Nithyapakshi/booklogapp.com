@@ -8,10 +8,13 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
     const query = encodeURIComponent(`${title} ${author}`)
     const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=10&key=${process.env.GOOGLE_BOOKS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
     // Google Books intermittently answers 503/429; retry a few times so covers are not lost to one bad response.
-    let response = await fetch(url)
-    for (let attempt = 1; attempt < 4 && (response.status === 503 || response.status === 429 || response.status >= 500); attempt++) {
+    // Each cover lookup gets about 2 seconds in total, so a slow Google never holds up the recommendations.
+    const deadline = Date.now() + 2000
+    const get = () => fetch(url, { signal: AbortSignal.timeout(Math.max(deadline - Date.now(), 200)) })
+    let response = await get()
+    for (let attempt = 1; attempt < 4 && (response.status === 503 || response.status === 429 || response.status >= 500) && Date.now() + 400 * attempt < deadline; attempt++) {
       await new Promise((r) => setTimeout(r, 400 * attempt))
-      response = await fetch(url)
+      response = await get()
     }
 
     if (!response.ok) {
