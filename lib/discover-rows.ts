@@ -42,8 +42,8 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
   // TEST ONLY: deterministic seeds, no account writes. Never merge.
   const mode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('fixture_mode') || 'success' : 'success'
   return [
-    {key:'rated:fixture-one',kind:'rated',seedTitle:mode==='cap'?'Fixture Cap One':mode==='thin'?'Fixture Thin One':'Fixture Seed One',seedAuthor:'Fixture Author One',title:'Fixture only: same-spirit row one',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'},
-    {key:'rated:fixture-two',kind:'rated',seedTitle:mode==='cap'?'Fixture Cap Two':mode==='thin'?'Fixture Thin Two':'Fixture Seed Two',seedAuthor:'Fixture Author Two',title:'Fixture only: same-spirit row two',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'}
+    {key:'rated:fixture-one:'+mode,kind:'rated',seedTitle:mode==='cap'?'Fixture Cap One':mode==='thin'?'Fixture Thin One':'Fixture Seed One',seedAuthor:'Fixture Author One',title:'Fixture only: same-spirit row one',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'},
+    {key:'rated:fixture-two:'+mode,kind:'rated',seedTitle:mode==='cap'?'Fixture Cap Two':mode==='thin'?'Fixture Thin Two':'Fixture Seed Two',seedAuthor:'Fixture Author Two',title:'Fixture only: same-spirit row two',subtitle:'Synthetic mechanics test, not recommendations',reason:'Fixture'}
   ]
 }
 
