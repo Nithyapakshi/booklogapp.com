@@ -138,7 +138,7 @@ Do not include any text outside the JSON array.`,
       const subject = query.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
       // Genre and mood requests remain taste even when phrased "books about ...".
       // Explicit subject requests still need a literal mention; this is a conservative guard.
-      const isTaste = !!subject && /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|sci fi|science fiction|magical realism)$/i.test(normText(subject))
+      const isTaste = !!subject && /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|comedy|humor|humour|sci fi|science fiction|magical realism)$/i.test(normText(subject))
       const subjectWords = subject && !isTaste ? normText(subject).split(" ").filter(w => !["the", "a", "an"].includes(w)) : []
       const recommendations = parsed
         .filter((b: any) => b && typeof b.title === "string" && typeof b.author === "string" && b.on_topic === true)
