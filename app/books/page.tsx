@@ -19,6 +19,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
+import { getSameSpiritCandidates } from "@/app/actions/same-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
@@ -223,7 +224,7 @@ function DiscoverTab() {
   const [candidates, setCandidates] = React.useState<Record<string, Candidate[]>>({})
   const [rowsLoading, setRowsLoading] = React.useState(false)
   const [rowsTimedOut, setRowsTimedOut] = React.useState(false)
-  const rowsCacheKey = discoverUser?.id ? `booklog.discover.rows:${discoverUser.id}` : ""
+  const rowsCacheKey = discoverUser?.id ? `booklog.discover.rows:v2:${discoverUser.id}` : ""
   React.useEffect(() => {
     if (!rowsCacheKey) return
     if (specs.length === 0) { setCandidates({}); return }
@@ -237,7 +238,10 @@ function DiscoverTab() {
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        const got = await fetchDiscoverCandidates(specs, (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated"), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const paid = aiAccessToken().then(token => getSameSpiritCandidates(token, specs.filter(s => s.kind === "rated"))).catch(() => ({}))
+        const [freeRows, spiritRows] = await Promise.all([free, paid])
+        const got = {...freeRows, ...spiritRows}
         if (cancelled) return
         setCandidates(got)
         if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
@@ -266,13 +270,19 @@ function DiscoverTab() {
     onHold:      "On Hold",
   }
 
+  const aiAccessToken = async () => {
+    const { data } = await createClientSupabaseClient().auth.getSession()
+    if (!data.session?.access_token) throw new Error("Please log in again")
+    return data.session.access_token
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim()) return
     setIsLoading(true)
     setError(null)
     try {
-      const results = await getAIBookRecommendations(prompt, [], 8)
+      const results = await getAIBookRecommendations(prompt, [], 8, await aiAccessToken())
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
@@ -288,7 +298,7 @@ function DiscoverTab() {
     setError(null)
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
-      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
+      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8, await aiAccessToken())
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
       const merged = [...recommendations, ...fresh]
@@ -387,14 +397,14 @@ function DiscoverTab() {
       {!hasAnything && !isLoading && (!rowsLoading || rowsTimedOut) && specs.length > 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p role="status" style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
-            Picks from your library are not loading right now. Describe what you enjoy in the Ask AI box above and we will suggest books.
+            No verified picks are available from your library right now.
           </p>
         </div>
       )}
       {!hasAnything && !rowsLoading && !isLoading && specs.length === 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
-            Describe what you enjoy above for AI recommendations. Picks based on your library show up here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
+            Picks based on your library can appear here as you read more books by the same author, rate favourites 5 stars, and build up a favourite genre.
           </p>
         </div>
       )}

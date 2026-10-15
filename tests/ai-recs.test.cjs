@@ -6,7 +6,7 @@ function load(fetchImpl, modelJson, seen) {
   const js = ts.transpileModule(src, { compilerOptions: { module: "commonjs", target: "es2020" } }).outputText
   const m = new Module("ai-recs"); m.paths = Module._nodeModulePaths(__dirname)
   const orig = Module._load
-  Module._load = (req, ...r) => req === "@anthropic-ai/sdk" ? { default: class { messages = { create: async (a) => { seen && seen.push(a); return { content: [{ type: "text", text: modelJson }] } } } } } : orig(req, ...r)
+  Module._load = (req, ...r) => req === "@/lib/ai-budget" ? {budgetedMessage:async (a) => {seen && seen.push({messages:[{content:a.prompt}]});return {content:[{type:"text",text:modelJson}]}}} : orig(req, ...r)
   const realFetch = global.fetch; global.fetch = fetchImpl
   process.env.ANTHROPIC_API_KEY = "x"; delete process.env.VERCEL_ENV
   try { m._compile(js, "ai-recs.js") } finally { Module._load = orig }

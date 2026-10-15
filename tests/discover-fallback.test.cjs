@@ -13,13 +13,14 @@ test('thin or empty Google results fall back to Open Library, not only errors', 
 test('rows are reported as each row set arrives', () => {
   const s = read('app/actions/discover-rows.ts')
   assert.match(s, /onSpec\?: \(key: string, list: Cand\[\]\) => void/)
-  assert.match(read('app/books/page.tsx'), /fetchDiscoverCandidates\(specs, \(key, list\)/)
+  assert.match(read('app/books/page.tsx'), /fetchDiscoverCandidates\(specs\.filter\(s => s\.kind !== "rated"\), \(key, list\)/)
 })
 
-test('library rows stop waiting after 10 seconds and point at Ask AI', () => {
+test('library rows stop waiting after 10 seconds without promising paid results', () => {
   const p = read('app/books/page.tsx')
   assert.match(p, /setRowsTimedOut\(true\) \}, 10000\)/)
-  assert.match(p, /Picks from your library are not loading right now\. Describe what you enjoy in the Ask AI box above/)
+  assert.doesNotMatch(p, /we will suggest books/);
+  assert.match(p, /No verified picks are available from your library right now\./)
   assert.match(p, /\(!rowsLoading \|\| rowsTimedOut\) && specs\.length > 0/)
 })
 
