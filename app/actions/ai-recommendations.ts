@@ -1,6 +1,7 @@
 "use server"
 
 import { budgetedMessage } from "@/lib/ai-budget"
+import { resolveCatalogBook } from "@/lib/book-catalog"
 
 // Function to get a book cover image URL and Google Books ID
 async function googleBookCover(title: string, author: string): Promise<{ cover: string; googleId: string }> {
@@ -141,13 +142,15 @@ Do not include any text outside the JSON array.`,
       // Add IDs and fetch cover images for each book
       const booksWithCovers = await Promise.all(
         recommendations.map(async (book: any) => {
-          const { cover, googleId } = await getBookCoverUrl(book.title, book.author)
-          const stableId = googleId || `ai-rec-${book.title}-${book.author}`.replace(/\s+/g, '-').toLowerCase()
-          return { ...book, id: stableId, cover }
+          const verified = (await resolveCatalogBook(book.title, book.author)).book
+          // Never return an uncorroborated model title/author, even when it sounds plausible.
+          if (!verified) return null
+          const { cover, googleId } = await getBookCoverUrl(verified.title, verified.author)
+          return { ...book, title: verified.title, author: verified.author, id: googleId || verified.id, cover: cover || verified.cover }
         }),
       )
 
-      return booksWithCovers
+      return booksWithCovers.filter((book): book is NonNullable<typeof book> => book !== null)
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError)
       console.log("Raw response:", responseText)
