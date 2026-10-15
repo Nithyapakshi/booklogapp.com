@@ -54,7 +54,7 @@ test("a row needs 4+ real suggestions; its books go back to the pool", () => {
 })
 test("rated row skips the seed book's own author", () => {
   const specs = buildRowSpecs(lib), r = specs.find(s => s.kind === "rated")
-  const rows = assembleRows([r], { [r.key]: [...cand(6, "Frank Herbert", "h"), ...cand(5, "Ursula Le Guin", "u")] }, lib, [])
+  const rows = assembleRows([r], { [r.key]: [...cand(6, "Frank Herbert", "h"), ...cand(10, "Ursula Le Guin", "u")] }, lib, [])
   assert.ok(rows[0].books.every(b => b.author === "Ursula Le Guin"))
 })
 test("dismissals remove the book; three from one author remove the author; rows can fall below 4 and hide", () => {
@@ -90,10 +90,12 @@ test("wiring: server action never writes, dialog reason is not saved with the bo
 })
 // discover rows tests end
 
-test('same-spirit rows keep even a single valid pick and order by relevance',()=>{
+test('rated rows require ten after filtering and preserve relevance order',()=>{
  const r={key:'rated:seed',kind:'rated',seedAuthor:'Seed Author',title:'Seed',subtitle:'Same spirit',reason:'Rated'}
- const c=[{id:'weak',title:'Weaker',author:'W',cover:'c',relevanceScore:25},{id:'strong',title:'Strong',author:'S',cover:'c',relevanceScore:100}]
- assert.deepStrictEqual(assembleRows([r],{[r.key]:c},[],[])[0].books.map(x=>x.id),['strong','weak'])
- assert.equal(assembleRows([r],{[r.key]:[c[0]]},[],[])[0].books.length,1)
- assert.equal(assembleRows([r],{[r.key]:c},[],c.map(x=>({key:bookKey(x.title,x.author),author:x.author}))).length,0)
+ const c=cand(10,'Other Author','z').map((x,i)=>({...x,relevanceScore:i+1}))
+ assert.equal(assembleRows([r],{[r.key]:c.slice(0,9)},[],[]).length,0)
+ const rows=assembleRows([r],{[r.key]:c},[],[]);assert.equal(rows[0].books.length,10);assert.equal(rows[0].books[0].id,'z9')
+ assert.equal(assembleRows([r],{[r.key]:c},[],[{key:bookKey(c[0].title,c[0].author),author:c[0].author}]).length,0)
+ assert.equal(assembleRows([r],{[r.key]:c},[{...c[0]}],[]).length,0)
+ assert.equal(takeTopPick(rows).pick,null);assert.equal(takeTopPick(rows).rows[0].books.length,10)
 })
