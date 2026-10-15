@@ -26,3 +26,9 @@ test('library rows stop waiting after 10 seconds and point at Ask AI', () => {
 test('the generic empty text only shows when the library has no qualifying rows', () => {
   assert.match(read('app/books/page.tsx'), /!hasAnything && !rowsLoading && !isLoading && specs\.length === 0/)
 })
+
+test('author rows require exact normalized author identity rather than shared name words',()=>{
+ const src=fs.readFileSync('app/actions/discover-rows.ts','utf8')
+ assert.match(src,/norm\(a\) === expectedAuthor/)
+ assert.doesNotMatch(src,/words\.every/)
+})
