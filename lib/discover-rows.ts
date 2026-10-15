@@ -1,11 +1,11 @@
 // Personalised Discover rows. Pure logic only (no network): row specs from the library, candidate filtering,
-// "each book once", the 4-book minimum, dismissals. Candidates are fetched by app/actions/discover-rows.ts.
+// "each book once", small same-spirit rows, dismissals. Candidates are fetched by app/actions/discover-rows.ts.
 
 export const ROW_SIZE = 15
 export const MIN_ROW_BOOKS = 4
 
 export interface LibBook { id?: string; title: string; author: string; status?: string; selfRating?: number; genre?: string }
-export interface Candidate { id: string; title: string; author: string; cover: string; description?: string; publishedYear?: number; genre?: string }
+export interface Candidate { id: string; title: string; author: string; cover: string; description?: string; publishedYear?: number; genre?: string; relevanceScore?: number; relevanceSource?: string }
 export type RowKind = "author" | "rated" | "genre"
 export interface RowSpec { key: string; kind: RowKind; title: string; subtitle: string; reason: string; author?: string; seedTitle?: string; seedAuthor?: string; seedGenre?: string; genre?: string }
 export interface DiscoverRow { key: string; title: string; subtitle: string; reason: string; books: Candidate[] }
@@ -85,7 +85,8 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
   const used = new Set<string>(extraSeen); const rows: DiscoverRow[] = []
   for (const s of specs) {
     const picked: Candidate[] = []
-    for (const c of candidates[s.key] || []) {
+    const ordered = s.kind === "rated" ? [...(candidates[s.key] || [])].sort((a,b)=>(b.relevanceScore || 0)-(a.relevanceScore || 0)) : candidates[s.key] || []
+    for (const c of ordered) {
       const k = bookKey(c.title, c.author)
       if (!c.cover || !c.title || used.has(k) || gone.has(k) || libraryHasBook(c, library)) continue
       if (blocked.has(authorKey(c.author))) continue
@@ -94,7 +95,7 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
       if (picked.length >= ROW_SIZE) break
     }
     // Books that did not make the row go back to the pool for later rows.
-    if (picked.length < MIN_ROW_BOOKS) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
+    if (picked.length < (s.kind === "rated" ? 1 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
     rows.push({ key: s.key, title: s.title, subtitle: s.subtitle, reason: s.reason, books: picked })
   }
   return rows
