@@ -116,3 +116,14 @@ test('edition author overrides work author and title-only collision is rejected'
 })
 
 test('book detail modal omits the unwanted reason banner',()=>{assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'../components/book-details-dialog.tsx'),'utf8'),/Why this book:/)})
+
+test('fiction about themes stays taste and trailing instructions are not subject words',async()=>{
+ const fixture=JSON.stringify([{title:'The Test Novel',author:'Synthetic Author',description:'Friends find comfort after loss.',on_topic:true}]);
+ for(const q of ['Recommend literary fiction about friendship, grief and recovery, with thoughtful character development. Give specific reasons, not generic bestseller picks.','novels about friendship and grief']){
+  const {mod,restore}=load(async()=>json({},429),fixture);try{assert.equal((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
+ }
+})
+test('named subject ignores separate formatting instructions but still rejects unrelated biographies',async()=>{
+ const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Amazon Unbound',author:'Brad Stone',description:'Jeff Bezos builds an empire.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{assert.deepEqual((await mod.getAIBookRecommendations('books about Bezos. Give specific reasons.')).map(b=>b.title),['Amazon Unbound'])}finally{restore()}
+})
+test('successful zero AI matches has explicit visible status rather than blank page',()=>{assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/recommendations\.length === 0/);assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/No verified matches for this request/)});
