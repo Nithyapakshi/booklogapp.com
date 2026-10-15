@@ -82,3 +82,30 @@ The two editorial samples reviewed earlier were research examples, not app
 outputs. With the currently returned descriptions, those examples do not both
 clear this stricter two-concept guard. No inference is added to make them pass.
 No paid model test or production activation in this tightening pass.
+
+## October 15 relevance-gradient revision (draft, no new model spend)
+
+The strict v3 gate above is superseded by v4. Verified model candidates with
+one substantive shared concept now rank below candidates with two or more.
+Generic words, author/title tokens, settings and genre alone still give zero
+credit. Tone/style assertions alone cannot admit a candidate. Candidates sort
+by evidence before library/dismissal/dedupe filtering. Same-spirit rows may
+show one, two or three valid books rather than hiding below four.
+
+Two source-backed public editorial pairings provide free leads: A Little Life
+by Hanya Yanagihara to Shuggie Bain by Douglas Stuart; The Secret History by
+Donna Tartt to If We Were Villains by M. L. Rio. Lead identity, English edition,
+bound description and cover are still verified against the live catalog.
+Editorial-backed picks rank first; this score is an ordering tier, not a
+probability or literary relevance measurement. The free leads work even when
+preview paid generation is disabled or the budget RPC fails. No free result
+writes to the shared cache without the existing paid-reservation rules.
+
+An empty row remains possible during catalog failure, with no qualifying
+seeds, or when every valid pick is already owned/dismissed. The app must not
+invent an unverified replacement to promise a result. Existing free author
+and genre rows remain distinct, not mislabelled as same-spirit.
+
+Editorial sources (read October 15):
+https://www.panmacmillan.com/blogs/literary/books-to-read-after-a-little-life
+https://fivebooks.com/books-like/donna-tartt-secret-history/
