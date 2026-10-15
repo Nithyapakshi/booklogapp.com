@@ -95,7 +95,7 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
       if (picked.length >= ROW_SIZE) break
     }
     // Books that did not make the row go back to the pool for later rows.
-    if (picked.length < (s.kind === "rated" ? ROW_SIZE : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
+    if (picked.length < (s.kind === "rated" ? 10 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
     rows.push({ key: s.key, title: s.title, subtitle: s.subtitle, reason: s.reason, books: picked })
   }
   return rows
@@ -110,5 +110,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min15-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min10-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
