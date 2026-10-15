@@ -1,5 +1,6 @@
 const test=require('node:test'),assert=require('node:assert'),fs=require('node:fs'),path=require('node:path'),Module=require('node:module'),ts=require('typescript')
 const compile=s=>ts.transpileModule(s,{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText
+const catalog=new Module('catalog');catalog._compile(compile(fs.readFileSync(path.join(__dirname,'../lib/book-catalog.ts'),'utf8')),'catalog.js')
 const pure=new Module('pure');pure._compile(compile(fs.readFileSync(path.join(__dirname,'../lib/same-spirit.ts'),'utf8')),'pure.js')
 async function run({eligible=true,hit=false,busy=false,budget=false,matching=true}={}){
  const seen=[],rpcCalls=[],seeds=[{key:'rated:seed1',seedTitle:'Seed One',seedAuthor:'Author One'},{key:'rated:seed2',seedTitle:'Seed Two',seedAuthor:'Author Two'}]
@@ -8,7 +9,7 @@ async function run({eligible=true,hit=false,busy=false,budget=false,matching=tru
   rpcCalls.push([op,args]);if(op==='lookup')return hit?{hit:true,payload:[{id:'cached',title:'Cached',author:'Writer',cover:'https://example.invalid/c.jpg'}]}:{hit:false};return {ok:op==='claim'?!busy:true}
  },budgetedMessage:async(input)=>{seen.push(input);if(budget)throw Error('cap');return {content:[{type:'text',text:model}]}}}
  const oldLoad=Module._load,oldFetch=global.fetch;const m=new Module('action');m.paths=Module._nodeModulePaths(__dirname)
- Module._load=(req,...r)=>req==='@/lib/ai-budget'?mockBudget:req==='@/lib/same-spirit'?pure.exports:oldLoad(req,...r)
+ Module._load=(req,...r)=>req==='@/lib/ai-budget'?mockBudget:req==='@/lib/same-spirit'?pure.exports:req==='@/lib/book-catalog'?catalog.exports:oldLoad(req,...r)
  global.fetch=async url=>{const q=new URL(url).searchParams.get('q'),title=q.match(/intitle:"([^"]+)"/)[1],author=q.match(/inauthor:"([^"]+)"/)[1];return {ok:true,json:async()=>({items:[{id:title,volumeInfo:{title:matching?title:'Wrong Hit',authors:[author],language:'en',description:'Grief and isolation follow these families through their lives.',imageLinks:{thumbnail:'https://example.invalid/c.jpg'}}}]})}}
  delete process.env.VERCEL_ENV
  try{m._compile(compile(fs.readFileSync(path.join(__dirname,'../app/actions/same-spirit.ts'),'utf8')),'action.js');const out=await m.exports.getSameSpiritCandidates('mock',seeds);return {out,seen,rpcCalls}}finally{Module._load=oldLoad;global.fetch=oldFetch}
