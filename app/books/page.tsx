@@ -19,6 +19,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
+import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
@@ -237,7 +238,10 @@ function DiscoverTab() {
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        const got = await fetchDiscoverCandidates(specs, (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated"), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated"))).catch(() => ({}))
+        const [other, rated] = await Promise.all([free, spirit])
+        const got = { ...other, ...rated }
         if (cancelled) return
         setCandidates(got)
         if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
