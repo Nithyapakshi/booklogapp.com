@@ -89,3 +89,11 @@ test("wiring: server action never writes, dialog reason is not saved with the bo
   assert.match(fs.readFileSync("app/actions/ai-recommendations.ts", "utf8"), /count: number = 5/)
 })
 // discover rows tests end
+
+test('same-spirit rows keep even a single valid pick and order by relevance',()=>{
+ const r={key:'rated:seed',kind:'rated',seedAuthor:'Seed Author',title:'Seed',subtitle:'Same spirit',reason:'Rated'}
+ const c=[{id:'weak',title:'Weaker',author:'W',cover:'c',relevanceScore:25},{id:'strong',title:'Strong',author:'S',cover:'c',relevanceScore:100}]
+ assert.deepStrictEqual(assembleRows([r],{[r.key]:c},[],[])[0].books.map(x=>x.id),['strong','weak'])
+ assert.equal(assembleRows([r],{[r.key]:[c[0]]},[],[])[0].books.length,1)
+ assert.equal(assembleRows([r],{[r.key]:c},[],c.map(x=>({key:bookKey(x.title,x.author),author:x.author}))).length,0)
+})
