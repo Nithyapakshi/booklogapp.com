@@ -19,7 +19,7 @@ test('rows are reported as each row set arrives', () => {
 test('library rows stop waiting after 10 seconds and point at Ask AI', () => {
   const p = read('app/books/page.tsx')
   assert.match(p, /setRowsTimedOut\(true\) \}, 10000\)/)
-  assert.match(p, /Picks from your library are not loading right now\. Describe what you enjoy in the Ask AI box above/)
+  assert.match(p, /No library-based rows are ready to show\. Describe what you enjoy in the Ask AI box above/)
   assert.match(p, /\(!rowsLoading \|\| rowsTimedOut\) && specs\.length > 0/)
 })
 
