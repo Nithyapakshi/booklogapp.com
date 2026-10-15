@@ -27,7 +27,7 @@ test('self-labelled tone/style cannot override shallow generic overlap',async()=
 test('free editorial picks surface without model spend or RPC writes in disabled preview',async()=>{
  const {out,seen,rpcCalls}=await run({editorial:true,preview:true});assert.equal(seen.length,0)
  const picks=Object.values(out).flat();assert.equal(picks[0].title,'Shuggie Bain');assert.equal(picks[0].relevanceScore,100)
- assert.ok(rpcCalls.every(x=>x[0]==='lookup'))
+ assert.equal(rpcCalls.length,0)
 })
 test('free editorial picks survive unavailable budget RPC and paid failure',async()=>{
  for(const options of [{editorial:true,rpcFailure:true},{editorial:true,budget:true}]){
@@ -36,4 +36,8 @@ test('free editorial picks survive unavailable budget RPC and paid failure',asyn
 })
 test('editorial sources do not override wrong catalog identity',async()=>{
  const {out,seen}=await run({editorial:true,preview:true,matching:false});assert.equal(Object.values(out).flat().length,0);assert.equal(seen.length,0)
+})
+
+test('disabled preview cannot expose a paid shared cache hit',async()=>{
+ const {out,seen,rpcCalls}=await run({editorial:true,preview:true,hit:true});assert.equal(seen.length,0);assert.equal(rpcCalls.length,0);assert.equal(Object.values(out).flat()[0].title,'Shuggie Bain')
 })
