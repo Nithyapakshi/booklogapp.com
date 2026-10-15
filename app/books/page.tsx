@@ -19,7 +19,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
-import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
+import { getSameSpiritCandidates } from "@/app/actions/same-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
@@ -239,7 +239,7 @@ function DiscoverTab() {
     const t = setTimeout(async () => {
       try {
         const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated"), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
-        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated"))).catch(() => ({}))
+        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getSameSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated"))).catch(() => ({}))
         const [other, rated] = await Promise.all([free, spirit])
         const got = { ...other, ...rated }
         if (cancelled) return
@@ -270,13 +270,19 @@ function DiscoverTab() {
     onHold:      "On Hold",
   }
 
+  const aiAccessToken = async () => {
+    const { data } = await createClientSupabaseClient().auth.getSession()
+    if (!data.session?.access_token) throw new Error("Please log in again")
+    return data.session.access_token
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim()) return
     setIsLoading(true)
     setError(null)
     try {
-      const results = await getAIBookRecommendations(prompt, [], 8)
+      const results = await getAIBookRecommendations(prompt, [], 8, await aiAccessToken())
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
@@ -292,7 +298,7 @@ function DiscoverTab() {
     setError(null)
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
-      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
+      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8, await aiAccessToken())
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
       const merged = [...recommendations, ...fresh]
