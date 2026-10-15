@@ -127,3 +127,7 @@ test('named subject ignores separate formatting instructions but still rejects u
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Amazon Unbound',author:'Brad Stone',description:'Jeff Bezos builds an empire.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{assert.deepEqual((await mod.getAIBookRecommendations('books about Bezos. Give specific reasons.')).map(b=>b.title),['Amazon Unbound'])}finally{restore()}
 })
 test('successful zero AI matches has explicit visible status rather than blank page',()=>{assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/recommendations\.length === 0/);assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/No verified matches for this request/)});
+
+test('genre frame does not exempt named subjects from literal relevance',async()=>{
+ const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{for(const q of ['literary fiction about Bezos','novels about Bezos','fiction about Dark Matter'])assert.deepEqual(await mod.getAIBookRecommendations(q),[],q)}finally{restore()}
+})
