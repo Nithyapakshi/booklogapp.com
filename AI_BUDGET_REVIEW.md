@@ -63,3 +63,22 @@ Shared book-catalog corroboration now guards Ask output. Model title/author pair
 Unpaid live local lookup: The Kiss Quotient / Sally Thorne was rejected; The Secret History / Donna Tartt and Never Let Me Go / Kazuo Ishiguro resolved to English editions with descriptions through the fallback. Local Google returned HTTP 429 without a server key; this is not proof of the earlier preview's cause. Mocked regression tests exercise wrong authors, HTTP categories, missing descriptions and mismatched work descriptions. These changes are local only; real same-spirit generation and app rendering remain unproven.
 
 Vercel's free daily deployment limit has stopped new previews. PR #35 cover/banner also awaits live light/dark proof. No production migration, merge or activation has occurred.
+
+## October 15 draft tightening (no model spend)
+
+Shared-theme guard now uses a closed, explicit thematic vocabulary. Pronouns,
+places, schools, genre labels, and arbitrary author tokens do not count. Words
+from the seed/candidate titles and author names are excluded from independent
+description evidence. Ordinary aliases (bereavement/grief, lonely/isolation)
+count as one concept each, never as two themes. Two distinct concepts must be
+present in the proposed themes and both verified catalog descriptions.
+
+Cache version v3 prevents older v2 results from bypassing the tighter guard.
+No existing cache/data was deleted. Tone/style flags still do not establish
+relevance by themselves. The guard remains conservative textual corroboration,
+not semantic proof; unfamiliar themes and thin descriptions hide good matches.
+
+The two editorial samples reviewed earlier were research examples, not app
+outputs. With the currently returned descriptions, those examples do not both
+clear this stricter two-concept guard. No inference is added to make them pass.
+No paid model test or production activation in this tightening pass.
