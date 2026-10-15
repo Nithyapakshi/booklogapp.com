@@ -1,5 +1,5 @@
 // Pure validation shared by the server action and tests. Cache contains catalog data only.
-export const SPIRIT_VERSION = 'spirit-v1'
+export const SPIRIT_VERSION = 'spirit-v2'
 export const normalize = (s: string) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 export const cacheKey = (title: string, author: string) => `${SPIRIT_VERSION}|claude-haiku-4-5-20251001|${normalize(title)}|${normalize(author)}`
 const STOP = new Set('the a an and or of in to with on for this that is are it its as by from novel story book fiction literary dark life world people character characters'.split(' '))
