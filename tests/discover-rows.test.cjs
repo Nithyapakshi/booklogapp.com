@@ -54,7 +54,7 @@ test("a row needs 4+ real suggestions; its books go back to the pool", () => {
 })
 test("rated row skips the seed book's own author", () => {
   const specs = buildRowSpecs(lib), r = specs.find(s => s.kind === "rated")
-  const rows = assembleRows([r], { [r.key]: [...cand(6, "Frank Herbert", "h"), ...cand(15, "Ursula Le Guin", "u")] }, lib, [])
+  const rows = assembleRows([r], { [r.key]: [...cand(6, "Frank Herbert", "h"), ...cand(10, "Ursula Le Guin", "u")] }, lib, [])
   assert.ok(rows[0].books.every(b => b.author === "Ursula Le Guin"))
 })
 test("dismissals remove the book; three from one author remove the author; rows can fall below 4 and hide", () => {
@@ -90,12 +90,12 @@ test("wiring: server action never writes, dialog reason is not saved with the bo
 })
 // discover rows tests end
 
-test('rated rows require fifteen after filtering and preserve relevance order',()=>{
+test('rated rows require ten after filtering and preserve relevance order',()=>{
  const r={key:'rated:seed',kind:'rated',seedAuthor:'Seed Author',title:'Seed',subtitle:'Same spirit',reason:'Rated'}
- const c=cand(15,'Other Author','z').map((x,i)=>({...x,relevanceScore:i+1}))
- assert.equal(assembleRows([r],{[r.key]:c.slice(0,14)},[],[]).length,0)
- const rows=assembleRows([r],{[r.key]:c},[],[]);assert.equal(rows[0].books.length,15);assert.equal(rows[0].books[0].id,'z14')
+ const c=cand(10,'Other Author','z').map((x,i)=>({...x,relevanceScore:i+1}))
+ assert.equal(assembleRows([r],{[r.key]:c.slice(0,9)},[],[]).length,0)
+ const rows=assembleRows([r],{[r.key]:c},[],[]);assert.equal(rows[0].books.length,10);assert.equal(rows[0].books[0].id,'z9')
  assert.equal(assembleRows([r],{[r.key]:c},[],[{key:bookKey(c[0].title,c[0].author),author:c[0].author}]).length,0)
  assert.equal(assembleRows([r],{[r.key]:c},[{...c[0]}],[]).length,0)
- assert.equal(takeTopPick(rows).pick,null);assert.equal(takeTopPick(rows).rows[0].books.length,15)
+ assert.equal(takeTopPick(rows).pick,null);assert.equal(takeTopPick(rows).rows[0].books.length,10)
 })
