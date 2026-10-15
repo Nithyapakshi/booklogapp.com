@@ -54,3 +54,12 @@ Paid preview testing requires BOOKLOG_AI_PREVIEW_TEST=enabled, staged only on th
 Same-spirit with The Secret History / Never Let Me Go produced no claims or reservations and no rows; its seed catalog precondition did not pass. Real same-spirit quality remains unproven. Preview disabled again, temporary seed books removed, original synthetic ratings restored. Ledger retained for cost accounting. Production unchanged and merge held.
 
 Publisher evidence: https://www.penguinrandomhouse.com/books/566902/the-kiss-quotient-by-helen-hoang/
+
+
+## Local correctness follow-up (October 14, not deployed)
+
+Shared book-catalog corroboration now guards Ask output. Model title/author pairs without a verified catalog identity are dropped. Google errors, empty results, missing descriptions and identity misses are classified without recording credentials or private library titles in diagnostics. Open Library may supply an exact English edition, verified author IDs/aliases and a description bound to that edition's work. No title-only acceptance or generic-popularity fallback. Same-spirit cache version is now v2.
+
+Unpaid live local lookup: The Kiss Quotient / Sally Thorne was rejected; The Secret History / Donna Tartt and Never Let Me Go / Kazuo Ishiguro resolved to English editions with descriptions through the fallback. Local Google returned HTTP 429 without a server key; this is not proof of the earlier preview's cause. Mocked regression tests exercise wrong authors, HTTP categories, missing descriptions and mismatched work descriptions. These changes are local only; real same-spirit generation and app rendering remain unproven.
+
+Vercel's free daily deployment limit has stopped new previews. PR #35 cover/banner also awaits live light/dark proof. No production migration, merge or activation has occurred.
