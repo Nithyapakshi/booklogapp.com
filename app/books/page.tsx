@@ -356,6 +356,12 @@ function DiscoverTab() {
         </div>
       )}
 
+      {!isLoading && !error && recommendations && recommendations.length === 0 && (
+        <div role="status" style={{ background: "var(--bl-f5f0e8)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
+          <p style={{ fontSize: "13px", color: "var(--bl-8a7560)" }}>No verified matches for this request. Try a different description of what you want to read.</p>
+        </div>
+      )}
+
       {!isLoading && recommendations && recommendations.length > 0 && (
         <DiscoverRowView
           rowKey="ai" title="From your AI request" subtitle={`"${prompt.trim().slice(0, 80)}${prompt.trim().length > 80 ? "..." : ""}"`}
