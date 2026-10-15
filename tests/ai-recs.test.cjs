@@ -131,3 +131,8 @@ test('successful zero AI matches has explicit visible status rather than blank p
 test('genre frame does not exempt named subjects from literal relevance',async()=>{
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{for(const q of ['literary fiction about Bezos','novels about Bezos','fiction about Dark Matter'])assert.deepEqual(await mod.getAIBookRecommendations(q),[],q)}finally{restore()}
 })
+
+test('subject initials and earlier context sentences are preserved',async()=>{
+ const fixture=JSON.stringify([{title:'Tolkien',author:'Humphrey Carpenter',description:'A biography of J. R. R. Tolkien.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]);
+ const {mod,restore}=load(async()=>json({},429),fixture);try{for(const q of ['books about J. R. R. Tolkien. Give specific reasons.','I want biographies. Books about Tolkien. Give specific reasons.'])assert.deepEqual((await mod.getAIBookRecommendations(q)).map(b=>b.title),['Tolkien'],q)}finally{restore()}
+})
