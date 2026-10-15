@@ -178,8 +178,8 @@ Do not include any text outside the JSON array.`,
       if (!Array.isArray(parsed)) throw new Error("AI response is not a list")
       // An explicit "about X" request must mention X in title or description as well.
       // Taste/mood queries do not use this subject gate.
-      const firstSentence = query.split(/[.!?]/)[0].trim()
-      const subject = firstSentence.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)$/i)?.[1]?.trim()
+      const requestText = query.split(/[.!?]\s+(?=(?:give|include|exclude|avoid|do not|don't|return|show|provide|explain|list|limit|use|please)\b)/i)[0].trim()
+      const subject = requestText.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
       // Genre and mood requests remain taste even when phrased "books about ...".
       // Explicit subject requests still need a literal mention; this is a conservative guard.
       const isTaste = !!subject && /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|comedy|humor|humour|sci fi|science fiction|magical realism)$/i.test(normText(subject))
