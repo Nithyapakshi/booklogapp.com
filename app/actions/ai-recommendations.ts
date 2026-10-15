@@ -1,6 +1,7 @@
 "use server"
 
-import Anthropic from "@anthropic-ai/sdk"
+import { budgetedMessage } from "@/lib/ai-budget"
+import { resolveCatalogBook } from "@/lib/book-catalog"
 
 // Function to get a book cover image URL and Google Books ID
 async function googleBookCover(title: string, author: string): Promise<{ cover: string; googleId: string }> {
@@ -124,24 +125,18 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
   return { cover: await openLibraryCover(title, author), googleId: g.googleId }
 }
 
-export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5) {
+export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5, accessToken: string = "") {
   const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
-    if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
+    if (process.env.VERCEL_ENV === "preview" && process.env.BOOKLOG_AI_PREVIEW_TEST !== "enabled") throw new Error("AI recommendations are disabled in the test preview.")
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
     }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: howMany > 5 ? 4096 : 1024,
+    const message = await budgetedMessage({
+      accessToken, purpose: "ask",
       system: "You are a literary expert who creates accurate book recommendations. You never pad a list with loosely related books.",
-      messages: [
-        {
-          role: "user",
-          content: `Recommend up to ${howMany} books for the request below.
+      prompt: `Recommend up to ${howMany} books for the request below.
 
 How to read the request:
 - Mood/genre phrases such as "books about dark literary fiction" are taste requests, not named subjects.
@@ -161,8 +156,6 @@ ${exclude.length ? `\nDo not recommend any of these books, the user has already 
 
 Format the response as a JSON array of objects with title, author, description, genre and on_topic.
 Do not include any text outside the JSON array.`,
-        },
-      ],
     })
 
     const responseText = message.content[0]?.type === "text" ? message.content[0].text : ""
@@ -192,13 +185,15 @@ Do not include any text outside the JSON array.`,
       // Add IDs and fetch cover images for each book
       const booksWithCovers = await Promise.all(
         recommendations.map(async (book: any) => {
-          const { cover, googleId } = await getBookCoverUrl(book.title, book.author)
-          const stableId = googleId || `ai-rec-${book.title}-${book.author}`.replace(/\s+/g, '-').toLowerCase()
-          return { ...book, id: stableId, cover }
+          const verified = (await resolveCatalogBook(book.title, book.author)).book
+          // Never return an uncorroborated model title/author, even when it sounds plausible.
+          if (!verified) return null
+          const { cover, googleId } = await getBookCoverUrl(verified.title, verified.author)
+          return { ...book, title: verified.title, author: verified.author, id: googleId || verified.id, cover: cover || verified.cover }
         }),
       )
 
-      return booksWithCovers
+      return booksWithCovers.filter((book): book is NonNullable<typeof book> => book !== null)
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError)
       console.log("Raw response:", responseText)
