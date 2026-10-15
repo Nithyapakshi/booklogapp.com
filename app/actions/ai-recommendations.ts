@@ -174,9 +174,12 @@ Do not include any text outside the JSON array.`,
       const firstSentence = query.split(/[.!?]/)[0].trim()
       const subject = firstSentence.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)$/i)?.[1]?.trim()
       const hasTasteFrame = /\b(?:fiction|novels?|stories|romance|fantasy|thrillers?|mystery|horror)\s+(?:about|on)\b/i.test(firstSentence)
+      // A genre frame alone must not turn named subjects ("fiction about Bezos") into taste.
+      const themeWords = new Set("friendship friends grief grieving recovery loss love loneliness isolation family families belonging identity survival trauma hope redemption memory healing relationships regret character development thoughtful strong emotional quiet dark uplifting and or with of the a an".split(" "))
+      const framedThemes = hasTasteFrame && !!subject && normText(subject).split(" ").every(w => themeWords.has(w))
       // Genre and mood requests remain taste even when phrased "books about ...".
       // Explicit subject requests still need a literal mention; this is a conservative guard.
-      const isTaste = !!subject && (hasTasteFrame || /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|comedy|humor|humour|sci fi|science fiction|magical realism)$/i.test(normText(subject)))
+      const isTaste = !!subject && (framedThemes || /^(?:(?:dark|literary|uplifting|heartwarming|feel good|character driven|slow burn|historical|psychological|gothic|romantic|dystopian|contemporary|epic|cozy)\s+)*(?:fiction|novels?|romance|fantasy|thrillers?|mystery|horror|comedy|humor|humour|sci fi|science fiction|magical realism)$/i.test(normText(subject)))
       const subjectWords = subject && !isTaste ? normText(subject).split(" ").filter(w => !["the", "a", "an"].includes(w)) : []
       const recommendations = parsed
         .filter((b: any) => b && typeof b.title === "string" && typeof b.author === "string" && b.on_topic === true)
