@@ -21,7 +21,7 @@ export async function getSameSpiritCandidates(accessToken:string,requested:Seed[
     const key=cacheKey(s.seedTitle,s.seedAuthor)
     if (key.length>700 || !eligible.has(key) || seen.has(key)) continue
     seen.add(key);out[s.key]=[]
-    const hit=await aiRpc('lookup',{key}).catch(()=>null)
+    const hit=paidEnabled ? await aiRpc('lookup',{key}).catch(()=>null) : null
     if(hit?.hit && Array.isArray(hit.payload)){out[s.key]=rankSpirit(hit.payload);if(out[s.key].length)continue}
     const resolved=await resolveCatalogBook(s.seedTitle,s.seedAuthor,true)
     const book=resolved.book
