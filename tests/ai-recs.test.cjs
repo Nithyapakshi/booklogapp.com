@@ -2,11 +2,11 @@ const test = require("node:test"), assert = require("node:assert"), fs = require
 const ts = require("typescript")
 const src = fs.readFileSync(path.join(__dirname, "../app/actions/ai-recommendations.ts"), "utf8")
 
-function load(fetchImpl, modelJson, seen) {
+function load(fetchImpl, modelJson, seen, rejectIdentity=false) {
   const js = ts.transpileModule(src, { compilerOptions: { module: "commonjs", target: "es2020" } }).outputText
   const m = new Module("ai-recs"); m.paths = Module._nodeModulePaths(__dirname)
   const orig = Module._load
-  Module._load = (req, ...r) => req === "@/lib/ai-budget" ? {budgetedMessage:async (a) => {seen && seen.push({messages:[{content:a.prompt}]});return {content:[{type:"text",text:modelJson}]}}} : orig(req, ...r)
+  Module._load = (req, ...r) => req === "@/lib/book-catalog" ? {resolveCatalogBook:async(title,author)=>({book:rejectIdentity?null:{id:"verified",title,author,cover:"",description:""}})} : req === "@/lib/ai-budget" ? {budgetedMessage:async (a) => {seen && seen.push({messages:[{content:a.prompt}]});return {content:[{type:"text",text:modelJson}]}}} : orig(req, ...r)
   const realFetch = global.fetch; global.fetch = fetchImpl
   process.env.ANTHROPIC_API_KEY = "x"; delete process.env.VERCEL_ENV
   try { m._compile(js, "ai-recs.js") } finally { Module._load = orig }
@@ -93,3 +93,5 @@ test("genre words inside named topics do not bypass the subject guard",async()=>
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:"Random",author:"Someone",description:"A novel about spies",on_topic:true}]))
  try{for(const q of ["books about Dark Matter","books about Bezos fiction"]){assert.deepStrictEqual(await mod.getAIBookRecommendations(q),[])}}finally{restore()}
 })
+
+test("Ask removes a model pair when catalog corroboration fails",async()=>{const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:"The Kiss Quotient",author:"Sally Thorne",on_topic:true}]),null,true);try{assert.deepEqual(await mod.getAIBookRecommendations("romance"),[])}finally{restore()}})
