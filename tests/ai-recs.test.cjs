@@ -2,13 +2,13 @@ const test = require("node:test"), assert = require("node:assert"), fs = require
 const ts = require("typescript")
 const src = fs.readFileSync(path.join(__dirname, "../app/actions/ai-recommendations.ts"), "utf8")
 
-function load(fetchImpl, modelJson, seen) {
+function load(fetchImpl, modelJson, seen, rejectIdentity=false) {
   const js = ts.transpileModule(src, { compilerOptions: { module: "commonjs", target: "es2020" } }).outputText
   const m = new Module("ai-recs"); m.paths = Module._nodeModulePaths(__dirname)
   const orig = Module._load
-  Module._load = (req, ...r) => req === "@anthropic-ai/sdk" ? { default: class { messages = { create: async (a) => { seen && seen.push(a); return { content: [{ type: "text", text: modelJson }] } } } } } : orig(req, ...r)
+  Module._load = (req, ...r) => req === "@/lib/book-catalog" ? {resolveCatalogBook:async(title,author)=>({book:rejectIdentity?null:{id:"verified",title,author,cover:"",description:""}})} : req === "@/lib/ai-budget" ? {budgetedMessage:async (a) => {seen && seen.push({messages:[{content:a.prompt}]});return {content:[{type:"text",text:modelJson}]}}} : orig(req, ...r)
   const realFetch = global.fetch; global.fetch = fetchImpl
-  process.env.ANTHROPIC_API_KEY = "x"; delete process.env.VERCEL_ENV
+  process.env.ANTHROPIC_API_KEY = "x"; delete process.env.VERCEL_ENV; delete process.env.VERCEL_ENV
   try { m._compile(js, "ai-recs.js") } finally { Module._load = orig }
   return { mod: m.exports, restore: () => { global.fetch = realFetch } }
 }
@@ -116,3 +116,18 @@ test('edition author overrides work author and title-only collision is rejected'
 })
 
 test('book detail modal omits the unwanted reason banner',()=>{assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'../components/book-details-dialog.tsx'),'utf8'),/Why this book:/)})
+
+test('fiction about themes stays taste and trailing instructions are not subject words',async()=>{
+ const fixture=JSON.stringify([{title:'The Test Novel',author:'Synthetic Author',description:'Friends find comfort after loss.',on_topic:true}]);
+ for(const q of ['Recommend literary fiction about friendship, grief and recovery, with thoughtful character development. Give specific reasons, not generic bestseller picks.','novels about friendship and grief']){
+  const {mod,restore}=load(async()=>json({},429),fixture);try{assert.equal((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
+ }
+})
+test('named subject ignores separate formatting instructions but still rejects unrelated biographies',async()=>{
+ const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Amazon Unbound',author:'Brad Stone',description:'Jeff Bezos builds an empire.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{assert.deepEqual((await mod.getAIBookRecommendations('books about Bezos. Give specific reasons.')).map(b=>b.title),['Amazon Unbound'])}finally{restore()}
+})
+test('successful zero AI matches has explicit visible status rather than blank page',()=>{assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/recommendations\.length === 0/);assert.match(fs.readFileSync(path.join(__dirname,'../app/books/page.tsx'),'utf8'),/No verified matches for this request/)});
+
+test('genre frame does not exempt named subjects from literal relevance',async()=>{
+ const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{for(const q of ['literary fiction about Bezos','novels about Bezos','fiction about Dark Matter'])assert.deepEqual(await mod.getAIBookRecommendations(q),[],q)}finally{restore()}
+})
