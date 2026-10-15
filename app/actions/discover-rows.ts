@@ -76,12 +76,14 @@ function toCand(it: any): Cand | null {
 
 // One entry per book (title+author), newest edition with a cover wins. Order of first appearance is kept.
 function oneEach(items: any[], wantAuthor?: string): Cand[] {
-  const words = wantAuthor ? norm(wantAuthor).split(" ").filter(w => w.length > 2) : []
+  const expectedAuthor = wantAuthor ? norm(wantAuthor) : ""
   const best = new Map<string, { c: Cand; pop: number }>(), order: string[] = []
   for (const it of items) {
     const v = it?.volumeInfo || {}
-    if (words.length && !words.every(w => norm((v.authors || []).join(" ")).includes(w))) continue
+    if (expectedAuthor && !Array.isArray(v.authors)) continue
+    if (expectedAuthor && !v.authors.some((a: string) => norm(a) === expectedAuthor)) continue
     const c = toCand(it); if (!c) continue
+    if (expectedAuthor) c.author = wantAuthor!
     const k = `${base(c.title)}|${norm(c.author).split(" ").slice(-1)[0]}`
     const pop = Number(v.ratingsCount) || 0
     const prev = best.get(k)
