@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Install once with: pnpm hooks:install
+exec bash scripts/check.sh --fast

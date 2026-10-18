@@ -1,0 +1,37 @@
+# BookLog standing rules, enforced on every pull request.
+# Runs scripts/check.sh: no secrets, no spending without approval, one lockfile, migration status line,
+# then tests, typecheck and the production build. Nothing here deploys, schedules or spends anything.
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Standing rules
+        env:
+          CHECK_BASE: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/check.sh

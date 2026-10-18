@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "node --test tests/*.test.cjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "bash scripts/check.sh",
+    "check:fast": "bash scripts/check.sh --fast",
+    "hooks:install": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
