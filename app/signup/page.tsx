@@ -43,7 +43,6 @@ export default function SignupPage() {
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -56,11 +55,6 @@ export default function SignupPage() {
     setError(null)
     setMessage(null)
 
-    if (password !== confirmPassword) {
-      setError("Passwords don't match")
-      return
-    }
-
     setIsLoading(true)
 
     try {
@@ -70,7 +64,7 @@ export default function SignupPage() {
         setError(error.message)
       } else if (data.user && !data.session) {
         // Email confirmation is on: there is no session until the link in the email is opened.
-        setMessage("Check your email to confirm your account, then log in.")
+        setMessage("Check your email to confirm your account. The link signs you in and takes you straight to your library.")
       } else if (data.user) {
         setMessage("Account created successfully! Redirecting...")
 
@@ -125,12 +119,12 @@ export default function SignupPage() {
           {/* First / Last name row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "1rem" }}>
             <div>
-              <label htmlFor="first-name" style={labelStyle}>First name</label>
-              <input id="first-name" name="first-name" type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle} />
+              <label htmlFor="first-name" style={labelStyle}>First name (optional)</label>
+              <input id="first-name" name="first-name" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label htmlFor="last-name" style={labelStyle}>Last name</label>
-              <input id="last-name" name="last-name" type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} style={inputStyle} />
+              <label htmlFor="last-name" style={labelStyle}>Last name (optional)</label>
+              <input id="last-name" name="last-name" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} style={inputStyle} />
             </div>
           </div>
 
@@ -142,11 +136,6 @@ export default function SignupPage() {
           <div style={{ marginBottom: "1rem" }}>
             <label htmlFor="password" style={labelStyle}>Password</label>
             <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
-          </div>
-
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label htmlFor="confirm-password" style={labelStyle}>Confirm password</label>
-            <input id="confirm-password" name="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
           </div>
 
           <button
