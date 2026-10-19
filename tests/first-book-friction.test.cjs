@@ -27,17 +27,50 @@ test("signUp passes an auth callback redirect so the confirm link can sign the u
   assert.ok(/emailRedirectTo/.test(s), "emailRedirectTo passed to signUp")
 })
 
-test("auth callback page exchanges the code and lands signed-in users on the library", () => {
+test("Supabase client auto-detects URL sessions - the callback flow depends on this", () => {
+  const s = fs.readFileSync("lib/supabase/client.ts", "utf8")
+  assert.ok(/detectSessionInUrl:\s*true/.test(s), "detectSessionInUrl stays on")
+})
+
+test("auth callback checks an existing session before exchanging, and re-checks after", () => {
   const s = fs.readFileSync("app/auth/callback/page.tsx", "utf8")
-  assert.ok(s.includes("exchangeCodeForSession"), "PKCE code exchange")
+  const firstGetSession = s.indexOf("waitForSession(supabase, 2)")
+  const manualExchange = s.indexOf("exchangeCodeForSession(code)")
+  assert.ok(firstGetSession !== -1, "session checked first")
+  assert.ok(manualExchange !== -1, "PKCE exchange present")
+  assert.ok(firstGetSession < manualExchange, "session check happens before any manual exchange")
+  const after = s.slice(manualExchange)
+  assert.ok(after.includes("waitForSession(supabase, 2)"), "session re-checked after manual exchange before failing")
+  assert.ok(after.includes(".catch(() => null)"), "a double-consumed code is not fatal")
   assert.ok(s.includes('router.replace("/books")'), "signed-in users land on /books")
   assert.ok(s.includes('router.replace("/login")'), "sessionless visitors fall back to /login")
 })
 
-test("empty library prompts for the first book and focuses search; empty tab keeps plain message", () => {
+// Behavioral: run the real decision logic across every load state.
+test("first-book prompt only shows for a loaded, error-free, truly empty library", () => {
+  const src = fs.readFileSync("lib/library-empty.ts", "utf8")
+  const js = src
+    .replace("export function showFirstBookPrompt(state: { loading: boolean; loadError: boolean; bookCount: number }): boolean {",
+             "function showFirstBookPrompt(state) {")
+  assert.ok(js.includes("function showFirstBookPrompt(state) {"), "helper transform applied")
+  const showFirstBookPrompt = new Function(js + "; return showFirstBookPrompt")()
+  const cases = [
+    [{ loading: true,  loadError: false, bookCount: 0 }, false, "still loading: never show"],
+    [{ loading: true,  loadError: true,  bookCount: 0 }, false, "loading with error: never show"],
+    [{ loading: false, loadError: true,  bookCount: 0 }, false, "load failed: never show"],
+    [{ loading: false, loadError: false, bookCount: 0 }, true,  "loaded, empty: show"],
+    [{ loading: false, loadError: false, bookCount: 3 }, false, "has books: never show"],
+    [{ loading: false, loadError: true,  bookCount: 3 }, false, "error with stale books: never show"],
+  ]
+  for (const [state, expected, label] of cases) {
+    assert.strictEqual(showFirstBookPrompt(state), expected, label)
+  }
+})
+
+test("books page gates the prompt through the shared helper; empty tab keeps plain message", () => {
   const s = fs.readFileSync("app/books/page.tsx", "utf8")
+  assert.ok(s.includes("showFirstBookPrompt({ loading, loadError,"), "page uses the gated helper")
   assert.ok(s.includes("Add your first book"), "first-book CTA")
-  assert.ok(s.includes("libraryEmpty"), "only when the whole library is empty")
   assert.ok(s.includes("No books here yet."), "plain per-tab message retained")
   assert.ok(s.includes('input[placeholder="Search books or authors"]'), "CTA focuses the search box")
 })
