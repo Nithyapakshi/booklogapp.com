@@ -1,5 +1,6 @@
 "use client"
 import { readingDatesLabel } from "@/lib/reading-dates"
+import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -504,8 +505,8 @@ function BooksLibraryContent() {
     prefetchAmazonDomain()
   }, [])
 
-  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks } = useBooks()
-  const libraryEmpty = Object.values(books).flat().length === 0
+  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks, loading } = useBooks()
+  const libraryEmpty = showFirstBookPrompt({ loading, loadError, bookCount: Object.values(books).flat().length })
   const searchParams = useSearchParams()
   const requestedBookId = searchParams.get("book")
   const [linkedBookId, setLinkedBookId] = useState<string | null>(null)
