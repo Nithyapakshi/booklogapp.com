@@ -4,6 +4,20 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+import type { Session, SupabaseClient } from "@supabase/supabase-js"
+
+// The Supabase client is configured with detectSessionInUrl: true, so it may
+// already be exchanging a code from this URL on its own. Always check for a
+// session first, and re-check after any manual exchange attempt, so a link
+// never double-consumes its one-time code.
+async function waitForSession(supabase: SupabaseClient, attempts: number): Promise<Session | null> {
+  for (let i = 0; i < attempts; i++) {
+    const { data } = await supabase.auth.getSession()
+    if (data.session) return data.session
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  return null
+}
 
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -13,24 +27,34 @@ export default function AuthCallbackPage() {
     async function finishSignIn() {
       try {
         const supabase = createClientSupabaseClient()
-        const code = new URL(window.location.href).searchParams.get("code")
-        if (code) {
-          // PKCE flow: swap the one-time code for a session in this browser.
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) {
-            setFailed(true)
-            return
-          }
+
+        // 1. A session may already exist (returning visitor, or the automatic
+        //    URL exchange has already finished).
+        const existing = await waitForSession(supabase, 2)
+        if (existing) {
           router.replace("/books")
           return
         }
-        // Implicit flow: the session token is in the URL hash and the client picks it up automatically.
-        const { data } = await supabase.auth.getSession()
-        if (data.session) {
-          router.replace("/books")
-        } else {
-          router.replace("/login")
+
+        // 2. PKCE flow: the confirm link carries a one-time ?code=. Swap it for
+        //    a session in this browser. If the automatic exchange beat us to it
+        //    the manual call fails harmlessly, so re-check the session before
+        //    declaring failure.
+        const code = new URL(window.location.href).searchParams.get("code")
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code).catch(() => null)
+          const session = await waitForSession(supabase, 2)
+          if (session) {
+            router.replace("/books")
+          } else {
+            setFailed(true)
+          }
+          return
         }
+
+        // 3. Implicit flow: the token is in the URL hash and the client picks it
+        //    up automatically - step 1 already covered it. Nothing usable here.
+        router.replace("/login")
       } catch {
         setFailed(true)
       }
