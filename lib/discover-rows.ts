@@ -69,11 +69,12 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
   const lovedGenres = [...lg.entries()].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 2)
   for (const [name, n] of lovedGenres) specs.push({ key: `ratedgenre:${clean(name)}`, kind: "genre", genre: name, title: `Because you've rated ${n} ${name} books 5 stars`, subtitle: "More from a shelf you love", reason: `You've rated ${n} ${name} books 5 stars.` })
   // 3. Genre rows: up to 3, any genre with 8+ tagged books, biggest first. "General" is excluded by primaryGenre.
-  const g = new Map<string, number>(); let withGenre = 0
-  for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
+  // The percentage is the honest share of the whole library, untagged books included.
+  const g = new Map<string, number>()
+  for (const b of books) { const p = primaryGenre(b.genre); if (p) g.set(p, (g.get(p) || 0) + 1) }
   const genres = [...g.entries()].filter(([, n]) => n >= 8).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, opts.maxGenreRows ?? 3)
   genres.forEach(([name, n], i) => {
-    const pct = withGenre ? Math.round((n / withGenre) * 100) : 0
+    const pct = books.length ? Math.round((n / books.length) * 100) : 0
     specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: i === 0 ? "Your biggest shelf" : "Another big shelf", reason: `${pct}% of your library is ${name}.` })
   })
   return specs
@@ -128,5 +129,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min3-loved-v5|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min3-loved-v6|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
