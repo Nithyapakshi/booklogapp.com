@@ -53,13 +53,13 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
   // 2. 5-star books
   const fives = books.filter(b => b.selfRating === 5).sort((a, b) => a.title.localeCompare(b.title)).slice(0, opts.maxRatedRows ?? 2)
   for (const b of fives) specs.push({ key: `rated:${bookKey(b.title, b.author)}`, kind: "rated", seedTitle: b.title, seedAuthor: b.author, seedGenre: primaryGenre(b.genre), title: `Because you rated ${b.title} 5 stars`, subtitle: "In the same spirit", reason: `You rated ${b.title} 5 stars.` })
-  // 3. Biggest genre, real share of the library
+  // 3. Biggest genre, real share of the library (25%+ of 5+ genre-tagged books)
   const g = new Map<string, number>(); let withGenre = 0
   for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
   if (withGenre >= 5) {
     const [name, n] = [...g.entries()].sort((a, b) => b[1] - a[1])[0]
     const pct = Math.round((n / withGenre) * 100)
-    if (pct >= 40) specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: "Your biggest shelf", reason: `${pct}% of your library is ${name}.` })
+    if (pct >= 25) specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: "Your biggest shelf", reason: `${pct}% of your library is ${name}.` })
   }
   return specs
 }
@@ -95,7 +95,7 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
       if (picked.length >= ROW_SIZE) break
     }
     // Books that did not make the row go back to the pool for later rows.
-    if (picked.length < (s.kind === "rated" ? 5 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
+    if (picked.length < (s.kind === "rated" ? 3 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
     rows.push({ key: s.key, title: s.title, subtitle: s.subtitle, reason: s.reason, books: picked })
   }
   return rows
@@ -110,5 +110,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min5-author-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min3-author-v2|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
