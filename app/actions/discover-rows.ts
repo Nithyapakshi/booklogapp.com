@@ -121,7 +121,7 @@ async function pages(q: string, n = 2): Promise<any[]> {
 const THIN = 8
 
 async function candidatesFrom(s: Spec, fetchPages: (q: string, n?: number) => Promise<any[]>): Promise<Cand[]> {
-  if (s.kind === "author" && s.author) return stripPop(oneEach(await fetchPages(`inauthor:"${s.author.replace(/"/g, "")}"`), s.author))
+  if (s.kind === "author" && s.author) return stripPop(oneEach(await fetchPages(`inauthor:"${s.author.replace(/"/g, "")}"`, 3), s.author))
   if (s.kind === "rated") return [] // Free editorial server action owns rated rows; no popularity fallback.
   if (s.kind === "genre" && s.genre) return popular(oneEach(await fetchPages(`subject:"${s.genre.replace(/"/g, "")}"`)))
   return []
