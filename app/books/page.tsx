@@ -232,7 +232,8 @@ function DiscoverTab() {
     if (specs.length === 0) { setCandidates({}); return }
     try {
       const saved = JSON.parse(localStorage.getItem(rowsCacheKey) || "null")
-      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 12 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
+      // Cached rows are good for 3 days; the library signature still refreshes them on any shelf change.
+      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 3 * 24 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
     } catch {}
     let cancelled = false
     setRowsLoading(true); setRowsTimedOut(false); setCandidates({})
