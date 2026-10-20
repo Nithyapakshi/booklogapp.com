@@ -243,14 +243,16 @@ function DiscoverTab() {
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated"), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
-        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated"))).catch(() => ({}))
-        const [other, rated] = await Promise.all([free, spirit])
-        const got = { ...other, ...rated }
+        // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide.
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated")).then(c => ({ c, failed: false }))).catch(() => ({ c: {} as Record<string, Candidate[]>, failed: true }))
+        const [freeRes, spiritRes] = await Promise.all([free, spirit])
+        const got = { ...freeRes.candidates, ...spiritRes.c }
         if (cancelled) return
         setCandidates(got)
-        // Full results cache for 3 days; if any fetchable spec came back empty, keep them for 1 hour only.
-        const partial = specs.filter(s => s.kind !== "rated").some(s => !got[s.key] || got[s.key].length === 0)
+        // Full results cache for 3 days; a fetch that actually FAILED (network or API error) expires after 1 hour instead.
+        // A successful call with zero results (obscure author, niche genre) caches normally.
+        const partial = freeRes.failed.length > 0 || spiritRes.failed
         if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
       } catch { if (!cancelled) setCandidates({}) }
       finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
