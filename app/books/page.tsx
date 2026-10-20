@@ -233,7 +233,9 @@ function DiscoverTab() {
     try {
       const saved = JSON.parse(localStorage.getItem(rowsCacheKey) || "null")
       // Cached rows are good for 3 days; the library signature still refreshes them on any shelf change.
-      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 3 * 24 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
+      // A partial fetch (some specs came back empty, e.g. a Google Books outage) expires after 1 hour instead.
+      const ttl = saved && saved.partial ? 3600 * 1000 : 3 * 24 * 3600 * 1000
+      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < ttl && saved.candidates) { setCandidates(saved.candidates); return }
     } catch {}
     let cancelled = false
     setRowsLoading(true); setRowsTimedOut(false); setCandidates({})
@@ -247,7 +249,9 @@ function DiscoverTab() {
         const got = { ...other, ...rated }
         if (cancelled) return
         setCandidates(got)
-        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
+        // Full results cache for 3 days; if any fetchable spec came back empty, keep them for 1 hour only.
+        const partial = specs.filter(s => s.kind !== "rated").some(s => !got[s.key] || got[s.key].length === 0)
+        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
       } catch { if (!cancelled) setCandidates({}) }
       finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
     }, 400)
