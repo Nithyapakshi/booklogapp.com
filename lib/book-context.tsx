@@ -29,7 +29,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 export type BookSaveResult = { outcome: "added" | "edited" | "duplicate"; books: Book[] }
 
 type BookContextType = {
-  createBook: (book: any, status: BookStatus) => Promise<BookSaveResult>
+  createBook: (book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean }) => Promise<BookSaveResult>
   editBook: (id: string, details: {title: string; author: string; cover?: string}) => Promise<BookSaveResult>
   saveDates: (bookId: string, dates: { startedAt?: string | null; startedPrecision?: DatePrecision; finishedAt?: string | null; finishedPrecision?: DatePrecision }) => Promise<void>
   moveBook: (book: any, status: BookStatus) => Promise<"added" | "duplicate" | "moved">
@@ -288,7 +288,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     })()
   }, [loading, authLoading, userId, books, enrichMissing])
 
-  const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean): Promise<BookSaveResult> => {
+  const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean }): Promise<BookSaveResult> => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
     const errorText = validateBookDetails(book.title, book.author || "", book.cover || "")
     if (errorText) throw new Error(errorText)
@@ -318,12 +318,12 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         return next
       })
       if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
-      else if (!edit && status === "reading") setStartPrompt({id: rows[0].id, title: rows[0].title})
+      else if (!edit && status === "reading" && !opts?.skipStartPrompt) setStartPrompt({id: rows[0].id, title: rows[0].title})
     }
     if (data.outcome !== "duplicate" && (edit || (!book.cover && !book.description))) void enrichMissing(rows[0])
     return {outcome: data.outcome, books: rows}
   }, [userId, loading, authLoading, books, enrichMissing])
-  const createBook = useCallback((book: any, status: BookStatus) => saveDetails(book, status, false), [saveDetails])
+  const createBook = useCallback((book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean }) => saveDetails(book, status, false, opts), [saveDetails])
   const editBook = useCallback((id: string, details: {title: string; author: string; cover?: string}) => saveDetails({...details, id}, "queued", true), [saveDetails])
 
   const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
@@ -474,3 +474,4 @@ export function useBooks() {
   if (context === undefined) throw new Error("useBooks must be used within a BookProvider")
   return context
 }
+
