@@ -1,5 +1,6 @@
 "use client"
 import { readingDatesLabel } from "@/lib/reading-dates"
+import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -504,7 +505,8 @@ function BooksLibraryContent() {
     prefetchAmazonDomain()
   }, [])
 
-  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks } = useBooks()
+  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks, loading } = useBooks()
+  const libraryEmpty = showFirstBookPrompt({ loading, loadError, bookCount: Object.values(books).flat().length })
   const searchParams = useSearchParams()
   const requestedBookId = searchParams.get("book")
   const [linkedBookId, setLinkedBookId] = useState<string | null>(null)
@@ -694,17 +696,36 @@ function BooksLibraryContent() {
     )
   }
 
+  const firstBookPrompt = (span: boolean) => (
+    <div className={span ? "col-span-full text-center py-12" : "text-center py-12"} style={sans}>
+      <p style={{ fontSize: "15px", color: "var(--bl-1a1208)", fontWeight: 600 }}>Your shelf is empty</p>
+      <p style={{ fontSize: "13px", color: "var(--bl-6b5c42)", margin: "6px auto 14px", maxWidth: "320px" }}>
+        Add your first book - search by title or author above, or scan its barcode.
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" })
+          setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder="Search books or authors"]')?.focus(), 300)
+        }}
+        style={{ fontSize: "13px", background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "8px", padding: "9px 20px", fontWeight: 600, cursor: "pointer" }}
+      >
+        Add your first book
+      </button>
+    </div>
+  )
+
   const gridView = (books: Book[]) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
       {books.map((book) => <BookCard key={book.id} book={book} removeBook={removeBook} />)}
-      {books.length === 0 && <div className="col-span-full text-gray-400 text-center py-12" style={sans}>No books here yet.</div>}
+      {books.length === 0 && (libraryEmpty ? firstBookPrompt(true) : <div className="col-span-full text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
     </div>
   )
 
   const listView = (books: Book[]) => (
     <div className="flex flex-col gap-2 mt-4">
       {books.map((book) => <BookListRow key={book.id} book={book} removeBook={removeBook} />)}
-      {books.length === 0 && <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>}
+      {books.length === 0 && (libraryEmpty ? firstBookPrompt(false) : <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
     </div>
   )
 

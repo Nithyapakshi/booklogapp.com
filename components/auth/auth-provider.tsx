@@ -124,7 +124,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      return await supabase.auth.signUp({ email, password, ...(metadata ? { options: { data: metadata } } : {}) })
+      const emailRedirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined
+      return await supabase.auth.signUp({
+        email,
+        password,
+        options: { ...(metadata ? { data: metadata } : {}), ...(emailRedirectTo ? { emailRedirectTo } : {}) },
+      })
     } catch (err) {
       console.error("Sign up error:", err)
       return {
