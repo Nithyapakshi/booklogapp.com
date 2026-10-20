@@ -780,7 +780,7 @@ function BooksLibraryContent() {
               <div className="mb-5">
                 <BookSearch />
               </div>
-              {libraryEmpty && <StarterBooksLine />}
+              <StarterBooksLine />
               <div className="flex items-center justify-between mb-3">
                 <ul className="flex gap-2 overflow-x-auto md:flex-wrap" style={{ scrollbarWidth: "none", flexShrink: 1, minWidth: 0 }}>
                   {tabs.map((tab) => (
