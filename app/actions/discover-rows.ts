@@ -139,7 +139,7 @@ async function candidatesFor(s: Spec): Promise<Cand[]> {
 
 export async function fetchDiscoverCandidates(specs: Spec[], onSpec?: (key: string, list: Cand[]) => void): Promise<Record<string, Cand[]>> {
   const out: Record<string, Cand[]> = {}
-  const list = (Array.isArray(specs) ? specs : []).slice(0, 8) // headroom for 2 author + 2 rated + 3 genre specs
+  const list = (Array.isArray(specs) ? specs : []).slice(0, 10) // rated specs are filtered out by the caller; 10 covers 1 loved-author + 2 author + 2 loved-genre + 3 genre with headroom
   await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] }; try { onSpec?.(String(s.key), out[String(s.key)]) } catch {} }))
   return out
 }
