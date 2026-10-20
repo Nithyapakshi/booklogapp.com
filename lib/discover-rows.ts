@@ -38,7 +38,7 @@ export function primaryGenre(g?: string): string {
   return first && !/^(general|unknown|n\/a)$/i.test(first) ? first.replace(/^./, c => c.toUpperCase()) : ""
 }
 
-export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: number; maxRatedRows?: number } = {}): RowSpec[] {
+export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: number; maxRatedRows?: number; maxGenreRows?: number } = {}): RowSpec[] {
   const books = uniqueLibrary(rawBooks.filter(b => b.title && b.title.trim()))
   const specs: RowSpec[] = []
   // 1. Most-read authors (Completed + Currently Reading). Needs at least 2 books by the author.
@@ -53,17 +53,14 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
   // 2. 5-star books
   const fives = books.filter(b => b.selfRating === 5).sort((a, b) => a.title.localeCompare(b.title)).slice(0, opts.maxRatedRows ?? 2)
   for (const b of fives) specs.push({ key: `rated:${bookKey(b.title, b.author)}`, kind: "rated", seedTitle: b.title, seedAuthor: b.author, seedGenre: primaryGenre(b.genre), title: `Because you rated ${b.title} 5 stars`, subtitle: "In the same spirit", reason: `You rated ${b.title} 5 stars.` })
-  // 3. Biggest genre, real share of the library (25%+ of 5+ genre-tagged books)
+  // 3. Genre rows: up to 3, any genre with 8+ tagged books, biggest first. "General" is excluded by primaryGenre.
   const g = new Map<string, number>(); let withGenre = 0
   for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
-  if (withGenre >= 5) {
-    const sorted = [...g.entries()].sort((a, b) => b[1] - a[1])
-    const [name, n] = sorted[0]
-    // No genre row on a tie: sorting must not pick a "top" genre the library does not have.
-    const tied = sorted.length > 1 && sorted[1][1] === n
-    const pct = Math.round((n / withGenre) * 100)
-    if (n >= 3 && !tied && pct >= 25) specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: "Your biggest shelf", reason: `${pct}% of your library is ${name}.` })
-  }
+  const genres = [...g.entries()].filter(([, n]) => n >= 8).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, opts.maxGenreRows ?? 3)
+  genres.forEach(([name, n], i) => {
+    const pct = withGenre ? Math.round((n / withGenre) * 100) : 0
+    specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: i === 0 ? "Your biggest shelf" : "Another big shelf", reason: `${pct}% of your library is ${name}.` })
+  })
   return specs
 }
 
@@ -116,5 +113,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min3-author-v3|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min3-genre8x3-v4|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
