@@ -48,11 +48,26 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
     const k = authorKey(b.author); if (!k) continue
     const c = counts.get(k) || { n: 0, name: b.author.trim() }; c.n += 1; counts.set(k, c)
   }
-  const authors = [...counts.values()].filter(c => c.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, opts.maxAuthorRows ?? 2)
+  // Loved authors first: 2+ of their books rated 5 stars. The stronger signal replaces the plain most-read row.
+  const loved = new Map<string, { n: number; name: string }>()
+  for (const b of books) {
+    if (b.selfRating !== 5) continue
+    const k = authorKey(b.author); if (!k) continue
+    const c = loved.get(k) || { n: 0, name: b.author.trim() }; c.n += 1; loved.set(k, c)
+  }
+  const lovedAuthors = [...loved.values()].filter(c => c.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 1)
+  for (const a of lovedAuthors) specs.push({ key: `ratedauthor:${authorKey(a.name)}`, kind: "author", author: a.name, title: `Because you've rated ${a.n} books by ${a.name} 5 stars`, subtitle: "More from an author you love", reason: `You've rated ${a.n} books by ${a.name} 5 stars.` })
+  const covered = new Set(lovedAuthors.map(a => authorKey(a.name)))
+  const authors = [...counts.values()].filter(c => c.n >= 2 && !covered.has(authorKey(c.name))).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, opts.maxAuthorRows ?? 2)
   for (const a of authors) specs.push({ key: `author:${authorKey(a.name)}`, kind: "author", author: a.name, title: `Since you've read ${a.n} books by ${a.name}`, subtitle: "More from an author you read a lot", reason: `You've read ${a.n} books by ${a.name}.` })
   // 2. 5-star books
   const fives = books.filter(b => b.selfRating === 5).sort((a, b) => a.title.localeCompare(b.title)).slice(0, opts.maxRatedRows ?? 2)
   for (const b of fives) specs.push({ key: `rated:${bookKey(b.title, b.author)}`, kind: "rated", seedTitle: b.title, seedAuthor: b.author, seedGenre: primaryGenre(b.genre), title: `Because you rated ${b.title} 5 stars`, subtitle: "In the same spirit", reason: `You rated ${b.title} 5 stars.` })
+  // 2b. Genres he loves: 3+ books in the genre rated 5 stars. Separate genres, biggest first.
+  const lg = new Map<string, number>()
+  for (const b of books) { if (b.selfRating !== 5) continue; const p = primaryGenre(b.genre); if (p) lg.set(p, (lg.get(p) || 0) + 1) }
+  const lovedGenres = [...lg.entries()].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 2)
+  for (const [name, n] of lovedGenres) specs.push({ key: `ratedgenre:${clean(name)}`, kind: "genre", genre: name, title: `Because you've rated ${n} ${name} books 5 stars`, subtitle: "More from a shelf you love", reason: `You've rated ${n} ${name} books 5 stars.` })
   // 3. Genre rows: up to 3, any genre with 8+ tagged books, biggest first. "General" is excluded by primaryGenre.
   const g = new Map<string, number>(); let withGenre = 0
   for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
@@ -113,5 +128,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min3-genre8x3-v4|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min3-loved-v5|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
