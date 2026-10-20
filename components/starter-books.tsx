@@ -120,11 +120,18 @@ export function StarterBooksLine() {
   }
 
   const allBooks = Object.values(books).flat()
+  // Titles on a real shelf often carry subtitles ("Atomic Habits: An Easy &
+  // Proven Way..."). Match on the part before the colon, or a prefix either
+  // way, and always require the author to agree.
+  const titleMatches = (a: string, b: string) => {
+    const core = (s: string) => norm(s).split(":")[0].trim()
+    return a === b || core(a) === core(b) || a.startsWith(b) || b.startsWith(a)
+  }
   const onShelf = (title: string, author: string) =>
     allBooks.some((b) => {
-      const bt = norm(b.title || "")
       const ba = norm(b.author || "")
-      return bt === norm(title) && (ba === norm(author) || ba.includes(norm(author)) || norm(author).includes(ba))
+      const authorOk = ba === norm(author) || ba.includes(norm(author)) || norm(author).includes(ba)
+      return authorOk && titleMatches(norm(b.title || ""), norm(title))
     })
   const remaining = STARTERS.filter((s) => !onShelf(s.title, s.author))
 
@@ -182,7 +189,7 @@ export function StarterBooksLine() {
           onClick={dismiss}
           aria-label="Hide these suggestions"
           title="Hide these suggestions"
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 2px", font: "inherit", fontSize: "12px", color: "var(--bl-8a7560)", borderRadius: "2px" }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "8px 10px", margin: "-8px 0", font: "inherit", fontSize: "14px", color: "var(--bl-8a7560)", borderRadius: "4px" }}
           className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]"
         >
           &times;
