@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { searchBooks } from "@/lib/google-books-api"
 import type { BookSearchResult } from "@/lib/google-books-api"
@@ -13,6 +13,11 @@ const STARTERS = [
   { title: "The Midnight Library", author: "Matt Haig" },
 ]
 
+// The line is a first-run nudge. Once someone has 3+ books they clearly know
+// how to add them, so it steps aside regardless of which books they own.
+const MAX_BOOKS_FOR_LINE = 3
+const DISMISS_KEY = "booklog-starter-line-dismissed"
+
 const addedLabels: Partial<Record<BookStatus, string>> = {
   reading: "Currently Reading",
   queued: "Want to Read",
@@ -21,31 +26,53 @@ const addedLabels: Partial<Record<BookStatus, string>> = {
 
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 
+const norm = (s: string) => s.trim().toLowerCase()
+
 // Accept only an exact title match, confirming the author when the results
 // carry one. Never fall back to a loose first result - adding the wrong book
 // on someone's very first tap would be worse than offering nothing.
 function exactStarterMatch(results: BookSearchResult[], title: string, author: string): BookSearchResult | undefined {
-  const t = title.trim().toLowerCase()
-  const a = author.trim().toLowerCase()
-  const exact = results.filter((r) => r.title.trim().toLowerCase() === t)
+  const t = norm(title)
+  const a = norm(author)
+  const exact = results.filter((r) => norm(r.title) === t)
   const withAuthor = exact.find((r) => {
-    const ra = (r.author || "").trim().toLowerCase()
+    const ra = norm(r.author || "")
     return ra.length > 0 && (ra.includes(a) || a.includes(ra))
   })
   return withAuthor ?? (exact.length === 1 ? exact[0] : undefined)
 }
 
 export function StarterBooksLine() {
-  const { createBook } = useBooks()
+  const { createBook, books, loading, loadError } = useBooks()
   const { toast } = useToast()
   const [book, setBook] = useState<BookSearchResult | null>(null)
   const [resolving, setResolving] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lineError, setLineError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
+  // Hidden until the dismiss flag is read from localStorage, so a dismissed
+  // line never flashes back on reload.
+  const [dismissed, setDismissed] = useState(true)
   // Synchronous lock: state updates lag a render, so a fast double-tap could
   // otherwise slip two resolves or two saves through before disabled kicks in.
   const busyRef = useRef(false)
+
+  useEffect(() => {
+    try {
+      setDismissed(window.localStorage.getItem(DISMISS_KEY) === "1")
+    } catch {
+      setDismissed(false)
+    }
+  }, [])
+
+  const dismiss = () => {
+    setDismissed(true)
+    try {
+      window.localStorage.setItem(DISMISS_KEY, "1")
+    } catch {
+      // private mode etc - hidden for this session, just not remembered
+    }
+  }
 
   const openStarter = async (title: string, author: string) => {
     if (busyRef.current) return
@@ -75,7 +102,9 @@ export function StarterBooksLine() {
     setSaving(true)
     setDialogError(null)
     try {
-      const result = await createBook(book, status)
+      // Starter adds skip the "Started this book?" date prompt - the date
+      // stays editable from the book's page later. Other add flows unchanged.
+      const result = await createBook(book, status, { skipStartPrompt: true })
       if (result.outcome === "duplicate") {
         toast({ title: "Already in your library", type: "warning" })
       } else {
@@ -89,6 +118,17 @@ export function StarterBooksLine() {
       setSaving(false)
     }
   }
+
+  const allBooks = Object.values(books).flat()
+  const onShelf = (title: string, author: string) =>
+    allBooks.some((b) => {
+      const bt = norm(b.title || "")
+      const ba = norm(b.author || "")
+      return bt === norm(title) && (ba === norm(author) || ba.includes(norm(author)) || norm(author).includes(ba))
+    })
+  const remaining = STARTERS.filter((s) => !onShelf(s.title, s.author))
+
+  if (loading || loadError || dismissed || allBooks.length >= MAX_BOOKS_FOR_LINE || remaining.length === 0) return null
 
   const linkBtn = {
     background: "none",
@@ -122,7 +162,7 @@ export function StarterBooksLine() {
     <>
       <p style={{ ...sans, fontSize: "13px", color: "var(--bl-8a7560)", margin: "2px 0 14px 2px" }}>
         Not sure where to start? Try{" "}
-        {STARTERS.map((s, i) => (
+        {remaining.map((s, i) => (
           <span key={s.title}>
             <button
               type="button"
@@ -133,9 +173,20 @@ export function StarterBooksLine() {
             >
               {s.title}
             </button>
-            {i < STARTERS.length - 2 ? ", " : i === STARTERS.length - 2 ? " or " : "."}
+            {i < remaining.length - 2 ? ", " : i === remaining.length - 2 ? " or " : "."}
           </span>
         ))}
+        {" "}
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Hide these suggestions"
+          title="Hide these suggestions"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 2px", font: "inherit", fontSize: "12px", color: "var(--bl-8a7560)", borderRadius: "2px" }}
+          className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]"
+        >
+          &times;
+        </button>
       </p>
       {lineError && <p role="alert" className="text-sm text-red-600 dark:text-red-300" style={{ margin: "-8px 0 12px 2px" }}>{lineError}</p>}
       <Dialog open={!!book} onOpenChange={(open) => { if (!open) setBook(null) }}>
