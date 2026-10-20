@@ -3,6 +3,7 @@
 
 export const ROW_SIZE = 15
 export const MIN_ROW_BOOKS = 4
+const MAX_ROWS = 3 // Visible-row ceiling; raise this one number to show more rows.
 
 export interface LibBook { id?: string; title: string; author: string; status?: string; selfRating?: number; genre?: string }
 export interface Candidate { id: string; title: string; author: string; cover: string; description?: string; publishedYear?: number; genre?: string; relevanceScore?: number; relevanceSource?: string }
@@ -117,7 +118,8 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
     if (picked.length < (s.kind === "rated" ? 3 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
     rows.push({ key: s.key, title: s.title, subtitle: s.subtitle, reason: s.reason, books: picked })
   }
-  return rows
+  // Owner-approved cap (20 Oct): at most MAX_ROWS visible rows, most-personal-first (spec order).
+  return rows.slice(0, MAX_ROWS)
 }
 
 // Mobile "Top pick": the first book of the first row that still keeps the minimum without it.
