@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
 import BookSearch from "@/components/book-search"
+import { StarterBooksLine } from "@/components/starter-books"
 import type { Book } from "@/types"
 import { Sidebar } from "@/components/sidebar"
 import { LayoutGrid, List } from "lucide-react"
@@ -779,6 +780,7 @@ function BooksLibraryContent() {
               <div className="mb-5">
                 <BookSearch />
               </div>
+              {!loading && Object.values(books).flat().length === 0 && <StarterBooksLine />}
               <div className="flex items-center justify-between mb-3">
                 <ul className="flex gap-2 overflow-x-auto md:flex-wrap" style={{ scrollbarWidth: "none", flexShrink: 1, minWidth: 0 }}>
                   {tabs.map((tab) => (
@@ -882,3 +884,4 @@ export default function BooksPage() {
   )
   return <BooksLibrary />
 }
+
