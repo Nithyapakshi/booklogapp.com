@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { searchBooks } from "@/lib/google-books-api"
 import type { BookSearchResult } from "@/lib/google-books-api"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 
 const STARTERS = [
@@ -21,6 +21,20 @@ const addedLabels: Partial<Record<BookStatus, string>> = {
 
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 
+// Accept only an exact title match, confirming the author when the results
+// carry one. Never fall back to a loose first result - adding the wrong book
+// on someone's very first tap would be worse than offering nothing.
+function exactStarterMatch(results: BookSearchResult[], title: string, author: string): BookSearchResult | undefined {
+  const t = title.trim().toLowerCase()
+  const a = author.trim().toLowerCase()
+  const exact = results.filter((r) => r.title.trim().toLowerCase() === t)
+  const withAuthor = exact.find((r) => {
+    const ra = (r.author || "").trim().toLowerCase()
+    return ra.length > 0 && (ra.includes(a) || a.includes(ra))
+  })
+  return withAuthor ?? (exact.length === 1 ? exact[0] : undefined)
+}
+
 export function StarterBooksLine() {
   const { createBook } = useBooks()
   const { toast } = useToast()
@@ -29,14 +43,18 @@ export function StarterBooksLine() {
   const [saving, setSaving] = useState(false)
   const [lineError, setLineError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
+  // Synchronous lock: state updates lag a render, so a fast double-tap could
+  // otherwise slip two resolves or two saves through before disabled kicks in.
+  const busyRef = useRef(false)
 
   const openStarter = async (title: string, author: string) => {
-    if (resolving) return
+    if (busyRef.current) return
+    busyRef.current = true
     setResolving(true)
     setLineError(null)
     try {
       const results = await searchBooks(`${title} ${author}`)
-      const match = results.find((r) => r.title.trim().toLowerCase() === title.toLowerCase()) ?? results[0]
+      const match = exactStarterMatch(results, title, author)
       if (match) {
         setDialogError(null)
         setBook(match)
@@ -46,12 +64,14 @@ export function StarterBooksLine() {
     } catch {
       setLineError("That book could not be loaded. Try searching above.")
     } finally {
+      busyRef.current = false
       setResolving(false)
     }
   }
 
   const addTo = async (status: BookStatus) => {
-    if (!book || saving) return
+    if (!book || busyRef.current) return
+    busyRef.current = true
     setSaving(true)
     setDialogError(null)
     try {
@@ -65,6 +85,7 @@ export function StarterBooksLine() {
     } catch {
       setDialogError("The book was not saved. Please try again.")
     } finally {
+      busyRef.current = false
       setSaving(false)
     }
   }
@@ -72,12 +93,13 @@ export function StarterBooksLine() {
   const linkBtn = {
     background: "none",
     border: "none",
-    padding: 0,
+    padding: "6px 0",
     cursor: "pointer",
     font: "inherit",
     color: "var(--bl-c17f3e)",
     fontWeight: 600,
     borderBottom: "0.5px solid var(--bl-d4a96a)",
+    borderRadius: "2px",
   } as const
 
   const addBtn = (primary: boolean) => ({
@@ -100,7 +122,13 @@ export function StarterBooksLine() {
         Not sure where to start? Try{" "}
         {STARTERS.map((s, i) => (
           <span key={s.title}>
-            <button type="button" onClick={() => openStarter(s.title, s.author)} disabled={resolving} style={linkBtn}>
+            <button
+              type="button"
+              onClick={() => openStarter(s.title, s.author)}
+              disabled={resolving}
+              style={linkBtn}
+              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]"
+            >
               {s.title}
             </button>
             {i < STARTERS.length - 2 ? ", " : i === STARTERS.length - 2 ? " or " : "."}
@@ -111,6 +139,7 @@ export function StarterBooksLine() {
       <Dialog open={!!book} onOpenChange={(open) => { if (!open) setBook(null) }}>
         <DialogContent className="sm:max-w-[560px]">
           <DialogTitle className="sr-only">{book?.title ?? "Starter book"}</DialogTitle>
+          <DialogDescription className="sr-only">Cover, title and author of the starter book, with buttons to add it to a tab on your shelf.</DialogDescription>
           <div className="flex flex-col sm:flex-row gap-5">
             <div className="flex-none w-[120px] max-sm:mx-auto">
               {book?.cover ? (
@@ -125,9 +154,9 @@ export function StarterBooksLine() {
               <p style={{ ...sans, fontSize: "13px", color: "var(--bl-8a7560)", marginTop: "4px" }}>{book?.author}</p>
               <p style={{ ...sans, fontSize: "12.5px", color: "var(--bl-6b5c42)", marginTop: "12px", lineHeight: 1.5 }}>Add it to a tab on your shelf:</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
-                <button type="button" disabled={saving} onClick={() => addTo("reading")} style={addBtn(true)}>Add to Reading</button>
-                <button type="button" disabled={saving} onClick={() => addTo("queued")} style={addBtn(false)}>Add to Queued</button>
-                <button type="button" disabled={saving} onClick={() => addTo("completed")} style={addBtn(false)}>Add to Completed</button>
+                <button type="button" disabled={saving} onClick={() => addTo("reading")} style={addBtn(true)} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]">Add to Reading</button>
+                <button type="button" disabled={saving} onClick={() => addTo("queued")} style={addBtn(false)} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]">Add to Queued</button>
+                <button type="button" disabled={saving} onClick={() => addTo("completed")} style={addBtn(false)} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]">Add to Completed</button>
               </div>
               {dialogError && <p role="alert" className="text-sm text-red-600 dark:text-red-300" style={{ marginTop: "10px" }}>{dialogError}</p>}
             </div>
