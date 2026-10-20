@@ -98,7 +98,9 @@ export function StarterBooksLine() {
     font: "inherit",
     color: "var(--bl-c17f3e)",
     fontWeight: 600,
-    borderBottom: "0.5px solid var(--bl-d4a96a)",
+    textDecoration: "underline",
+    textDecorationColor: "var(--bl-d4a96a)",
+    textUnderlineOffset: "3px",
     borderRadius: "2px",
   } as const
 
