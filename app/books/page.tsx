@@ -271,7 +271,7 @@ function DiscoverTab() {
   React.useEffect(() => {
     if (!discoverUser?.id) return
     let cancelled = false
-    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author").order("created_at", { ascending: false }).limit(10)
+    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author,created_at").order("created_at", { ascending: false }).limit(10)
       .then(({ data, error: surveyReadError }) => { if (!cancelled && !surveyReadError) setSurveyAnswers(latestAnswers((data || []) as SurveyEvent[])) })
     return () => { cancelled = true }
   }, [discoverUser?.id, surveyReload])
@@ -602,14 +602,14 @@ function BooksLibraryContent() {
   const router = useRouter()
   const { user } = useAuth()
 
-  // Welcome survey: once per user, over My Books only, and only when no survey_events row exists yet.
+  // Welcome survey: over My Books only; completed/skipped never ask again, the X asks again after 7 days.
   // If the table is missing (migration not applied), the read errors and the survey simply never pops.
   const [surveyEvents, setSurveyEvents] = useState<SurveyEvent[] | null>(null)
   const [surveyOpen, setSurveyOpen] = useState(false)
   const surveyAskedRef = React.useRef(false)
   useEffect(() => {
     if (!user) return
-    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author").order("created_at", { ascending: false }).limit(10)
+    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author,created_at").order("created_at", { ascending: false }).limit(10)
       .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]) })
   }, [user])
   useEffect(() => {
