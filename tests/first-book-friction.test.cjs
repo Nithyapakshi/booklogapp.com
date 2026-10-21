@@ -74,3 +74,11 @@ test("books page gates the prompt through the shared helper; empty tab keeps pla
   assert.ok(s.includes("No books here yet."), "plain per-tab message retained")
   assert.ok(s.includes('input[placeholder="Search books or authors"]'), "CTA focuses the search box")
 })
+
+test("empty shelf points to Discover", () => {
+  const s = fs.readFileSync("app/books/page.tsx", "utf8")
+  assert.ok(s.includes("Not sure what to read yet?"), "Discover line present")
+  assert.ok(s.includes('href="/discover"'), "links to /discover")
+  assert.ok(s.includes("ideas picked for you."), "his approved copy")
+  assert.ok(!s.includes("no shelf needed"), "no 'no shelf needed' copy anywhere")
+})
