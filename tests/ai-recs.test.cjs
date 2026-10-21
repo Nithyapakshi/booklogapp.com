@@ -123,6 +123,12 @@ test('fiction about themes stays taste and trailing instructions are not subject
   const {mod,restore}=load(async()=>json({},429),fixture);try{assert.equal((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
  }
 })
+test('genre requests ignore separate trailing instructions',async()=>{
+ const fixture=JSON.stringify([{title:'The Test Novel',author:'Synthetic Author',description:'Friends find comfort after loss.',on_topic:true}]);
+ for(const q of ['books about literary fiction. Give specific reasons, not generic bestseller picks.','books about dark fiction! Give specific reasons.']){
+  const {mod,restore}=load(async()=>json({},429),fixture);try{assert.equal((await mod.getAIBookRecommendations(q,[],8)).length,1,q)}finally{restore()}
+ }
+})
 test('named subject ignores separate formatting instructions but still rejects unrelated biographies',async()=>{
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Amazon Unbound',author:'Brad Stone',description:'Jeff Bezos builds an empire.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{assert.deepEqual((await mod.getAIBookRecommendations('books about Bezos. Give specific reasons.')).map(b=>b.title),['Amazon Unbound'])}finally{restore()}
 })
@@ -130,4 +136,9 @@ test('successful zero AI matches has explicit visible status rather than blank p
 
 test('genre frame does not exempt named subjects from literal relevance',async()=>{
  const {mod,restore}=load(async()=>json({},429),JSON.stringify([{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]));try{for(const q of ['literary fiction about Bezos','novels about Bezos','fiction about Dark Matter'])assert.deepEqual(await mod.getAIBookRecommendations(q),[],q)}finally{restore()}
+})
+
+test('subject initials and earlier context sentences are preserved',async()=>{
+ const fixture=JSON.stringify([{title:'Tolkien',author:'Humphrey Carpenter',description:'A biography of J. R. R. Tolkien.',on_topic:true},{title:'Steve Jobs',author:'Walter Isaacson',description:'Apple founder',on_topic:true}]);
+ const {mod,restore}=load(async()=>json({},429),fixture);try{for(const q of ['books about J. R. R. Tolkien. Give specific reasons.','I want biographies. Books about Tolkien. Give specific reasons.'])assert.deepEqual((await mod.getAIBookRecommendations(q)).map(b=>b.title),['Tolkien'],q)}finally{restore()}
 })

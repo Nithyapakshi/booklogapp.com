@@ -171,9 +171,9 @@ Do not include any text outside the JSON array.`,
       if (!Array.isArray(parsed)) throw new Error("AI response is not a list")
       // An explicit "about X" request must mention X in title or description as well.
       // Taste/mood queries do not use this subject gate.
-      const firstSentence = query.split(/[.!?]/)[0].trim()
-      const subject = firstSentence.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)$/i)?.[1]?.trim()
-      const hasTasteFrame = /\b(?:fiction|novels?|stories|romance|fantasy|thrillers?|mystery|horror)\s+(?:about|on)\b/i.test(firstSentence)
+      const requestText = query.split(/[.!?]\s+(?=(?:give|include|exclude|avoid|do not|don't|return|show|provide|explain|list|limit|use|please)\b)/i)[0].trim()
+      const subject = requestText.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
+      const hasTasteFrame = /\b(?:fiction|novels?|stories|romance|fantasy|thrillers?|mystery|horror)\s+(?:about|on)\b/i.test(requestText)
       // A genre frame alone must not turn named subjects ("fiction about Bezos") into taste.
       const themeWords = new Set("friendship friends grief grieving recovery loss love loneliness isolation family families belonging identity survival trauma hope redemption memory healing relationships regret character development thoughtful strong emotional quiet dark uplifting and or with of the a an".split(" "))
       const framedThemes = hasTasteFrame && !!subject && normText(subject).split(" ").every(w => themeWords.has(w))
