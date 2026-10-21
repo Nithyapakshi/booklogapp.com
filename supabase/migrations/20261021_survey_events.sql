@@ -2,6 +2,7 @@
 -- (completed, skipped, or closed via the X), their answers when completed (up to 3 genres,
 -- one mood, optional favorite author), and when. New table only; no changes to existing tables.
 -- Idempotent: safe to run again (if not exists / drop ... if exists first).
+-- Applied to the preview project only; prod applies at go-live.
 
 create table if not exists public.survey_events (
   id uuid primary key default gen_random_uuid(),
