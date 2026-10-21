@@ -2,6 +2,7 @@ import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
+import { traceAICall } from './ai-trace'
 
 // Draft server wrapper. All paid entry points must use this before enablement.
 const MODEL = 'claude-haiku-4-5-20251001'
@@ -38,7 +39,17 @@ export async function budgetedMessage(input: {accessToken:string,purpose:Purpose
   const reserved = await aiRpc('reserve', {id,user_id:userId,purpose:input.purpose,input_tokens:counted.input_tokens,output_limit:outputLimit,cache_keys:input.cacheKeys || []})
   if (!reserved?.ok) throw new Error('Recommendations are not available right now')
   // No automatic retries. Failed/unknown calls retain the full DB reservation.
-  const result = await client.messages.create({model:MODEL,max_tokens:outputLimit,system:input.system,messages})
+  const callStart = new Date()
+  let result
+  try {
+    result = await client.messages.create({model:MODEL,max_tokens:outputLimit,system:input.system,messages})
+  } catch (err) {
+    // Metadata-only trace: status and error class name, never the error text.
+    await traceAICall({purpose: input.purpose, status: 'error', startTime: callStart, endTime: new Date(), maxOutputTokens: outputLimit, errorType: err instanceof Error ? err.constructor.name : 'Error'})
+    throw err
+  }
+  // Metadata-only trace: model, token counts, latency, estimated cost. No prompt or user data.
+  await traceAICall({purpose: input.purpose, status: 'success', startTime: callStart, endTime: new Date(), maxOutputTokens: outputLimit, inputTokens: result.usage.input_tokens, outputTokens: result.usage.output_tokens})
   try {
     const settled = await aiRpc('settle', {id,input_tokens:result.usage.input_tokens,output_tokens:result.usage.output_tokens})
     if (!settled?.ok) throw new Error('AI usage exceeded reservation')
