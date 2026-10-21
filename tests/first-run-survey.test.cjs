@@ -1,7 +1,17 @@
 const test = require("node:test"), assert = require("node:assert"), fs = require("fs")
-const { shouldShowSurvey, latestAnswers, orderGenresByMood, buildSurveySpecs, provenanceLine, SURVEY_GENRES, MAX_SURVEY_GENRES } = require("../lib/survey.ts")
+const { shouldShowSurvey, isSurveyEligibleUser, SURVEY_FIRST_RUN_AFTER, latestAnswers, orderGenresByMood, buildSurveySpecs, provenanceLine, SURVEY_GENRES, MAX_SURVEY_GENRES } = require("../lib/survey.ts")
 
 // --- behaviour (pure logic) ---
+
+test("popup is for new accounts only: existing users never see it", () => {
+  assert.strictEqual(isSurveyEligibleUser("2025-01-01T00:00:00Z"), false, "old account: never shows")
+  assert.strictEqual(isSurveyEligibleUser("2099-01-01T00:00:00Z"), true, "new account: shows")
+  assert.strictEqual(isSurveyEligibleUser(SURVEY_FIRST_RUN_AFTER), true, "the go-live instant itself is eligible")
+  assert.strictEqual(isSurveyEligibleUser(null), false)
+  assert.strictEqual(isSurveyEligibleUser(undefined), false)
+  assert.strictEqual(isSurveyEligibleUser("garbage"), false)
+  assert.ok(Date.parse(SURVEY_FIRST_RUN_AFTER) > 0, "go-live constant is a real timestamp")
+})
 
 test("completed and skipped never ask again; the X asks again after 7 days", () => {
   const now = Date.parse("2026-10-21T12:00:00Z")
@@ -86,7 +96,7 @@ test("migration is idempotent and guards values", () => {
 
 test("survey pops over My Books only, never on the landing page", () => {
   const p = fs.readFileSync("app/books/page.tsx", "utf8")
-  assert.ok(p.includes('sidebarTab === "my-books" && shouldShowSurvey(surveyEvents)'), "gated to the My Books tab")
+  assert.ok(p.includes('sidebarTab === "my-books" && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)'), "gated to the My Books tab and new accounts only")
   const landing = fs.readFileSync("app/page.tsx", "utf8")
   assert.ok(!landing.includes("FirstRunSurvey"), "landing page never shows the survey")
 })
