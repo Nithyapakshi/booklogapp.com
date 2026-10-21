@@ -3,6 +3,7 @@ import { readingDatesLabel } from "@/lib/reading-dates"
 import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
 import BookCard from "@/components/book-card"
@@ -800,6 +801,17 @@ function BooksLibraryContent() {
       >
         Add your first book
       </button>
+      <p style={{ fontSize: "13px", color: "var(--bl-6b5c42)", marginTop: "14px" }}>
+        Not sure what to read yet?{" "}
+        <Link
+          href="/books?section=discover"
+          onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); handleSidebarTab("discover") }}
+          style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}
+        >
+          Browse Discover
+        </Link>{" "}
+        - ideas picked for you.
+      </p>
     </div>
   )
 
@@ -971,4 +983,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-                    }
+}
