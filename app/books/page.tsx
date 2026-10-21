@@ -232,7 +232,10 @@ function DiscoverTab() {
     if (specs.length === 0) { setCandidates({}); return }
     try {
       const saved = JSON.parse(localStorage.getItem(rowsCacheKey) || "null")
-      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < 12 * 3600 * 1000 && saved.candidates) { setCandidates(saved.candidates); return }
+      // Cached rows are good for 3 days; the library signature still refreshes them on any shelf change.
+      // A partial fetch (some specs came back empty, e.g. a Google Books outage) expires after 1 hour instead.
+      const ttl = saved && saved.partial ? 3600 * 1000 : 3 * 24 * 3600 * 1000
+      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < ttl && saved.candidates) { setCandidates(saved.candidates); return }
     } catch {}
     let cancelled = false
     setRowsLoading(true); setRowsTimedOut(false); setCandidates({})
@@ -240,13 +243,17 @@ function DiscoverTab() {
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated"), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
-        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated"))).catch(() => ({}))
-        const [other, rated] = await Promise.all([free, spirit])
-        const got = { ...other, ...rated }
+        // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide.
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated")).then(c => ({ c, failed: false }))).catch(() => ({ c: {} as Record<string, Candidate[]>, failed: true }))
+        const [freeRes, spiritRes] = await Promise.all([free, spirit])
+        const got = { ...freeRes.candidates, ...spiritRes.c }
         if (cancelled) return
         setCandidates(got)
-        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), candidates: got })) } catch {} }
+        // Full results cache for 3 days; a fetch that actually FAILED (network or API error) expires after 1 hour instead.
+        // A successful call with zero results (obscure author, niche genre) caches normally.
+        const partial = freeRes.failed.length > 0 || spiritRes.failed
+        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
       } catch { if (!cancelled) setCandidates({}) }
       finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
     }, 400)

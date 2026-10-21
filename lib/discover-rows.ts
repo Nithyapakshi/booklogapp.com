@@ -3,6 +3,7 @@
 
 export const ROW_SIZE = 15
 export const MIN_ROW_BOOKS = 4
+const MAX_ROWS = 3 // Visible-row ceiling; raise this one number to show more rows.
 
 export interface LibBook { id?: string; title: string; author: string; status?: string; selfRating?: number; genre?: string }
 export interface Candidate { id: string; title: string; author: string; cover: string; description?: string; publishedYear?: number; genre?: string; relevanceScore?: number; relevanceSource?: string }
@@ -38,7 +39,7 @@ export function primaryGenre(g?: string): string {
   return first && !/^(general|unknown|n\/a)$/i.test(first) ? first.replace(/^./, c => c.toUpperCase()) : ""
 }
 
-export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: number; maxRatedRows?: number } = {}): RowSpec[] {
+export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: number; maxRatedRows?: number; maxGenreRows?: number } = {}): RowSpec[] {
   const books = uniqueLibrary(rawBooks.filter(b => b.title && b.title.trim()))
   const specs: RowSpec[] = []
   // 1. Most-read authors (Completed + Currently Reading). Needs at least 2 books by the author.
@@ -48,19 +49,35 @@ export function buildRowSpecs(rawBooks: LibBook[], opts: { maxAuthorRows?: numbe
     const k = authorKey(b.author); if (!k) continue
     const c = counts.get(k) || { n: 0, name: b.author.trim() }; c.n += 1; counts.set(k, c)
   }
-  const authors = [...counts.values()].filter(c => c.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, opts.maxAuthorRows ?? 2)
+  // Loved authors first: 2+ of their books rated 5 stars. The stronger signal replaces the plain most-read row.
+  const loved = new Map<string, { n: number; name: string }>()
+  for (const b of books) {
+    if (b.selfRating !== 5) continue
+    const k = authorKey(b.author); if (!k) continue
+    const c = loved.get(k) || { n: 0, name: b.author.trim() }; c.n += 1; loved.set(k, c)
+  }
+  const lovedAuthors = [...loved.values()].filter(c => c.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 1)
+  for (const a of lovedAuthors) specs.push({ key: `ratedauthor:${authorKey(a.name)}`, kind: "author", author: a.name, title: `Because you've rated ${a.n} books by ${a.name} 5 stars`, subtitle: "More from an author you love", reason: `You've rated ${a.n} books by ${a.name} 5 stars.` })
+  const covered = new Set(lovedAuthors.map(a => authorKey(a.name)))
+  const authors = [...counts.values()].filter(c => c.n >= 2 && !covered.has(authorKey(c.name))).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, opts.maxAuthorRows ?? 2)
   for (const a of authors) specs.push({ key: `author:${authorKey(a.name)}`, kind: "author", author: a.name, title: `Since you've read ${a.n} books by ${a.name}`, subtitle: "More from an author you read a lot", reason: `You've read ${a.n} books by ${a.name}.` })
   // 2. 5-star books
   const fives = books.filter(b => b.selfRating === 5).sort((a, b) => a.title.localeCompare(b.title)).slice(0, opts.maxRatedRows ?? 2)
   for (const b of fives) specs.push({ key: `rated:${bookKey(b.title, b.author)}`, kind: "rated", seedTitle: b.title, seedAuthor: b.author, seedGenre: primaryGenre(b.genre), title: `Because you rated ${b.title} 5 stars`, subtitle: "In the same spirit", reason: `You rated ${b.title} 5 stars.` })
-  // 3. Biggest genre, real share of the library
-  const g = new Map<string, number>(); let withGenre = 0
-  for (const b of books) { const p = primaryGenre(b.genre); if (p) { g.set(p, (g.get(p) || 0) + 1); withGenre++ } }
-  if (withGenre >= 5) {
-    const [name, n] = [...g.entries()].sort((a, b) => b[1] - a[1])[0]
-    const pct = Math.round((n / withGenre) * 100)
-    if (pct >= 40) specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: "Your biggest shelf", reason: `${pct}% of your library is ${name}.` })
-  }
+  // 2b. Genres he loves: 3+ books in the genre rated 5 stars. Separate genres, biggest first.
+  const lg = new Map<string, number>()
+  for (const b of books) { if (b.selfRating !== 5) continue; const p = primaryGenre(b.genre); if (p) lg.set(p, (lg.get(p) || 0) + 1) }
+  const lovedGenres = [...lg.entries()].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 2)
+  for (const [name, n] of lovedGenres) specs.push({ key: `ratedgenre:${clean(name)}`, kind: "genre", genre: name, title: `Because you've rated ${n} ${name} books 5 stars`, subtitle: "More from a shelf you love", reason: `You've rated ${n} ${name} books 5 stars.` })
+  // 3. Genre rows: up to 3, any genre with 8+ tagged books, biggest first. "General" is excluded by primaryGenre.
+  // The percentage is the honest share of the whole library, untagged books included.
+  const g = new Map<string, number>()
+  for (const b of books) { const p = primaryGenre(b.genre); if (p) g.set(p, (g.get(p) || 0) + 1) }
+  const genres = [...g.entries()].filter(([, n]) => n >= 8).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, opts.maxGenreRows ?? 3)
+  genres.forEach(([name, n], i) => {
+    const pct = books.length ? Math.round((n / books.length) * 100) : 0
+    specs.push({ key: `genre:${clean(name)}`, kind: "genre", genre: name, title: `Because ${pct}% of your library is ${name}`, subtitle: i === 0 ? "Your biggest shelf" : "Another big shelf", reason: `${pct}% of your library is ${name}.` })
+  })
   return specs
 }
 
@@ -86,19 +103,23 @@ export function assembleRows(specs: RowSpec[], candidates: Record<string, Candid
   for (const s of specs) {
     const picked: Candidate[] = []
     const ordered = s.kind === "rated" ? [...(candidates[s.key] || [])].sort((a,b)=>(b.relevanceScore || 0)-(a.relevanceScore || 0)) : candidates[s.key] || []
+    // Rated rows under 5 books stand on very few picks; keep only strongly-relevant ones.
+    const ratedFloor = s.kind === "rated" && ordered.length < 5 ? 50 : 0
     for (const c of ordered) {
       const k = bookKey(c.title, c.author)
       if (!c.cover || !c.title || used.has(k) || gone.has(k) || libraryHasBook(c, library)) continue
+      if ((c.relevanceScore || 0) < ratedFloor) continue
       if (blocked.has(authorKey(c.author))) continue
       if (s.kind === "rated" && s.seedAuthor && authorKey(c.author) === authorKey(s.seedAuthor)) continue
       picked.push(c); used.add(k)
       if (picked.length >= ROW_SIZE) break
     }
     // Books that did not make the row go back to the pool for later rows.
-    if (picked.length < (s.kind === "rated" ? 5 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
+    if (picked.length < (s.kind === "rated" ? 3 : MIN_ROW_BOOKS)) { picked.forEach(c => used.delete(bookKey(c.title, c.author))); continue }
     rows.push({ key: s.key, title: s.title, subtitle: s.subtitle, reason: s.reason, books: picked })
   }
-  return rows
+  // Owner-approved cap (20 Oct): at most MAX_ROWS visible rows, most-personal-first (spec order).
+  return rows.slice(0, MAX_ROWS)
 }
 
 // Mobile "Top pick": the first book of the first row that still keeps the minimum without it.
@@ -110,5 +131,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min5-author-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-min3-loved-v6|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }

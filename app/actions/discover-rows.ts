@@ -121,7 +121,7 @@ async function pages(q: string, n = 2): Promise<any[]> {
 const THIN = 8
 
 async function candidatesFrom(s: Spec, fetchPages: (q: string, n?: number) => Promise<any[]>): Promise<Cand[]> {
-  if (s.kind === "author" && s.author) return stripPop(oneEach(await fetchPages(`inauthor:"${s.author.replace(/"/g, "")}"`), s.author))
+  if (s.kind === "author" && s.author) return stripPop(oneEach(await fetchPages(`inauthor:"${s.author.replace(/"/g, "")}"`, 3), s.author))
   if (s.kind === "rated") return [] // Free editorial server action owns rated rows; no popularity fallback.
   if (s.kind === "genre" && s.genre) return popular(oneEach(await fetchPages(`subject:"${s.genre.replace(/"/g, "")}"`)))
   return []
@@ -137,9 +137,10 @@ async function candidatesFor(s: Spec): Promise<Cand[]> {
   return list
 }
 
-export async function fetchDiscoverCandidates(specs: Spec[], onSpec?: (key: string, list: Cand[]) => void): Promise<Record<string, Cand[]>> {
+export async function fetchDiscoverCandidates(specs: Spec[], onSpec?: (key: string, list: Cand[]) => void): Promise<{ candidates: Record<string, Cand[]>; failed: string[] }> {
   const out: Record<string, Cand[]> = {}
-  const list = (Array.isArray(specs) ? specs : []).slice(0, 6)
-  await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = [] }; try { onSpec?.(String(s.key), out[String(s.key)]) } catch {} }))
-  return out
+  const failed: string[] = []
+  const list = (Array.isArray(specs) ? specs : []).slice(0, 10) // rated specs are filtered out by the caller; 10 covers 1 loved-author + 2 author + 2 loved-genre + 3 genre with headroom
+  await Promise.all(list.map(async s => { try { out[String(s.key)] = (await candidatesFor(s)).slice(0, 60) } catch { out[String(s.key)] = []; failed.push(String(s.key)) }; try { onSpec?.(String(s.key), out[String(s.key)]) } catch {} }))
+  return { candidates: out, failed }
 }
