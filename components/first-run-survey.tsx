@@ -3,7 +3,7 @@
 // Welcome survey for signed-in users with no survey_events row yet (see lib/survey.ts).
 // Shows over My Books only (app/books/page.tsx gates that) and records exactly one of
 // three outcomes per popup: completed (answers saved), skipped ("Skip for now"), or
-// closed_x (the X). All three suppress the popup; they are counted separately.
+// closed_x (the X). Completed and skipped never ask again; the X asks again after 7 days.
 
 import React, { useState } from "react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
