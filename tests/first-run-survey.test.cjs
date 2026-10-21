@@ -62,6 +62,23 @@ test("genre picks are capped", () => {
   assert.strictEqual(MAX_SURVEY_GENRES, 3)
 })
 
+test("edit answers writes nothing on X or Skip, only on Save", () => {
+  const c = fs.readFileSync("components/first-run-survey.tsx", "utf8")
+  assert.ok(c.includes("editMode"), "edit mode detected from initial answers")
+  assert.ok(c.includes('if (editMode && outcome !== "completed") { onFinished(outcome); return }'), "edit-mode dismissals close without inserting")
+})
+
+test("migration is idempotent and guards values", () => {
+  const m = fs.readFileSync("supabase/migrations/20261021_survey_events.sql", "utf8")
+  assert.ok(m.includes("create table if not exists"), "table create is idempotent")
+  assert.ok(m.includes("create index if not exists"), "index create is idempotent")
+  assert.ok(m.includes("drop policy if exists"), "policies re-appliable")
+  assert.ok(m.includes("drop constraint if exists"), "constraints re-appliable")
+  assert.ok(m.includes("coalesce(array_length(genres, 1), 0) <= 3"), "DB caps genres at 3")
+  assert.ok(m.includes("'Something slow & rich'"), "DB constrains mood to the known list")
+  assert.ok(m.includes("char_length(favorite_author) <= 120"), "DB caps author length")
+})
+
 test("survey pops over My Books only, never on the landing page", () => {
   const p = fs.readFileSync("app/books/page.tsx", "utf8")
   assert.ok(p.includes('sidebarTab === "my-books" && shouldShowSurvey(surveyEvents)'), "gated to the My Books tab")
