@@ -725,7 +725,7 @@ function BooksLibraryContent() {
         Not sure what to read yet?{" "}
         <Link
           href="/books?section=discover"
-          onClick={(e) => { e.preventDefault(); handleSidebarTab("discover") }}
+          onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); handleSidebarTab("discover") }}
           style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}
         >
           Browse Discover
