@@ -219,7 +219,7 @@ function DiscoverTab() {
     try { if (dismissKey) localStorage.setItem(dismissKey, JSON.stringify(next)) } catch {}
   }
 
-  // Personalised rows: which rows qualify comes from the library; candidates come from Google Books (cached 12h per row set).
+  // Personalised rows: which rows qualify comes from the library; candidates come from Google Books (cached 3 days per row set; failed fetches retry after 1h).
   const libForRows = React.useMemo(() => allMyBooks.map(b => ({ id: b.id, title: b.title, author: b.author, status: b.status, selfRating: b.selfRating, genre: b.genre })), [allMyBooks])
   const specs = React.useMemo(() => buildRowSpecs(libForRows), [libForRows])
   const specsSig = specsSignature(specs)
@@ -243,7 +243,7 @@ function DiscoverTab() {
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
-        // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide.
+        // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide. Raise this slice if MAX_ROWS grows past 3.
         const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
         const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated")).then(c => ({ c, failed: false }))).catch(() => ({ c: {} as Record<string, Candidate[]>, failed: true }))
         const [freeRes, spiritRes] = await Promise.all([free, spirit])
@@ -890,6 +890,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
-
-
+                    }
