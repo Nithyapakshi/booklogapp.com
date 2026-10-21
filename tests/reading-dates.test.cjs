@@ -34,6 +34,13 @@ test("dates are asked only when they happen and never invented", () => {
   assert.match(fs.readFileSync("components/start-book-dialog.tsx", "utf8"), /Skip/)
   assert.match(fs.readFileSync("components/finish-book-dialog.tsx", "utf8"), /Skip/)
 })
+test("adding a book straight to Completed asks for rating and finish month", () => {
+  const c = fs.readFileSync("lib/book-context.tsx", "utf8")
+  // Search/add-dialog insert path.
+  assert.match(c, /else if \(status === "completed"\) setFinishPrompt\(\{ id: bookId, title: book\.title, rating: book\.selfRating \|\| 0, where: "Completed", direct: true \}\)/)
+  // Add-manually saveDetails path.
+  assert.match(c, /else if \(!edit && status === "completed"\) setFinishPrompt\(\{id: rows\[0\]\.id, title: rows\[0\]\.title, rating: rows\[0\]\.selfRating \|\| 0, where: "Completed", direct: true\}\)/)
+})
 test("recommended copy returns to Reading as one unit and keeps its dates", () => {
   const c = fs.readFileSync("lib/book-context.tsx", "utf8")
   assert.match(c, /status === "reading" && existingBook!\.autoCompleted/)
