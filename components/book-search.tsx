@@ -74,22 +74,22 @@ export default function BookSearch() {
 
 const handleBookSelect = async (book: BookSearchResult) => {
     setFromScan(false)
+    const owned = findInLibrary(book.id, book.title, book.author)
+    if (owned) { setSelectedBook(owned as BookSearchResult); setSelectedBookInLibrary(true); setDialogOpen(true); return }
+    // Open the dialog instantly with the search result; enrich in the background.
+    // getBookById can take seconds when Google Books is flapping (or returns null fast
+    // while the circuit breaker is open) - neither should block the click.
+    setSelectedBook(book)
+    setSelectedBookInLibrary(false)
+    setDialogOpen(true)
     try {
-      setIsLoading(true)
-      const owned = findInLibrary(book.id, book.title, book.author)
-      if (owned) { setSelectedBook(owned as BookSearchResult); setSelectedBookInLibrary(true); setDialogOpen(true); return }
       const fullBook = await getBookById(book.id)
-      const resolved = fullBook ?? book
-      setSelectedBook(resolved)
-      setSelectedBookInLibrary(!!findInLibrary(resolved.id, resolved.title, resolved.author))
-      setDialogOpen(true)
-    } catch (error) {
-      console.error("Error getting book details:", error)
-      setSelectedBook(book)
-      setSelectedBookInLibrary(!!findInLibrary(book.id, book.title, book.author))
-      setDialogOpen(true)
-    } finally {
-      setIsLoading(false)
+      if (fullBook) {
+        setSelectedBook(prev => (prev && prev.id === book.id ? fullBook : prev))
+        setSelectedBookInLibrary(!!findInLibrary(fullBook.id, fullBook.title, fullBook.author))
+      }
+    } catch {
+      // The dialog already shows the search result; enrichment is best-effort.
     }
   }
 
