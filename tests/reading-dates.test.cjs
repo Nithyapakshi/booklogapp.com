@@ -15,7 +15,7 @@ test("date validation", () => {
   assert.ok(isValidDate("2026-02-28")); assert.ok(!isValidDate("2026-02-30")); assert.ok(!isValidDate("")); assert.ok(!isValidDate(null)); assert.ok(!isValidDate("10/11/2026"))
 })
 test("label shows what is known and nothing else", () => {
-  assert.strictEqual(readingDatesLabel("2026-10-03", "2026-10-10"), "Started 3 Oct 2026 · Finished 10 Oct 2026")
+  assert.strictEqual(readingDatesLabel("2026-10-03", "2026-10-10"), "Started 3 Oct 2026 Â· Finished 10 Oct 2026")
   assert.strictEqual(readingDatesLabel("2026-10-03", null), "Started 3 Oct 2026")
   assert.strictEqual(readingDatesLabel(undefined, "2026-10-10"), "Finished 10 Oct 2026")
   assert.strictEqual(readingDatesLabel(undefined, undefined), "")
@@ -33,6 +33,13 @@ test("dates are asked only when they happen and never invented", () => {
   assert.match(c, /status === "reading"\) setStartPrompt/)
   assert.match(fs.readFileSync("components/start-book-dialog.tsx", "utf8"), /Skip/)
   assert.match(fs.readFileSync("components/finish-book-dialog.tsx", "utf8"), /Skip/)
+})
+test("adding a book straight to Completed asks for rating and finish month", () => {
+  const c = fs.readFileSync("lib/book-context.tsx", "utf8")
+  // Search/add-dialog insert path.
+  assert.match(c, /else if \(status === "completed"\) setFinishPrompt\(\{ id: bookId, title: book\.title, rating: book\.selfRating \|\| 0, where: "Completed", direct: true \}\)/)
+  // Add-manually saveDetails path.
+  assert.match(c, /else if \(!edit && status === "completed"\) setFinishPrompt\(\{id: rows\[0\]\.id, title: rows\[0\]\.title, rating: rows\[0\]\.selfRating \|\| 0, where: "Completed", direct: true\}\)/)
 })
 test("recommended copy returns to Reading as one unit and keeps its dates", () => {
   const c = fs.readFileSync("lib/book-context.tsx", "utf8")
