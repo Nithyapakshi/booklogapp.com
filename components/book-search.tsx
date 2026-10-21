@@ -85,8 +85,13 @@ const handleBookSelect = async (book: BookSearchResult) => {
     try {
       const fullBook = await getBookById(book.id)
       if (fullBook) {
-        setSelectedBook(prev => (prev && prev.id === book.id ? fullBook : prev))
-        setSelectedBookInLibrary(!!findInLibrary(fullBook.id, fullBook.title, fullBook.author))
+        // Both updates must share the staleness guard: a slow enrichment from an earlier
+        // click must not touch the book (or its add/view mode) now showing in the dialog.
+        setSelectedBook(prev => {
+          if (!prev || prev.id !== book.id) return prev
+          setSelectedBookInLibrary(!!findInLibrary(fullBook.id, fullBook.title, fullBook.author))
+          return fullBook
+        })
       }
     } catch {
       // The dialog already shows the search result; enrichment is best-effort.
