@@ -110,5 +110,5 @@ export function takeTopPick(rows: DiscoverRow[]): { pick: (Candidate & { reason:
 }
 
 export function specsSignature(specs: RowSpec[]): string {
-  return "spirit-min5-author-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
+  return "spirit-paid20-min5-v1|" + specs.map(s => [s.key, s.title, s.seedGenre || "", s.genre || ""].join("~")).join("||")
 }
