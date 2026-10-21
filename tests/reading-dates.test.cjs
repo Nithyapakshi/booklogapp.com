@@ -15,7 +15,7 @@ test("date validation", () => {
   assert.ok(isValidDate("2026-02-28")); assert.ok(!isValidDate("2026-02-30")); assert.ok(!isValidDate("")); assert.ok(!isValidDate(null)); assert.ok(!isValidDate("10/11/2026"))
 })
 test("label shows what is known and nothing else", () => {
-  assert.strictEqual(readingDatesLabel("2026-10-03", "2026-10-10"), "Started 3 Oct 2026 Â· Finished 10 Oct 2026")
+  assert.strictEqual(readingDatesLabel("2026-10-03", "2026-10-10"), "Started 3 Oct 2026 · Finished 10 Oct 2026")
   assert.strictEqual(readingDatesLabel("2026-10-03", null), "Started 3 Oct 2026")
   assert.strictEqual(readingDatesLabel(undefined, "2026-10-10"), "Finished 10 Oct 2026")
   assert.strictEqual(readingDatesLabel(undefined, undefined), "")
