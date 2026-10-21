@@ -26,7 +26,7 @@ import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
-import { shouldShowSurvey, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
+import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -603,7 +603,7 @@ function BooksLibraryContent() {
   const router = useRouter()
   const { user } = useAuth()
 
-  // Welcome survey: over My Books only; completed/skipped never ask again, the X asks again after 7 days.
+  // Welcome survey: new accounts only, over My Books only; completed/skipped never ask again, the X asks again after 7 days.
   // If the table is missing (migration not applied), the read errors and the survey simply never pops.
   const [surveyEvents, setSurveyEvents] = useState<SurveyEvent[] | null>(null)
   const [surveyOpen, setSurveyOpen] = useState(false)
@@ -615,7 +615,7 @@ function BooksLibraryContent() {
   }, [user])
   useEffect(() => {
     if (surveyAskedRef.current || surveyEvents === null) return
-    if (sidebarTab === "my-books" && shouldShowSurvey(surveyEvents)) { surveyAskedRef.current = true; setSurveyOpen(true) }
+    if (sidebarTab === "my-books" && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)) { surveyAskedRef.current = true; setSurveyOpen(true) }
   }, [surveyEvents, sidebarTab])
 
   useEffect(() => {
