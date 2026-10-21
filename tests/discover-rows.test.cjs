@@ -106,3 +106,8 @@ test('rated rows need three after filtering, floor 50 when thin, and preserve re
  // Rated rows never donate the mobile top pick.
  assert.equal(takeTopPick(rows).pick,null);assert.equal(takeTopPick(rows).rows[0].books.length,5)
 })
+
+test('a total book-source outage surfaces as a failure instead of caching empty for days',()=>{
+ const s=fs.readFileSync('app/actions/discover-rows.ts','utf8')
+ assert.match(s,/throw new Error\(`book sources unavailable/)
+})
