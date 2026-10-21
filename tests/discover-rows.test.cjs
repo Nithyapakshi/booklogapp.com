@@ -90,12 +90,19 @@ test("wiring: server action never writes, dialog reason is not saved with the bo
 })
 // discover rows tests end
 
-test('rated rows require five after filtering and preserve relevance order',()=>{
+test('rated rows need three after filtering, floor 50 when thin, and preserve relevance order',()=>{
  const r={key:'rated:seed',kind:'rated',seedAuthor:'Seed Author',title:'Seed',subtitle:'Same spirit',reason:'Rated'}
  const c=cand(5,'Other Author','z').map((x,i)=>({...x,relevanceScore:i+1}))
+ // Thin list (<5 candidates) applies the relevance floor 50: low-score picks drop, the row hides.
  assert.equal(assembleRows([r],{[r.key]:c.slice(0,4)},[],[]).length,0)
+ // Thin list with strong scores assembles with three.
+ const strong=cand(3,'Other Author','s').map(x=>({...x,relevanceScore:80}))
+ assert.equal(assembleRows([r],{[r.key]:strong},[],[])[0].books.length,3)
+ // Full list: no floor, relevance-descending order preserved.
  const rows=assembleRows([r],{[r.key]:c},[],[]);assert.equal(rows[0].books.length,5);assert.equal(rows[0].books[0].id,'z4')
- assert.equal(assembleRows([r],{[r.key]:c},[],[{key:bookKey(c[0].title,c[0].author),author:c[0].author}]).length,0)
- assert.equal(assembleRows([r],{[r.key]:c},[{...c[0]}],[]).length,0)
+ // A dismissal or an owned book now just narrows the row (minimum is 3, not 5).
+ assert.equal(assembleRows([r],{[r.key]:c},[],[{key:bookKey(c[0].title,c[0].author),author:c[0].author}])[0].books.length,4)
+ assert.equal(assembleRows([r],{[r.key]:c},[{...c[0]}],[])[0].books.length,4)
+ // Rated rows never donate the mobile top pick.
  assert.equal(takeTopPick(rows).pick,null);assert.equal(takeTopPick(rows).rows[0].books.length,5)
 })
