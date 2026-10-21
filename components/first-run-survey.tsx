@@ -101,6 +101,7 @@ export function FirstRunSurvey({ userId, initial, onFinished }: {
         </div>
         <input
           value={author} onChange={e => setAuthor(e.target.value)} disabled={saving}
+          maxLength={120}
           placeholder="e.g. Madeline Miller" aria-label="An author you love"
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px 13px", borderRadius: 10,
