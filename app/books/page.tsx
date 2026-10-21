@@ -723,7 +723,11 @@ function BooksLibraryContent() {
       </button>
       <p style={{ fontSize: "13px", color: "var(--bl-6b5c42)", marginTop: "14px" }}>
         Not sure what to read yet?{" "}
-        <Link href="/discover" style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}>
+        <Link
+          href="/books?section=discover"
+          onClick={(e) => { e.preventDefault(); handleSidebarTab("discover") }}
+          style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}
+        >
           Browse Discover
         </Link>{" "}
         - ideas picked for you.
