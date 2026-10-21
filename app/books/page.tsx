@@ -25,6 +25,8 @@ import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
 import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
+import { FirstRunSurvey } from "@/components/first-run-survey"
+import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -261,6 +263,54 @@ function DiscoverTab() {
     return () => { cancelled = true; clearTimeout(t); clearTimeout(limit) }
   }, [rowsCacheKey, specsSig])
 
+
+  // Welcome-survey rows: only when the library yields no row specs at all (a brand-new or tiny library).
+  // Answers come from the newest completed survey_events row; candidates from the same subject feed as genre rows.
+  const [surveyAnswers, setSurveyAnswers] = React.useState<SurveyAnswers | null>(null)
+  const [surveyEditOpen, setSurveyEditOpen] = React.useState(false)
+  const [surveyReload, setSurveyReload] = React.useState(0)
+  React.useEffect(() => {
+    if (!discoverUser?.id) return
+    let cancelled = false
+    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author,created_at").order("created_at", { ascending: false }).limit(10)
+      .then(({ data, error: surveyReadError }) => { if (!cancelled && !surveyReadError) setSurveyAnswers(latestAnswers((data || []) as SurveyEvent[])) })
+    return () => { cancelled = true }
+  }, [discoverUser?.id, surveyReload])
+
+  const surveySpecs = React.useMemo(() => (specs.length === 0 && surveyAnswers ? buildSurveySpecs(surveyAnswers) : []), [specs.length, surveyAnswers])
+  const surveySig = JSON.stringify(surveySpecs.map(s => s.key))
+  const surveyCacheKey = discoverUser?.id ? `booklog.discover.surveyrows:${discoverUser.id}` : ""
+  const [surveyCandidates, setSurveyCandidates] = React.useState<Record<string, Candidate[]>>({})
+  React.useEffect(() => {
+    if (!surveyCacheKey || surveySpecs.length === 0) { setSurveyCandidates({}); return }
+    try {
+      const saved = JSON.parse(localStorage.getItem(surveyCacheKey) || "null")
+      const ttl = saved && saved.partial ? 3600 * 1000 : 3 * 24 * 3600 * 1000
+      if (saved && saved.sig === surveySig && Date.now() - saved.savedAt < ttl && saved.candidates) { setSurveyCandidates(saved.candidates); return }
+    } catch {}
+    let cancelled = false
+    setSurveyCandidates({})
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetchDiscoverCandidates(surveySpecs.slice(0, 3), (key, list) => { if (!cancelled) setSurveyCandidates(prev => ({ ...prev, [key]: list })) })
+        if (cancelled) return
+        setSurveyCandidates(res.candidates)
+        const partial = res.failed.length > 0
+        if (Object.values(res.candidates).some(list => list.length > 0)) { try { localStorage.setItem(surveyCacheKey, JSON.stringify({ sig: surveySig, savedAt: Date.now(), partial, candidates: res.candidates })) } catch {} }
+      } catch { if (!cancelled) setSurveyCandidates({}) }
+    }, 400)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [surveyCacheKey, surveySig])
+
+  // Survey rows skip books already on a shelf and anything dismissed, same as library rows.
+  const surveyRows = React.useMemo(() => surveySpecs.map(s => ({
+    ...s,
+    books: (surveyCandidates[s.key] || [])
+      .filter(c => !libForRows.some(lb => bookKey(lb.title, lb.author) === bookKey(c.title, c.author)))
+      .filter(c => !dismissed.some(d => d.key === bookKey(c.title, c.author)))
+      .slice(0, 15),
+  })).filter(r => r.books.length >= 4), [surveySpecs, surveyCandidates, dismissed, libForRows])
+
   const aiKeys = (recommendations || []).map(r => bookKey(r.title, r.author))
   const builtRows = React.useMemo(() => assembleRows(specs, candidates, libForRows, dismissed, aiKeys), [specs, candidates, libForRows, dismissed, recommendations])
   const { pick: topPick, rows: shownRows } = desktop ? { pick: null, rows: builtRows } : takeTopPick(builtRows)
@@ -328,7 +378,7 @@ function DiscoverTab() {
   )
   const linkBtn: React.CSSProperties = { fontSize: 11, color: "var(--bl-8a7560)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "'DM Sans', sans-serif" }
   const aiBooks = (recommendations || []).map(r => ({ id: r.id, title: r.title, author: r.author, cover: r.cover, badge: findInLibrary(r.id, r.title, r.author) ? "In library" : undefined }))
-  const hasAnything = !!recommendations || shownRows.length > 0 || !!topPick
+  const hasAnything = !!recommendations || shownRows.length > 0 || !!topPick || surveyRows.length > 0
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
@@ -400,6 +450,21 @@ function DiscoverTab() {
           onOpen={(b) => { const c = r.books.find(x => x.id === b.id && x.title === b.title); if (c) openCandidate(c, r.reason) }}
           onDismiss={(b) => dismissBook(b.title, b.author)} />
       ))}
+
+      {surveyAnswers && surveyRows.length > 0 && (
+        <p style={{ fontSize: 11, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }}>
+          {provenanceLine(surveyAnswers)}{" "}
+          <button type="button" style={linkBtn} onClick={() => setSurveyEditOpen(true)}>Edit answers</button>
+        </p>
+      )}
+      {surveyRows.map(r => (
+        <DiscoverRowView key={r.key} rowKey={r.key} title={r.title} subtitle={r.subtitle} books={r.books} mobile={!desktop}
+          onOpen={(b) => { const c = r.books.find(x => x.id === b.id && x.title === b.title); if (c) openCandidate(c, r.reason) }}
+          onDismiss={(b) => dismissBook(b.title, b.author)} />
+      ))}
+      {surveyEditOpen && discoverUser && (
+        <FirstRunSurvey userId={discoverUser.id} initial={surveyAnswers} onFinished={() => { setSurveyEditOpen(false); setSurveyReload(n => n + 1) }} />
+      )}
 
       {rowsLoading && !rowsTimedOut && shownRows.length === 0 && !topPick && (
         <p style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }}>Finding picks from your library...</p>
@@ -537,6 +602,21 @@ function BooksLibraryContent() {
   const [shareCopied, setShareCopied]     = useState(false)
   const router = useRouter()
   const { user } = useAuth()
+
+  // Welcome survey: new accounts only, over My Books only; completed/skipped never ask again, the X asks again after 7 days.
+  // If the table is missing (migration not applied), the read errors and the survey simply never pops.
+  const [surveyEvents, setSurveyEvents] = useState<SurveyEvent[] | null>(null)
+  const [surveyOpen, setSurveyOpen] = useState(false)
+  const surveyAskedRef = React.useRef(false)
+  useEffect(() => {
+    if (!user) return
+    createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author,created_at").order("created_at", { ascending: false }).limit(10)
+      .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]) })
+  }, [user])
+  useEffect(() => {
+    if (surveyAskedRef.current || surveyEvents === null) return
+    if (sidebarTab === "my-books" && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)) { surveyAskedRef.current = true; setSurveyOpen(true) }
+  }, [surveyEvents, sidebarTab])
 
   useEffect(() => {
     async function fetchShareProfile() {
@@ -752,6 +832,7 @@ function BooksLibraryContent() {
   return (
     <div className="flex min-h-screen" style={{ background: "var(--bl-faf7f2)" }}>
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
+      {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "var(--bl-f7f4ef)" }}>
