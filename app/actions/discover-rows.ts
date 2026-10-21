@@ -57,9 +57,12 @@ async function gbooks(params: Record<string, string>): Promise<any[]> {
     } catch (e) { lastStatus = e instanceof Error ? e.message : String(e) }
     if (a < GB_TRIES - 1) await new Promise(r => setTimeout(r, 500 * (a + 1)))
   }
+  // We only reach this fallback after Google failed every retry. If Open Library has
+  // nothing either, surface the outage so the caller marks the spec failed (1h retry)
+  // instead of caching an outage-empty row set for 3 days.
   const ol = await openLibrary(params)
-  if (ol.length) cache.set(ck, ol)
-  return ol
+  if (ol.length) { cache.set(ck, ol); return ol }
+  throw new Error(`book sources unavailable for "${params.q || params.isbn || "query"}" (google: ${lastStatus})`)
 }
 
 function secure(u: string) { return (u || "").replace(/^http:\/\//, "https://").replace("&edge=curl", "") }
