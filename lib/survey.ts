@@ -34,6 +34,14 @@ export function orderGenresByMood(genres: string[], mood: string): string[] {
   return [...genres].sort((a, b) => (leads.indexOf(a) === -1 ? 99 : leads.indexOf(a)) - (leads.indexOf(b) === -1 ? 99 : leads.indexOf(b)))
 }
 
+// New readers only (his call, 21 Oct 2026): accounts created before go-live never get the popup.
+// Set to the go-live instant; bump to the real merge day before merging.
+export const SURVEY_FIRST_RUN_AFTER = "2026-10-22T00:00:00Z"
+export function isSurveyEligibleUser(createdAt?: string | null): boolean {
+  const t = Date.parse(createdAt || "")
+  return Number.isFinite(t) && t >= Date.parse(SURVEY_FIRST_RUN_AFTER)
+}
+
 // completed or skipped = never ask again; the X (closed_x) = ask again after 7 days (his call, 21 Oct 2026).
 export const SURVEY_REASK_AFTER_MS = 7 * 24 * 3600 * 1000
 export function shouldShowSurvey(events: SurveyEvent[], now = Date.now()): boolean {
