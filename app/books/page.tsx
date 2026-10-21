@@ -273,7 +273,6 @@ function DiscoverTab() {
     let cancelled = false
     createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author").order("created_at", { ascending: false }).limit(10)
       .then(({ data, error: surveyReadError }) => { if (!cancelled && !surveyReadError) setSurveyAnswers(latestAnswers((data || []) as SurveyEvent[])) })
-      .catch(() => {})
     return () => { cancelled = true }
   }, [discoverUser?.id, surveyReload])
 
@@ -612,7 +611,6 @@ function BooksLibraryContent() {
     if (!user) return
     createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author").order("created_at", { ascending: false }).limit(10)
       .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]) })
-      .catch(() => {})
   }, [user])
   useEffect(() => {
     if (surveyAskedRef.current || surveyEvents === null) return
