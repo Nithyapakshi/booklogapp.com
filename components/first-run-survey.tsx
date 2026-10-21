@@ -27,9 +27,13 @@ export function FirstRunSurvey({ userId, initial, onFinished }: {
     setGenres(prev => prev.includes(chip) ? prev.filter(g => g !== chip) : prev.length >= MAX_SURVEY_GENRES ? prev : [...prev, chip])
   }
 
+  const editMode = !!initial
   const record = async (outcome: "completed" | "skipped" | "closed_x") => {
     if (saving) return
     if (outcome === "completed" && genres.length === 0) { setError("Pick at least one genre so we know what you enjoy."); return }
+    // Edit answers changes answers only: closing it with the X or "Skip for now" writes
+    // nothing, so survey_events stays one row per real first-run decision (critic, 21 Oct 2026).
+    if (editMode && outcome !== "completed") { onFinished(outcome); return }
     setSaving(true)
     setError(null)
     try {
