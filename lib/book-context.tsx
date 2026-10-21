@@ -226,6 +226,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         ...(status === "recommended" ? { completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true, rowId: data.find(r => r.status === "completed")?.row_id }] } : {}),
       }))
       if (status === "recommended") setRatingPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0 })
+      else if (status === "completed") setFinishPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0, where: "Completed", direct: true })
       else if (status === "reading") setStartPrompt({ id: bookId, title: book.title })
       return "added" as const
     }
@@ -318,6 +319,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         return next
       })
       if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
+      else if (!edit && status === "completed") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Completed", direct: true})
       else if (!edit && status === "reading" && !opts?.skipStartPrompt) setStartPrompt({id: rows[0].id, title: rows[0].title})
     }
     if (data.outcome !== "duplicate" && (edit || (!book.cover && !book.description))) void enrichMissing(rows[0])
