@@ -13,7 +13,7 @@ test('thin or empty Google results fall back to Open Library, not only errors', 
 test('rows are reported as each row set arrives', () => {
   const s = read('app/actions/discover-rows.ts')
   assert.match(s, /onSpec\?: \(key: string, list: Cand\[\]\) => void/)
-  assert.match(read('app/books/page.tsx'), /fetchDiscoverCandidates\(specs\.filter\(s => s\.kind !== "rated"\), \(key, list\)/)
+  assert.match(read('app/books/page.tsx'), /fetchDiscoverCandidates\(specs\.filter\(s => s\.kind !== "rated"\)\.slice\(0, 6\), \(key, list\)/)
 })
 
 test('library rows stop waiting after 10 seconds and point at Ask AI', () => {
