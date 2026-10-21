@@ -3,9 +3,14 @@ const { shouldShowSurvey, latestAnswers, orderGenresByMood, buildSurveySpecs, pr
 
 // --- behaviour (pure logic) ---
 
-test("survey shows only when there is no survey_events row at all", () => {
-  assert.strictEqual(shouldShowSurvey([]), true)
-  for (const t of ["completed", "skipped", "closed_x"]) assert.strictEqual(shouldShowSurvey([{ event_type: t }]), false, t)
+test("completed and skipped never ask again; the X asks again after 7 days", () => {
+  const now = Date.parse("2026-10-21T12:00:00Z")
+  assert.strictEqual(shouldShowSurvey([], now), true)
+  assert.strictEqual(shouldShowSurvey([{ event_type: "completed", created_at: "2026-10-01T00:00:00Z" }], now), false)
+  assert.strictEqual(shouldShowSurvey([{ event_type: "skipped", created_at: "2026-10-01T00:00:00Z" }], now), false)
+  assert.strictEqual(shouldShowSurvey([{ event_type: "closed_x", created_at: "2026-10-21T11:00:00Z" }], now), false, "X one hour ago: too soon")
+  assert.strictEqual(shouldShowSurvey([{ event_type: "closed_x", created_at: "2026-10-13T00:00:00Z" }], now), true, "X eight days ago: ask again")
+  assert.strictEqual(shouldShowSurvey([{ event_type: "closed_x", created_at: "2026-10-13T00:00:00Z" }, { event_type: "skipped", created_at: "2026-10-20T00:00:00Z" }], now), false, "skip wins over an old X")
 })
 
 test("latestAnswers takes the newest completed row with genres", () => {
