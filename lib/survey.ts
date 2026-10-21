@@ -4,7 +4,7 @@
 // as the library genre rows.
 
 export interface SurveyAnswers { genres: string[]; mood: string; favoriteAuthor: string }
-export interface SurveyEvent { event_type: string; genres?: string[] | null; mood?: string | null; favorite_author?: string | null }
+export interface SurveyEvent { event_type: string; genres?: string[] | null; mood?: string | null; favorite_author?: string | null; created_at?: string }
 
 // chip = what the user taps; subject = the Google Books subject feed behind it.
 export const SURVEY_GENRES: { chip: string; subject: string }[] = [
@@ -34,9 +34,13 @@ export function orderGenresByMood(genres: string[], mood: string): string[] {
   return [...genres].sort((a, b) => (leads.indexOf(a) === -1 ? 99 : leads.indexOf(a)) - (leads.indexOf(b) === -1 ? 99 : leads.indexOf(b)))
 }
 
-// The survey pops up only for someone with no survey_events row at all: any of
-// completed / skipped / closed_x suppresses it.
-export const shouldShowSurvey = (events: SurveyEvent[]) => events.length === 0
+// completed or skipped = never ask again; the X (closed_x) = ask again after 7 days (his call, 21 Oct 2026).
+export const SURVEY_REASK_AFTER_MS = 7 * 24 * 3600 * 1000
+export function shouldShowSurvey(events: SurveyEvent[], now = Date.now()): boolean {
+  if (events.some(e => e.event_type === "completed" || e.event_type === "skipped")) return false
+  const lastX = Math.max(0, ...events.filter(e => e.event_type === "closed_x").map(e => Date.parse(e.created_at || "") || 0))
+  return now - lastX >= SURVEY_REASK_AFTER_MS
+}
 
 // Newest completed answers win (events come in created_at-desc order).
 export function latestAnswers(events: SurveyEvent[]): SurveyAnswers | null {
