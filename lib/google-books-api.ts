@@ -99,9 +99,16 @@ export function rankSearchResults(query: string, books: BookSearchResult[]): Boo
   return sorted.filter(x => x.score >= cutoff).slice(0,5).map(x => ({ ...x.book, title: x.book.title.replace(/\s*\([^)]*(?:edition|anniversary)[^)]*\)\s*/gi, " ").trim() || x.book.title }))
 }
 
-// Google Books intermittently answers 503 (and occasionally 429). Retry those a few times
-// before giving up so a single bad response does not surface as "Search is unavailable".
-async function fetchWithRetry(url: string, attempts = 6): Promise<Response> {
+// Google Books intermittently answers 503 (and occasionally 429). Retry once so a single bad
+// response does not surface as "Search is unavailable" - but when it keeps failing, stop paying
+// the retry cost on every search and click: skip Google for 5 minutes (circuit breaker) and let
+// the Open Library fallback serve the gap.
+let googleDownUntil = 0
+const googleDown = () => Date.now() < googleDownUntil
+// Marker for the deliberate short-circuit throw: it must never re-arm the breaker, or every
+// search during the window would push recovery another 5 minutes out.
+const CIRCUIT_OPEN_ERROR = "Google Books circuit open"
+async function fetchWithRetry(url: string, attempts = 2): Promise<Response> {
   let last: Response | undefined
   for (let i = 0; i < attempts; i++) {
     try {
@@ -147,6 +154,7 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
 export async function searchBooksRaw(query: string): Promise<BookSearchResult[]> {
   if (!query.trim()) return []
   try {
+    if (googleDown()) throw new Error(CIRCUIT_OPEN_ERROR)
     const response = await fetchWithRetry(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
     )
@@ -174,6 +182,9 @@ export async function searchBooksRaw(query: string): Promise<BookSearchResult[]>
     }))
     return books
   } catch (error) {
+    if (!(error instanceof Error && error.message === CIRCUIT_OPEN_ERROR)) {
+      googleDownUntil = Date.now() + 5 * 60 * 1000
+    }
     const fallback = await openLibrarySearch(query)
     if (fallback.length) return fallback
     throw error instanceof Error ? error : new Error("Book search failed")
@@ -182,6 +193,7 @@ export async function searchBooksRaw(query: string): Promise<BookSearchResult[]>
 
 // Function to get a book by ID
 export async function getBookById(id: string): Promise<BookSearchResult | null> {
+  if (googleDown()) return null
   try {
     const response = await fetchWithRetry(`https://www.googleapis.com/books/v1/volumes/${id}?key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
 

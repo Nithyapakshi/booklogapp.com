@@ -74,22 +74,27 @@ export default function BookSearch() {
 
 const handleBookSelect = async (book: BookSearchResult) => {
     setFromScan(false)
+    const owned = findInLibrary(book.id, book.title, book.author)
+    if (owned) { setSelectedBook(owned as BookSearchResult); setSelectedBookInLibrary(true); setDialogOpen(true); return }
+    // Open the dialog instantly with the search result; enrich in the background.
+    // getBookById can take seconds when Google Books is flapping (or returns null fast
+    // while the circuit breaker is open) - neither should block the click.
+    setSelectedBook(book)
+    setSelectedBookInLibrary(false)
+    setDialogOpen(true)
     try {
-      setIsLoading(true)
-      const owned = findInLibrary(book.id, book.title, book.author)
-      if (owned) { setSelectedBook(owned as BookSearchResult); setSelectedBookInLibrary(true); setDialogOpen(true); return }
       const fullBook = await getBookById(book.id)
-      const resolved = fullBook ?? book
-      setSelectedBook(resolved)
-      setSelectedBookInLibrary(!!findInLibrary(resolved.id, resolved.title, resolved.author))
-      setDialogOpen(true)
-    } catch (error) {
-      console.error("Error getting book details:", error)
-      setSelectedBook(book)
-      setSelectedBookInLibrary(!!findInLibrary(book.id, book.title, book.author))
-      setDialogOpen(true)
-    } finally {
-      setIsLoading(false)
+      if (fullBook) {
+        // Both updates must share the staleness guard: a slow enrichment from an earlier
+        // click must not touch the book (or its add/view mode) now showing in the dialog.
+        setSelectedBook(prev => {
+          if (!prev || prev.id !== book.id) return prev
+          setSelectedBookInLibrary(!!findInLibrary(fullBook.id, fullBook.title, fullBook.author))
+          return fullBook
+        })
+      }
+    } catch {
+      // The dialog already shows the search result; enrichment is best-effort.
     }
   }
 
