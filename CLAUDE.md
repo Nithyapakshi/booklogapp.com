@@ -16,7 +16,7 @@ BookLog is a personal reading tracker, live in production at https://www.booklog
 6. **A review/critic pass happens before merging changes that affect live users.**
 7. **Keep the product minimalistic and clean** — he rejects busy designs.
 8. **Emails to users always need his review and approval of the draft first.**
-9. **Roadmap hygiene:** update the roadmap doc (link below) as part of every release so statuses match what is actually live.
+9. **Roadmap hygiene:** update the roadmap doc as part of every release so statuses match what is actually live.
 
 ## Stack
 
@@ -59,7 +59,7 @@ pnpm test        # node --test tests/*.test.cjs
 pnpm typecheck   # tsc --noEmit
 ```
 
-Current state: **178 tests, 177 pass.** The 1 failure is the pre-existing signup-metadata test, which fails on `main` too — known, not a blocker. Tests are pure-logic Node tests over `lib/` functions and run in a few seconds.
+Current state: **176 tests, 175 pass.** The 1 failure is the pre-existing signup-metadata test, which fails on `main` too — known, not a blocker. Tests are pure-logic Node tests over `lib/` functions and run in a few seconds.
 
 ## Deploy flow
 
@@ -106,5 +106,5 @@ Current state: **178 tests, 177 pass.** The 1 failure is the pre-existing signup
 
 - Production: https://www.booklogapp.com
 - Repo: https://github.com/Nithyapakshi/booklogapp.com
-- Roadmap (kept current, anyone-with-link readable): https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit
+- Roadmap: the "BookLog_Roadmap_June2026" Google Doc in the owner's Drive (kept current; ask the owner for the link)
 - Metrics: Excel dashboard in his Google Drive (users, books, per-tab averages; excludes his own activity)
