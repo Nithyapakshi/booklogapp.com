@@ -68,6 +68,11 @@ test("edit answers writes nothing on X or Skip, only on Save", () => {
   assert.ok(c.includes('if (editMode && outcome !== "completed") { onFinished(outcome); return }'), "edit-mode dismissals close without inserting")
 })
 
+test("author input never exceeds the DB cap", () => {
+  const c = fs.readFileSync("components/first-run-survey.tsx", "utf8")
+  assert.ok(c.includes("maxLength={120}"), "input caps author at the DB limit")
+})
+
 test("migration is idempotent and guards values", () => {
   const m = fs.readFileSync("supabase/migrations/20261021_survey_events.sql", "utf8")
   assert.ok(m.includes("create table if not exists"), "table create is idempotent")
