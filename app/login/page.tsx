@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -95,6 +96,8 @@ export default function LoginPage() {
             {status}
           </div>
         )}
+
+        <GoogleSignInButton onError={setError} />
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: "1rem" }}>
