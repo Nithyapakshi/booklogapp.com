@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -114,6 +115,8 @@ export default function SignupPage() {
             {message}
           </div>
         )}
+
+        <GoogleSignInButton onError={setError} />
 
         <form onSubmit={handleSubmit}>
           {/* First / Last name row */}
