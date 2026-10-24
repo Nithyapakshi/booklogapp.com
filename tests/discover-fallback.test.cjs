@@ -16,11 +16,11 @@ test('rows are reported as each row set arrives', () => {
   assert.match(read('app/books/page.tsx'), /fetchDiscoverCandidates\(specs\.filter\(s => s\.kind !== "rated"\)\.slice\(0, 6\), \(key, list\)/)
 })
 
-test('library rows stop waiting after 10 seconds and point at Ask AI', () => {
+test('library rows stay loading after 10 seconds, never declare empty while in flight', () => {
   const p = read('app/books/page.tsx')
   assert.match(p, /setRowsTimedOut\(true\) \}, 10000\)/)
   assert.match(p, /No library-based rows are ready to show\. Describe what you enjoy in the Ask AI box above/)
-  assert.match(p, /\(!rowsLoading \|\| rowsTimedOut\) && specs\.length > 0/)
+  assert.match(p, /!rowsLoading && !rowsFailed && specs\.length > 0/)
 })
 
 test('the generic empty text only shows when the library has no qualifying rows', () => {
