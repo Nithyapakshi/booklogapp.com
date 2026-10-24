@@ -1,11 +1,13 @@
 "use client"
 
+import { authReturnFromLocation } from "@/lib/auth-return"
 import type React from "react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -47,6 +49,8 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
+  const [nextPath, setNextPath] = useState("/books")
+  useEffect(()=>setNextPath(authReturnFromLocation()),[])
   const router = useRouter()
   const { signUp } = useAuth()
 
@@ -64,7 +68,7 @@ export default function SignupPage() {
         setError(error.message)
       } else if (data.user && !data.session) {
         // Email confirmation is on: there is no session until the link in the email is opened.
-        setMessage("Check your email to confirm your account. The link signs you in and takes you straight to your library.")
+        setMessage(authReturnFromLocation() === "/books" ? "Check your email to confirm your account. The link signs you in and takes you straight to your library." : "Check your email to confirm your account. The link signs you in and returns you to BookLog to finish saving your book.")
       } else if (data.user) {
         setMessage("Account created successfully! Redirecting...")
 
@@ -79,7 +83,7 @@ export default function SignupPage() {
         }
 
         setTimeout(() => {
-          router.push("/books")
+          router.push(authReturnFromLocation())
         }, 1500)
       }
     } catch (err) {
@@ -115,6 +119,8 @@ export default function SignupPage() {
           </div>
         )}
 
+        <GoogleSignInButton onError={setError} />
+
         <form onSubmit={handleSubmit}>
           {/* First / Last name row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "1rem" }}>
@@ -149,7 +155,7 @@ export default function SignupPage() {
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "var(--bl-8a7560)", marginTop: "1.25rem" }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--bl-c17f3e)", textDecoration: "none", fontWeight: "500" }}>
+          <Link href={`/login?next=${encodeURIComponent(nextPath)}`} style={{ color: "var(--bl-c17f3e)", textDecoration: "none", fontWeight: "500" }}>
             Log in
           </Link>
         </p>

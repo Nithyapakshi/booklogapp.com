@@ -25,6 +25,7 @@ import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
 import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
+import { ShareControls } from "@/components/share-controls"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -553,7 +554,6 @@ function BooksLibraryContent() {
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
   const [shareUsername, setShareUsername] = useState("")
   const [sharingOn, setSharingOn]         = useState(false)
-  const [shareCopied, setShareCopied]     = useState(false)
   const router = useRouter()
   const { user } = useAuth()
 
@@ -574,15 +574,14 @@ function BooksLibraryContent() {
     fetchShareProfile()
   }, [user])
 
-  const handleShare = useCallback(() => {
+  const profileShareUrl = async () => {
     if (!sharingOn || !shareUsername) {
       router.push("/settings")
-      return
+      throw new Error("Set up profile sharing in Settings first. Your profile stays private until you choose to publish it.")
     }
-    navigator.clipboard.writeText(`https://booklogapp.com/u/${shareUsername}`)
-    setShareCopied(true)
-    setTimeout(() => setShareCopied(false), 2000)
-  }, [sharingOn, shareUsername, router])
+    return `${window.location.origin}/u/${encodeURIComponent(shareUsername)}`
+  }
+
 
   useEffect(() => {
     const genreFilter = sidebarTab === "recommended" ? recommendedGenreFilter : myBooksGenreFilter
@@ -786,30 +785,7 @@ function BooksLibraryContent() {
             <h1 className="text-2xl font-bold" style={{ ...serif, color: "var(--bl-2d2416)" }}>
               {pageTitle}
             </h1>
-            {sidebarTab !== "discover" && <button
-              onClick={handleShare}
-              className="p-1.5 md:px-3.5 md:py-1.5"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "transparent",
-                border: "0.5px solid var(--bl-c17f3e)",
-                borderRadius: "7px",
-                cursor: "pointer",
-                fontSize: "12px",
-                color: "var(--bl-c17f3e)",
-                fontWeight: "600",
-                fontFamily: "'DM Sans', sans-serif",
-                flexShrink: 0,
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--bl-c17f3e)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-              <span className="hidden md:inline">{shareCopied ? "Copied!" : "Share profile"}</span>
-            </button>}
+            {sidebarTab !== "discover" && <ShareControls getUrl={profileShareUrl} label="profile"/>}
           </div>
 
           {/* MY BOOKS */}
@@ -921,4 +897,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-    }
+                                }

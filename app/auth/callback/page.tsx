@@ -1,5 +1,6 @@
 "use client"
 
+import { authReturnFromLocation } from "@/lib/auth-return"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -32,7 +33,7 @@ export default function AuthCallbackPage() {
         //    URL exchange has already finished).
         const existing = await waitForSession(supabase, 2)
         if (existing) {
-          router.replace("/books")
+          router.replace(authReturnFromLocation())
           return
         }
 
@@ -45,7 +46,7 @@ export default function AuthCallbackPage() {
           await supabase.auth.exchangeCodeForSession(code).catch(() => null)
           const session = await waitForSession(supabase, 2)
           if (session) {
-            router.replace("/books")
+            router.replace(authReturnFromLocation())
           } else {
             setFailed(true)
           }
@@ -54,7 +55,7 @@ export default function AuthCallbackPage() {
 
         // 3. Implicit flow: the token is in the URL hash and the client picks it
         //    up automatically - step 1 already covered it. Nothing usable here.
-        router.replace("/login")
+        router.replace(`/login?next=${encodeURIComponent(authReturnFromLocation())}`)
       } catch {
         setFailed(true)
       }
@@ -69,7 +70,7 @@ export default function AuthCallbackPage() {
           <p style={{ fontSize: "14px", color: "var(--bl-1a1208)", marginBottom: "1rem" }}>
             That sign-in link did not work here. It may have expired, or it was opened in a different browser than the one used to sign up.
           </p>
-          <Link href="/login" style={{ fontSize: "13px", color: "var(--bl-primary-ink)", background: "var(--bl-c17f3e)", padding: "9px 20px", borderRadius: "8px", fontWeight: "500", textDecoration: "none" }}>
+          <Link href={`/login?next=${encodeURIComponent(authReturnFromLocation())}`} style={{ fontSize: "13px", color: "var(--bl-primary-ink)", background: "var(--bl-c17f3e)", padding: "9px 20px", borderRadius: "8px", fontWeight: "500", textDecoration: "none" }}>
             Go to log in
           </Link>
         </div>

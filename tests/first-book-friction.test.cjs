@@ -23,7 +23,7 @@ test("signup confirmation message promises automatic sign-in", () => {
 
 test("signUp passes an auth callback redirect so the confirm link can sign the user in", () => {
   const s = fs.readFileSync("components/auth/auth-provider.tsx", "utf8")
-  assert.ok(s.includes("/auth/callback"), "callback URL present")
+  assert.ok(s.includes("callbackUrl()") && fs.readFileSync("lib/auth-return.ts","utf8").includes("/auth/callback"), "callback URL helper present")
   assert.ok(/emailRedirectTo/.test(s), "emailRedirectTo passed to signUp")
 })
 
@@ -42,8 +42,8 @@ test("auth callback checks an existing session before exchanging, and re-checks 
   const after = s.slice(manualExchange)
   assert.ok(after.includes("waitForSession(supabase, 2)"), "session re-checked after manual exchange before failing")
   assert.ok(after.includes(".catch(() => null)"), "a double-consumed code is not fatal")
-  assert.ok(s.includes('router.replace("/books")'), "signed-in users land on /books")
-  assert.ok(s.includes('router.replace("/login")'), "sessionless visitors fall back to /login")
+  assert.ok(s.includes("router.replace(authReturnFromLocation())"), "signed-in users use validated return (default /books)")
+  assert.ok(s.includes("router.replace(`/login?next="), "sessionless visitors fall back to login with validated return")
 })
 
 // Behavioral: run the real decision logic across every load state.
