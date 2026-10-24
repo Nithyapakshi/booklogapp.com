@@ -1,5 +1,6 @@
 "use client"
 
+import { BookShareControls } from "@/components/book-share-controls"
 import { nearDuplicate } from "@/lib/book-identity"
 import Link from "next/link"
 import { BookEditForm } from "@/components/book-edit-form"
@@ -87,6 +88,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
         {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
         {near && <p role="alert">This looks like a book you already have: {near.title} by {near.author}. <button type="button" className="underline" onClick={() => handleAddBook(true)}>Add anyway</button> <a className="underline" href={`/books?book=${encodeURIComponent(near.id)}`} onClick={onClose}>View existing book</a></p>}
         {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
+        {book && !editing && <div style={{paddingRight:28,display:"flex",justifyContent:"flex-end"}}><BookShareControls book={book}/></div>}
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
           <DialogDescription>
