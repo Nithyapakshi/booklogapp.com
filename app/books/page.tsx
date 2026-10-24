@@ -24,6 +24,7 @@ import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
 import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
+import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -227,39 +228,50 @@ function DiscoverTab() {
   const [candidates, setCandidates] = React.useState<Record<string, Candidate[]>>({})
   const [rowsLoading, setRowsLoading] = React.useState(false)
   const [rowsTimedOut, setRowsTimedOut] = React.useState(false)
+  const [rowsFailed, setRowsFailed] = React.useState(false)
+  const [rowsRetry, setRowsRetry] = React.useState(0)
+  const rowsOwnerRef = React.useRef("")
   const rowsCacheKey = discoverUser?.id ? `booklog.discover.rows:${discoverUser.id}` : ""
   React.useEffect(() => {
+    if (rowsOwnerRef.current !== rowsCacheKey) {
+      rowsOwnerRef.current = rowsCacheKey
+      setCandidates({}); setRowsLoading(false); setRowsTimedOut(false); setRowsFailed(false)
+    }
     if (!rowsCacheKey) return
-    if (specs.length === 0) { setCandidates({}); return }
+    if (specs.length === 0) { setCandidates({}); setRowsLoading(false); setRowsFailed(false); return }
     try {
       const saved = JSON.parse(localStorage.getItem(rowsCacheKey) || "null")
       // Cached rows are good for 3 days; the library signature still refreshes them on any shelf change.
       // A partial fetch (some specs came back empty, e.g. a Google Books outage) expires after 1 hour instead.
       const ttl = saved && saved.partial ? 3600 * 1000 : 3 * 24 * 3600 * 1000
-      if (saved && saved.sig === specsSig && Date.now() - saved.savedAt < ttl && saved.candidates) { setCandidates(saved.candidates); return }
+      // Restore stale same-user candidates too, but always filter them against the current library/specs.
+      if (saved?.candidates) setCandidates(saved.candidates)
+      if (!rowsRetry && saved && saved.sig === specsSig && Date.now() - saved.savedAt < ttl && saved.candidates) { setRowsLoading(false); setRowsFailed(!!saved.partial); return }
     } catch {}
     let cancelled = false
-    setRowsLoading(true); setRowsTimedOut(false); setCandidates({})
-    // After 10 seconds without rows, stop waiting and point at the Ask AI box. Fetching carries on; rows still appear if they arrive.
+    setRowsLoading(true); setRowsTimedOut(false); setRowsFailed(false)
+    // A slow request is still loading, not an empty result or a failure.
     const limit = setTimeout(() => { if (!cancelled) setRowsTimedOut(true) }, 10000)
     const t = setTimeout(async () => {
       try {
         // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide. Raise this slice if MAX_ROWS grows past 3.
-        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled && list.length) setCandidates(prev => ({ ...prev, [key]: list })) })
         const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated")).then(c => ({ c, failed: false }))).catch(() => ({ c: {} as Record<string, Candidate[]>, failed: true }))
         const [freeRes, spiritRes] = await Promise.all([free, spirit])
         const got = { ...freeRes.candidates, ...spiritRes.c }
         if (cancelled) return
-        setCandidates(got)
-        // Full results cache for 3 days; a fetch that actually FAILED (network or API error) expires after 1 hour instead.
-        // A successful call with zero results (obscure author, niche genre) caches normally.
         const partial = freeRes.failed.length > 0 || spiritRes.failed
-        if (Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
-      } catch { if (!cancelled) setCandidates({}) }
+        const failedKeys = [...freeRes.failed, ...(spiritRes.failed ? specs.filter(s => s.kind === "rated").map(s => s.key) : [])]
+        setRowsFailed(partial)
+        setCandidates(prev => mergeRefreshCandidates(specs.map(s => s.key), prev, got, failedKeys))
+        // Only complete successful refreshes replace the working cache. Failed/partial
+        // refreshes keep the last usable cache for a later visit or retry.
+        if (!partial && Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
+      } catch { if (!cancelled) setRowsFailed(true) }
       finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
     }, 400)
     return () => { cancelled = true; clearTimeout(t); clearTimeout(limit) }
-  }, [rowsCacheKey, specsSig])
+  }, [rowsCacheKey, specsSig, rowsRetry])
 
   const aiKeys = (recommendations || []).map(r => bookKey(r.title, r.author))
   const builtRows = React.useMemo(() => assembleRows(specs, candidates, libForRows, dismissed, aiKeys), [specs, candidates, libForRows, dismissed, recommendations])
@@ -329,6 +341,7 @@ function DiscoverTab() {
   const linkBtn: React.CSSProperties = { fontSize: 11, color: "var(--bl-8a7560)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "'DM Sans', sans-serif" }
   const aiBooks = (recommendations || []).map(r => ({ id: r.id, title: r.title, author: r.author, cover: r.cover, badge: findInLibrary(r.id, r.title, r.author) ? "In library" : undefined }))
   const hasAnything = !!recommendations || shownRows.length > 0 || !!topPick
+  const rowStatus = refreshStatus(rowsLoading, rowsTimedOut, rowsFailed)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
@@ -401,10 +414,16 @@ function DiscoverTab() {
           onDismiss={(b) => dismissBook(b.title, b.author)} />
       ))}
 
-      {rowsLoading && !rowsTimedOut && shownRows.length === 0 && !topPick && (
-        <p style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }}>Finding picks from your library...</p>
+      {rowsLoading && (
+        <p style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18, fontFamily: "'DM Sans', sans-serif" }} role="status">{rowStatus === "slow" ? (shownRows.length || topPick ? "Still loading suggestions. Your earlier picks stay here while we refresh." : "Still loading suggestions. The book sources are taking longer than usual.") : "Finding picks from your library..."}</p>
       )}
-      {!hasAnything && !isLoading && (!rowsLoading || rowsTimedOut) && specs.length > 0 && (
+      {rowsFailed && !rowsLoading && (
+        <div role="status" style={{ fontSize: 12, color: "var(--bl-8a7560)", marginTop: 18 }}>
+          {shownRows.length || topPick ? "Some suggestions could not be refreshed. Your earlier picks are still shown. " : "Suggestions could not be loaded. Please try again. "}
+          <button type="button" style={linkBtn} onClick={() => setRowsRetry(n => n + 1)}>Retry</button>
+        </div>
+      )}
+      {!hasAnything && !isLoading && !rowsLoading && !rowsFailed && specs.length > 0 && (
         <div style={{ background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "10px", padding: "1.25rem", marginTop: 14 }}>
           <p role="status" style={{ fontSize: "12px", color: "var(--bl-8a7560)", lineHeight: "1.65" }}>
             No library-based rows are ready to show. Describe what you enjoy in the Ask AI box above for recommendations.
@@ -902,4 +921,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
+                    }
