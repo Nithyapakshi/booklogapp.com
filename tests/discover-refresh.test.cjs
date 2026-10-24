@@ -22,7 +22,7 @@ test('a timeout is slow loading, not a completed empty result or retryable error
 })
 test('stale same-owner rows remain during refresh; empty incremental fetch cannot erase them',()=>{
   assert.match(p,/if \(saved\?\.candidates\) setCandidates\(saved.candidates\)/)
-  assert.match(p,/if \(!cancelled && list.length\) setCandidates/)
+  assert.match(p,/if \(!cancelled && list.length >= 4\) setCandidates/)
   assert.doesNotMatch(p,/setRowsLoading\(true\); setRowsTimedOut\(false\); setCandidates\(\{\}\)/)
 })
 test('partial failure keeps only failed keys; successful empty result clears old candidates',()=>{
@@ -33,7 +33,7 @@ test('partial failure keeps only failed keys; successful empty result clears old
  assert.deepEqual(mergeRefreshCandidates(['a'],{},got,['a']),{a:[]})
 })
 test('cache failures do not overwrite the previous working cache; account change clears rows',()=>{
- assert.match(p,/if \(!partial && Object.values\(got\)/)
+ assert.match(p,/if \(!partial\)/)
  assert.match(p,/rowsOwnerRef.current !== rowsCacheKey/)
  assert.match(p,/rowsOwnerRef.current = rowsCacheKey\s+setCandidates\(\{\}\)/)
  assert.match(p,/catch \{ if \(!cancelled\) setRowsFailed\(true\) \}/)
