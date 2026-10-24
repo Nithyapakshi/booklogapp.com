@@ -255,7 +255,7 @@ function DiscoverTab() {
     const t = setTimeout(async () => {
       try {
         // Fetch only the first 6 non-rated specs: 3 visible rows (MAX_ROWS) plus headroom for rows that hide. Raise this slice if MAX_ROWS grows past 3.
-        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled && list.length) setCandidates(prev => ({ ...prev, [key]: list })) })
+        const free = fetchDiscoverCandidates(specs.filter(s => s.kind !== "rated").slice(0, 6), (key, list) => { if (!cancelled && list.length >= 4) setCandidates(prev => ({ ...prev, [key]: list })) })
         const spirit = createClientSupabaseClient().auth.getSession().then(({data}) => getFreeSpiritCandidates(data.session?.access_token || "", specs.filter(s => s.kind === "rated")).then(c => ({ c, failed: false }))).catch(() => ({ c: {} as Record<string, Candidate[]>, failed: true }))
         const [freeRes, spiritRes] = await Promise.all([free, spirit])
         const got = { ...freeRes.candidates, ...spiritRes.c }
@@ -266,7 +266,7 @@ function DiscoverTab() {
         setCandidates(prev => mergeRefreshCandidates(specs.map(s => s.key), prev, got, failedKeys))
         // Only complete successful refreshes replace the working cache. Failed/partial
         // refreshes keep the last usable cache for a later visit or retry.
-        if (!partial && Object.values(got).some(list => list.length > 0)) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
+        if (!partial) { try { localStorage.setItem(rowsCacheKey, JSON.stringify({ sig: specsSig, savedAt: Date.now(), partial, candidates: got })) } catch {} }
       } catch { if (!cancelled) setRowsFailed(true) }
       finally { if (!cancelled) { setRowsLoading(false); clearTimeout(limit) } }
     }, 400)
@@ -921,4 +921,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-                    }
+    }
