@@ -140,6 +140,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", background: "var(--bl-faf7f2)", padding: "1rem 1.5rem", textAlign: "center" }}>
         <p style={{ fontSize: "11px", color: "var(--bl-a8927a)" }}>© {new Date().getFullYear()} BookLog. All rights reserved.</p>
+        <Link href="/privacy" style={{ fontSize: "12px", color: "var(--bl-6b5c42)", display: "inline-block", marginTop: "8px" }}>Privacy</Link>
       </footer>
 
     </div>

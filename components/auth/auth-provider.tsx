@@ -1,5 +1,6 @@
 "use client"
 
+import { callbackUrl } from "@/lib/auth-return"
 import type React from "react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import type { Session, User } from "@supabase/supabase-js"
@@ -124,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const emailRedirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined
+      const emailRedirectTo = typeof window !== "undefined" ? callbackUrl() : undefined
       return await supabase.auth.signUp({
         email,
         password,

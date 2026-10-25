@@ -1,9 +1,11 @@
 "use client"
 
+import { safeAuthReturn } from "@/lib/auth-return"
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -23,7 +25,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   const searchParams = useSearchParams()
-  const redirectPath = searchParams.get("redirect") || "/books"
+  const redirectPath = safeAuthReturn(searchParams.get("next"))
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +65,7 @@ export default function LoginPage() {
       if (data.user) {
         setStatus("Login successful! Redirecting...")
         localStorage.setItem("booklog-user", JSON.stringify(data.user))
-        window.location.href = "/books"
+        window.location.href = redirectPath
       }
     } catch (err) {
       setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
@@ -95,6 +97,8 @@ export default function LoginPage() {
             {status}
           </div>
         )}
+
+        <GoogleSignInButton onError={setError} />
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: "1rem" }}>
@@ -143,10 +147,11 @@ export default function LoginPage() {
 
         <p style={{ textAlign: "center", fontSize: "12px", color: "var(--bl-8a7560)", marginTop: "1.25rem" }}>
           Don't have an account?{" "}
-          <Link href="/signup" style={{ color: "var(--bl-c17f3e)", textDecoration: "none", fontWeight: "500" }}>
+          <Link href={`/signup?next=${encodeURIComponent(redirectPath)}`} style={{ color: "var(--bl-c17f3e)", textDecoration: "none", fontWeight: "500" }}>
             Sign up
           </Link>
         </p>
+        <p style={{ textAlign: "center", marginTop: "18px", fontSize: "12px" }}><Link href="/privacy" style={{ color: "var(--bl-6b5c42)" }}>Privacy</Link></p>
       </div>
     </div>
   )
