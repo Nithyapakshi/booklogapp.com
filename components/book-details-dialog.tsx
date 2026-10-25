@@ -84,11 +84,11 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto outline-none" closeButtonClassName="inline-flex h-11 w-11 items-center justify-center" tabIndex={-1} onOpenAutoFocus={(event) => { event.preventDefault(); (event.target as HTMLElement).focus() }}>
         {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
         {near && <p role="alert">This looks like a book you already have: {near.title} by {near.author}. <button type="button" className="underline" onClick={() => handleAddBook(true)}>Add anyway</button> <a className="underline" href={`/books?book=${encodeURIComponent(near.id)}`} onClick={onClose}>View existing book</a></p>}
         {duplicate && <p role="alert">Already in your library: {duplicate.title} ({duplicate.status}). <a className="underline" href={`/books?book=${encodeURIComponent(duplicate.id)}`} onClick={onClose}>View existing book</a></p>}
-        {book && !editing && <div style={{paddingRight:28,display:"flex",justifyContent:"flex-end"}}><BookShareControls book={book}/></div>}
+        {book && !editing && <BookShareControls book={book}/>}
         <DialogHeader>
           <DialogTitle>{book?.title || ""}</DialogTitle>
           <DialogDescription>
