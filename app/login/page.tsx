@@ -151,6 +151,7 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
+        <p style={{ textAlign: "center", marginTop: "18px", fontSize: "12px" }}><Link href="/privacy" style={{ color: "var(--bl-6b5c42)" }}>Privacy</Link></p>
       </div>
     </div>
   )
