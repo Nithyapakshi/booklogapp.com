@@ -26,3 +26,15 @@ test('failed recommendation does not prompt',async()=>{const h=harness(Error('de
 test('duplicate recommendation does not prompt',async()=>{const b={id:'stored',title:'Book',author:'Author',status:'recommended'};const h=harness(null,[],{reading:[],queued:[],completed:[],recommended:[b],onHold:[]});assert.equal(await h.value.addBook(b,'recommended'),'duplicate');assert.equal(h.prompts.length,0);});
 test('ordinary move does not prompt for recommendation rating',async()=>{const h=harness();await h.value.addBook({id:'stored',title:'Book',author:'Author'},'queued');assert.equal(h.prompts.length,0);});
 test('rating updates every membership copy for owner',async()=>{const b={id:'stored',title:'Book',author:'Author'};const h=harness(null,[{id:'stored'}],{reading:[],queued:[],completed:[b],recommended:[b],onHold:[]});await h.value.updateRating('stored',5);assert.equal(h.state().completed[0].selfRating,5);assert.equal(h.state().recommended[0].selfRating,5);assert.ok(h.calls.some(x=>x[0]==='eq'&&x[1]==='user_id'&&x[2]==='owner'));});
+
+test('every existing shelf moved to Recommended prompts finish and keeps saved date precision',async()=>{
+ for(const status of ['reading','queued','completed','onHold'])for(const precision of ['day','month']){
+  const book={id:'stored',title:'Book',author:'Author',status,selfRating:4,finishedAt:precision==='day'?'2026-02-14':'2026-02-01',finishedPrecision:precision};
+  const state={reading:[],queued:[],completed:[],recommended:[],onHold:[]};state[status]=[book];
+  const h=harness(null,[{id:'stored',status:'completed',row_id:'c',finished_at:book.finishedAt,finished_precision:precision},{id:'stored',status:'recommended',row_id:'r',finished_at:book.finishedAt,finished_precision:precision}],state);
+  await h.value.addBook(book,'recommended');assert.equal(h.prompts.length,1);assert.equal(h.prompts[0].where,'Recommendations');assert.equal(h.prompts[0].finishedAt,book.finishedAt);assert.equal(h.prompts[0].finishedPrecision,precision);assert.equal(h.state().completed[0].finishedAt,book.finishedAt);
+ }
+});
+test('new recommended add prompts for both rating and finish date',async()=>{
+ const h=harness(null,[{row_id:'r',status:'recommended'},{row_id:'c',status:'completed'}]);await h.value.addBook({id:'new',title:'New',author:'Author'},'recommended');assert.equal(h.prompts[0].where,'Recommendations');assert.equal(h.prompts[0].rating,0);assert.equal(h.state().completed.length,1);
+});
