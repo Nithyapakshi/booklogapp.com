@@ -4,6 +4,7 @@ import { PUBLIC_ORIGIN, HOME_DESCRIPTION, HOME_TITLE } from "@/lib/public-discov
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
+  verification: { google: "Pq6XsHlZiwbh0PEeIzDIur1oFTsry4UgDtVKUKYjCUA" },
   description: HOME_DESCRIPTION,
   alternates: { canonical: `${PUBLIC_ORIGIN}/home` },
 }
