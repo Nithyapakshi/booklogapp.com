@@ -48,3 +48,25 @@ test("recommended copy returns to Reading as one unit and keeps its dates", () =
   assert.strictEqual((m.match(/,st,fi\)/g) || []).length, 4)
   assert.match(m, /select min\(started_at\),max\(finished_at\) into st,fi/)
 })
+
+test("all new date prompts default to month while saved exact days stay exact", () => {
+ const {promptReadingDate} = mod.exports
+ assert.deepStrictEqual(promptReadingDate(undefined, undefined, new Date(2026,9,25)), {value:"2026-10-01",precision:"month"})
+ assert.deepStrictEqual(promptReadingDate("2026-02-14", "day"), {value:"2026-02-14",precision:"day"})
+ assert.deepStrictEqual(promptReadingDate("2026-02-14"), {value:"2026-02-14",precision:"day"})
+ assert.deepStrictEqual(promptReadingDate("2026-02-01", "month"), {value:"2026-02-01",precision:"month"})
+ for (const name of ["start-book-dialog", "finish-book-dialog"]) {
+  const s=fs.readFileSync(`components/${name}.tsx`,"utf8")
+  assert.match(s,/MonthDayPicker/);assert.doesNotMatch(s,/type="date"/);assert.match(s,/promptReadingDate/)
+ }
+})
+test("Reading edit includes both dates and context carries saved precision through prompts", () => {
+ const e=fs.readFileSync("components/book-edit-form.tsx","utf8")
+ assert.match(e,/const showFinish = \["reading", "completed", "recommended"\]/)
+ const c=fs.readFileSync("lib/book-context.tsx","utf8")
+ assert.doesNotMatch(c,/Precision === "month" \? undefined/)
+ assert.match(c,/startedAt: existingBook!\.startedAt, startedPrecision: existingBook!\.startedPrecision/)
+ assert.match(c,/finishedAt: existingBook!\.finishedAt, finishedPrecision: existingBook!\.finishedPrecision/)
+ assert.match(c,/started_precision: precision/)
+ assert.match(c,/onSave=\{\(date, precision\) => saveStart\(startPrompt.id, date, precision\)\}/)
+})
