@@ -61,8 +61,8 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [reloadTick, setReloadTick] = useState(0)
   const reloadBooks = useCallback(() => setReloadTick(t => t + 1), [])
   const [ratingPrompt, setRatingPrompt] = useState<{ id: string; title: string; rating: number } | null>(null)
-  const [finishPrompt, setFinishPrompt] = useState<{ id: string; title: string; rating: number; finishedAt?: string; where: "Completed" | "Recommendations"; direct?: boolean } | null>(null)
-  const [startPrompt, setStartPrompt] = useState<{ id: string; title: string; startedAt?: string } | null>(null)
+  const [finishPrompt, setFinishPrompt] = useState<{ id: string; title: string; rating: number; finishedAt?: string; finishedPrecision?: DatePrecision; where: "Completed" | "Recommendations"; direct?: boolean } | null>(null)
+  const [startPrompt, setStartPrompt] = useState<{ id: string; title: string; startedAt?: string; startedPrecision?: DatePrecision } | null>(null)
 
   // Load books from Supabase when userId is available
   useEffect(() => {
@@ -191,10 +191,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           }
           return next
         })
-        // Dates are asked only at the two moments they happen: finishing (Reading to Recommended) and starting (into Reading).
-        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Recommendations" })
-        else if (status === "recommended") setRatingPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0 })
-        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
+        // Every Recommended destination offers an optional finish date; entering Reading offers an optional start date.
+        if (status === "recommended" && existingStatus === "reading") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, finishedPrecision: existingBook!.finishedPrecision, where: "Recommendations" })
+        else if (status === "recommended") setFinishPrompt({ id: existingBook!.id, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, finishedPrecision: existingBook!.finishedPrecision, where: "Recommendations" })
+        else if (status === "reading") setStartPrompt({ id: existingBook!.id, title: existingBook!.title, startedAt: existingBook!.startedAt, startedPrecision: existingBook!.startedPrecision })
         return "moved" as const
       }
 
@@ -208,10 +208,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         [existingStatus!]: prev[existingStatus!].filter((b) => b.id !== storedId),
         [status]: [...prev[status], { ...existingBook!, status }],
       }))
-      // Dates are asked only when they happen, never invented: finishing (Reading to Completed) and starting (into Reading).
-      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed" })
-      else if (status === "completed" && (existingStatus === "queued" || existingStatus === "onHold")) setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedPrecision === "month" ? undefined : existingBook!.finishedAt, where: "Completed", direct: true })
-      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedPrecision === "month" ? undefined : existingBook!.startedAt })
+      // Completed destinations offer an optional finish date; entering Reading offers an optional start date.
+      if (status === "completed" && existingStatus === "reading") setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, finishedPrecision: existingBook!.finishedPrecision, where: "Completed" })
+      else if (status === "completed" && (existingStatus === "queued" || existingStatus === "onHold")) setFinishPrompt({ id: storedId, title: existingBook!.title, rating: existingBook!.selfRating || 0, finishedAt: existingBook!.finishedAt, finishedPrecision: existingBook!.finishedPrecision, where: "Completed", direct: true })
+      else if (status === "reading") setStartPrompt({ id: storedId, title: existingBook!.title, startedAt: existingBook!.startedAt, startedPrecision: existingBook!.startedPrecision })
       return "moved" as const
 
     } else {
@@ -225,7 +225,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         [status]: [...prev[status], { ...book, id: bookId, status, rowId: data.find(r => r.status === status)?.row_id }],
         ...(status === "recommended" ? { completed: [...prev.completed, { ...book, id: bookId, status: "completed", autoCompleted: true, rowId: data.find(r => r.status === "completed")?.row_id }] } : {}),
       }))
-      if (status === "recommended") setRatingPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0 })
+      if (status === "recommended") setFinishPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0, where: "Recommendations" })
       else if (status === "completed") setFinishPrompt({ id: bookId, title: book.title, rating: book.selfRating || 0, where: "Completed", direct: true })
       else if (status === "reading") setStartPrompt({ id: bookId, title: book.title })
       return "added" as const
@@ -318,7 +318,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         }
         return next
       })
-      if (!edit && status === "recommended") setRatingPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0})
+      if (!edit && status === "recommended") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Recommendations"})
       else if (!edit && status === "completed") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Completed", direct: true})
       else if (!edit && status === "reading" && !opts?.skipStartPrompt) setStartPrompt({id: rows[0].id, title: rows[0].title})
     }
@@ -396,7 +396,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClientSupabaseClient()
     const patch: Record<string, unknown> = { finished_at: finishedAt, finished_precision: precision }
     if (rating) patch.self_rating = rating
-    // Reading to Recommended leaves a Completed copy as well, so both rows get the day. Otherwise only the Completed row does.
+    // Recommendations has a Completed copy as well, so both rows get the chosen precision. Otherwise only the Completed row does.
     let q = supabase.from("books").update(patch).eq("id", bookId).eq("user_id", userId)
     if (where === "Completed") q = q.eq("status", "completed")
     const { data, error } = await q.select("id")
@@ -415,15 +415,15 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     })
   }, [userId])
 
-  const saveStart = useCallback(async (bookId: string, startedAt: string) => {
+  const saveStart = useCallback(async (bookId: string, startedAt: string, precision: DatePrecision) => {
     if (!userId || !isValidDate(startedAt)) throw new Error("Invalid start date")
     const supabase = createClientSupabaseClient()
-    const { data, error } = await supabase.from("books").update({ started_at: startedAt, started_precision: "day" }).eq("id", bookId).eq("user_id", userId).select("id")
+    const { data, error } = await supabase.from("books").update({ started_at: startedAt, started_precision: precision }).eq("id", bookId).eq("user_id", userId).select("id")
     if (error) throw error
     if (!data?.length) throw new Error("Not saved")
     setBooks((prev) => {
       const updated = { ...prev }
-      for (const s of Object.keys(updated) as BookStatus[]) updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, startedAt, startedPrecision: "day" as DatePrecision } : b)
+      for (const s of Object.keys(updated) as BookStatus[]) updated[s] = updated[s].map((b) => b.id === bookId ? { ...b, startedAt, startedPrecision: precision } : b)
       return updated
     })
   }, [userId])
@@ -466,7 +466,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
       {finishPrompt && !ratingPrompt && <FinishBookDialog key={finishPrompt.id} book={finishPrompt} direct={finishPrompt.direct} onSave={(rating, date, precision) => saveFinish(finishPrompt.id, rating, date, finishPrompt.where, precision)} onClose={() => setFinishPrompt(null)} />}
-      {startPrompt && !ratingPrompt && !finishPrompt && <StartBookDialog key={startPrompt.id} book={startPrompt} onSave={(date) => saveStart(startPrompt.id, date)} onClose={() => setStartPrompt(null)} />}
+      {startPrompt && !ratingPrompt && !finishPrompt && <StartBookDialog key={startPrompt.id} book={startPrompt} onSave={(date, precision) => saveStart(startPrompt.id, date, precision)} onClose={() => setStartPrompt(null)} />}
     </BookContext.Provider>
   )
 }
@@ -476,4 +476,3 @@ export function useBooks() {
   if (context === undefined) throw new Error("useBooks must be used within a BookProvider")
   return context
 }
-

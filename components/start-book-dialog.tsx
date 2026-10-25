@@ -2,23 +2,25 @@
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { MonthDayPicker } from "@/components/month-day-picker"
 import { Button } from "@/components/ui/button"
-import { todayLocal, isValidDate } from "@/lib/reading-dates"
+import { todayLocal, isValidDate, promptReadingDate, type DatePrecision } from "@/lib/reading-dates"
 
 export function StartBookDialog({ book, onSave, onClose }: {
-  book: { id: string; title: string; startedAt?: string }
-  onSave: (startedAt: string) => Promise<void>
+  book: { id: string; title: string; startedAt?: string; startedPrecision?: DatePrecision }
+  onSave: (startedAt: string, precision: DatePrecision) => Promise<void>
   onClose: () => void
 }) {
-  const [date, setDate] = useState(isValidDate(book.startedAt) ? book.startedAt : todayLocal())
+  const [picked, setPicked] = useState(() => promptReadingDate(book.startedAt, book.startedPrecision))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const save = async () => {
     if (saving) return
-    if (!isValidDate(date)) { setError("Pick a valid date."); return }
+    if (!isValidDate(picked.value)) { setError("Pick a valid date."); return }
+    if (picked.precision === "month" ? picked.value.slice(0, 7) > todayLocal().slice(0, 7) : picked.value > todayLocal()) { setError("The start date cannot be in the future."); return }
     setSaving(true)
     setError(null)
-    try { await onSave(date); onClose() }
+    try { await onSave(picked.value, picked.precision); onClose() }
     catch { setError("This was not saved. Try again or choose Skip.") }
     finally { setSaving(false) }
   }
@@ -26,12 +28,9 @@ export function StartBookDialog({ book, onSave, onClose }: {
     <DialogContent className="w-[calc(100%-2rem)] max-w-sm" onPointerDownOutside={(e) => { if (saving) e.preventDefault() }} onEscapeKeyDown={(e) => { if (saving) e.preventDefault() }}>
       <DialogHeader>
         <DialogTitle>Started this book?</DialogTitle>
-        <DialogDescription>{book.title} is in Reading. Add the day you started, or skip.</DialogDescription>
+        <DialogDescription>{book.title} is in Reading. Add the month (and day, if you know it) you started, or skip.</DialogDescription>
       </DialogHeader>
-      <label className="flex items-center justify-between gap-3 text-sm">
-        <span>Started on</span>
-        <input type="date" value={date} max={todayLocal()} disabled={saving} onChange={(e) => setDate(e.target.value)} className="bg-background text-foreground border border-input rounded px-2 py-1" />
-      </label>
+      <MonthDayPicker label="Started" value={picked.value} precision={picked.precision} onChange={setPicked} disabled={saving} />
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}
       <div className="flex justify-end gap-2">
         <Button variant="outline" disabled={saving} onClick={onClose}>Skip</Button>
