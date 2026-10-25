@@ -1,9 +1,22 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { createClientSupabaseClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import type { Metadata } from "next"
 import Link from "next/link"
+import { PUBLIC_ORIGIN, HOME_DESCRIPTION, HOME_TITLE } from "@/lib/public-discovery"
+
+export const metadata: Metadata = {
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: `${PUBLIC_ORIGIN}/home` },
+}
+
+const application = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "BookLog",
+  url: `${PUBLIC_ORIGIN}/home`,
+  description: HOME_DESCRIPTION,
+  applicationCategory: "LifestyleApplication",
+  operatingSystem: "Web",
+}
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -16,35 +29,10 @@ function BookLogLogo({ size = 22 }: { size?: number }) {
 }
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const supabase = createClientSupabaseClient()
-        const { data } = await supabase.auth.getUser()
-        setLoading(false)
-      } catch (err) {
-        console.error("Auth check error:", err)
-        setLoading(false)
-      }
-    }
-    checkAuth()
-  }, [router])
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--bl-faf7f2)" }}>
-        <div className="text-center">
-          <p style={{ color: "var(--bl-8a7560)", fontFamily: "DM Sans, sans-serif" }}>Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--bl-faf7f2)", fontFamily: "DM Sans, sans-serif" }}>
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(application).replace(/</g, "\\u003c") }} />
 
       {/* Header */}
       <header style={{ borderBottom: "0.5px solid var(--bl-e0d5c4)", background: "var(--bl-faf7f2)" }}>
@@ -74,7 +62,7 @@ export default function HomePage() {
             Track the books that shape you
           </h1>
           <p style={{ fontSize: "14px", color: "var(--bl-6b5c42)", lineHeight: "1.75", marginBottom: "2rem" }}>
-            Log what you're reading, collect your favourites, and discover what to read next — all in one quiet place.
+            {HOME_DESCRIPTION}
           </p>
           <div className="flex justify-center gap-3 flex-wrap">
             <Link href="/signup" style={{ fontSize: "13px", color: "var(--bl-primary-ink)", background: "var(--bl-c17f3e)", padding: "10px 24px", borderRadius: "7px", fontWeight: "500" }}>
