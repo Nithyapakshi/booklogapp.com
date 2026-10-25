@@ -1,7 +1,8 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { PUBLIC_ORIGIN } from "@/lib/public-discovery"
 
-export const metadata: Metadata = { title: "Privacy | BookLog", description: "How BookLog handles your account, library, recommendations and shared links." }
+export const metadata: Metadata = { title: "Privacy | BookLog", description: "How BookLog handles your account, library, recommendations and shared links.", alternates: { canonical: `${PUBLIC_ORIGIN}/privacy` } }
 const sections = [
   [
     "About BookLog",
