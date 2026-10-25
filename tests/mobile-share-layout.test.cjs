@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs');
+const read=p=>fs.readFileSync(p,'utf8');
+test('book share controls reserve a close-button lane and keep disclosure below the row',()=>{const s=read('components/book-share-controls.tsx');assert.ok(s.includes('justify-end pr-11'));assert.ok(s.includes('Shares this book and your Settings display name'));assert.ok(s.includes('mt-1 text-left'))});
+test('book dialog focuses the dialog on open, preserving keyboard-accessible share buttons',()=>{const s=read('components/book-details-dialog.tsx');assert.ok(s.includes('onOpenAutoFocus'));assert.ok(s.includes('event.preventDefault()'));assert.ok(s.includes('tabIndex={-1}'));assert.ok(s.includes('closeButtonClassName="inline-flex h-11 w-11'))});
+test('quiet share buttons center their icon and retain44px touch height and focus-visible ring',()=>{const s=read('components/share-controls.tsx');assert.ok(s.includes('width:44,height:44'));assert.ok(s.includes('inline-flex items-center justify-center'));assert.ok(s.includes('focus-visible:ring-2'));assert.ok(s.includes('whiteSpace:"nowrap"'));assert.ok(s.includes('flexBasis:"100%"'))});

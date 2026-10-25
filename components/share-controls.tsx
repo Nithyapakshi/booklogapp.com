@@ -19,11 +19,11 @@ export function ShareControls({ getUrl, label }: { getUrl: () => Promise<string>
     } catch (e) { tab?.close(); setMessage(e instanceof Error ? e.message : "Could not share. Please try again.") }
     finally { setBusy(false) }
   }
-  return <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,color:"var(--bl-8a7560)",fontSize:12}}>
-    <button type="button" aria-label={`Share ${label} on WhatsApp`} disabled={busy} onClick={()=>share(true)} style={{background:"none",border:0,color:"inherit",minWidth:44,minHeight:44,cursor:"pointer"}}>
+  return <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"flex-end",gap:4,color:"var(--bl-8a7560)",fontSize:12}}>
+    <button type="button" aria-label={`Share ${label} on WhatsApp`} disabled={busy} onClick={()=>share(true)} className="inline-flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" style={{background:"none",border:0,color:"inherit",width:44,height:44,flexShrink:0,cursor:"pointer"}}>
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 7.5c.3 4.5 3.3 7.4 7.5 8l1.2-2-2.8-1.3-1 1c-1.8-.8-2.8-1.8-3.5-3.5l.8-1L9.2 6.5Z"/></svg>
     </button>
-    <button type="button" aria-label={`Copy ${label} link`} disabled={busy} onClick={()=>share(false)} style={{background:"none",border:0,color:"inherit",minHeight:44,cursor:"pointer",fontSize:12}}>{busy?"Preparing...":message==="Copied!"?"Copied!":"Copy link"}</button>
-    {message && message!=="Copied!" && <span role="alert">{message}</span>}
+    <button type="button" aria-label={`Copy ${label} link`} disabled={busy} onClick={()=>share(false)} className="inline-flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" style={{background:"none",border:0,color:"inherit",height:44,whiteSpace:"nowrap",padding:"0 8px",cursor:"pointer",fontSize:12}}>{busy?"Preparing...":message==="Copied!"?"Copied!":"Copy link"}</button>
+    {message && message!=="Copied!" && <span role="alert" style={{flexBasis:"100%",fontSize:11,lineHeight:1.5}}>{message}</span>}
   </div>
 }

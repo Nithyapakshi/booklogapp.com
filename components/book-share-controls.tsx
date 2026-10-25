@@ -17,5 +17,5 @@ export function BookShareControls({book}:{book:{id:string;title:string;author:st
     const url=`${window.location.origin}/s/${data.token}`
     saved.current={key,url};return url
   }
-  return <div><ShareControls getUrl={getUrl} label="book"/><p style={{fontSize:11,color:"var(--bl-8a7560)"}}>Shares this book and your Settings display name, not your library, notes or rating. Anyone with the link can view it.</p></div>
+  return <div className="book-share-header"><div className="-mt-2 flex min-h-11 justify-end pr-11"><ShareControls getUrl={getUrl} label="book"/></div><p className="mt-1 text-left" style={{fontSize:11,lineHeight:1.5,color:"var(--bl-8a7560)"}}>Shares this book and your Settings display name, not your library, notes or rating. Anyone with the link can view it.</p></div>
 }
