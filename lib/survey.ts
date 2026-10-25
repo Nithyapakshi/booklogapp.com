@@ -36,7 +36,7 @@ export function orderGenresByMood(genres: string[], mood: string): string[] {
 
 // New readers only (his call, 21 Oct 2026): accounts created before go-live never get the popup.
 // Set to the go-live instant; bump to the real merge day before merging.
-export const SURVEY_FIRST_RUN_AFTER = "2026-10-25T07:00:00Z"
+export const SURVEY_FIRST_RUN_AFTER = "2026-10-25T08:00:00Z"
 export function isSurveyEligibleUser(createdAt?: string | null): boolean {
   const t = Date.parse(createdAt || "")
   return Number.isFinite(t) && t >= Date.parse(SURVEY_FIRST_RUN_AFTER)
