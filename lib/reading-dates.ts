@@ -37,3 +37,9 @@ export function readingDatesLabel(startedAt?: string | null, finishedAt?: string
 
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 export function daysInMonth(year: number, month: number): number { return new Date(Date.UTC(year, month, 0)).getUTCDate() }
+
+// New prompts start at month precision; a saved exact day is never silently rounded.
+export function promptReadingDate(value?: string | null, precision?: DatePrecision, now: Date = new Date()): { value: string; precision: DatePrecision } {
+  if (isValidDate(value)) return { value, precision: toPrecision(precision) }
+  return { value: todayLocal(now).slice(0, 7) + "-01", precision: "month" }
+}
