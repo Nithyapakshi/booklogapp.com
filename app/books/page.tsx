@@ -1,4 +1,7 @@
 "use client"
+import { useNextRead } from "@/hooks/use-next-read"
+import { nextReadBook, otherQueued } from "@/lib/next-read"
+import { NextReadHeader, NextReadChoice, UpNext, NextReadConfirmation } from "@/components/next-read-controls"
 import { readingDatesLabel } from "@/lib/reading-dates"
 import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
@@ -600,7 +603,7 @@ function BooksLibraryContent() {
     prefetchAmazonDomain()
   }, [])
 
-  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks, loading } = useBooks()
+  const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks, loading, moveBook } = useBooks()
   const libraryEmpty = showFirstBookPrompt({ loading, loadError, bookCount: Object.values(books).flat().length })
   const searchParams = useSearchParams()
   const requestedBookId = searchParams.get("book")
@@ -622,6 +625,36 @@ function BooksLibraryContent() {
   const [sharingOn, setSharingOn]         = useState(false)
   const router = useRouter()
   const { user } = useAuth()
+  const nextRead = useNextRead(user?.id)
+  const [choosingNext, setChoosingNext] = useState(false)
+  const [pendingNext, setPendingNext] = useState<string | null>(null)
+  const [nextBusy, setNextBusy] = useState(false)
+  const [nextError, setNextError] = useState("")
+  const pinnedNext = nextReadBook(books.queued, nextRead.id)
+  const queuedTab = sidebarTab === "my-books" && activeTab === "Queued"
+  useEffect(() => {
+    if (!loading && !loadError && nextRead.id && !books.queued.some(book => book.id === nextRead.id)) nextRead.forgetLocally()
+  },[loading,loadError,books.queued,nextRead.id])
+  const beginNextChoice = () => { setPendingNext(pinnedNext?.id ?? null); setNextError(""); setChoosingNext(true) }
+  useEffect(() => { setChoosingNext(false); setPendingNext(null); setNextError("") },[activeTab,sidebarTab,user?.id])
+  const saveNextChoice = async () => {
+    if (nextBusy || !pendingNext || !books.queued.some(b => b.id === pendingNext)) return
+    setNextBusy(true); setNextError("")
+    try { await nextRead.save(pendingNext); setChoosingNext(false) }
+    catch { setNextError("Next read was not saved. Try again. Your books have not moved.") }
+    finally { setNextBusy(false) }
+  }
+  const startNext = async () => {
+    if (!pinnedNext || nextBusy) return
+    setNextBusy(true); setNextError("")
+    try {
+      const result = await moveBook(pinnedNext,"reading")
+      if (result !== "moved") throw new Error("Book was not moved")
+      nextRead.forgetLocally()
+      setListSearch(""); setMyBooksGenreFilter("All"); setActiveTab("Reading")
+    } catch { setNextError("Book was not started. Try again. Your next-read choice is unchanged.") }
+    finally { setNextBusy(false) }
+  }
 
   // Welcome survey: new accounts only, over My Books only; completed/skipped never ask again, the X asks again after 7 days.
   // If the table is missing (migration not applied), the read errors and the survey simply never pops.
@@ -669,11 +702,12 @@ function BooksLibraryContent() {
     const raw = sidebarTab === "recommended"
       ? getBooksByStatus("recommended")
       : getBooksByStatus(mapTabToStatus(activeTab))
-    const byGenre = genreFilter === "All" ? raw : raw.filter(b => b.genre === genreFilter)
+    const visible = activeTab === "Queued" && sidebarTab === "my-books" && !choosingNext ? otherQueued(raw, pinnedNext) : raw
+    const byGenre = genreFilter === "All" ? visible : visible.filter(b => b.genre === genreFilter)
     const q = listSearch.trim().toLowerCase()
     setFilteredBooks(q ? byGenre.filter(b => `${b.title} ${b.author}`.toLowerCase().includes(q)) : byGenre)
     setCurrentPage(1)
-  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter, listSearch])
+  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter, listSearch, choosingNext, pinnedNext?.id])
 
   const tabs = [
     { name: "Reading",   count: getBookCountByStatus("reading")   },
@@ -914,8 +948,20 @@ function BooksLibraryContent() {
                 onToggleExpand={() => setMyBooksGenreExpanded(e => !e)}
                 genres={userGenres}
               />
-              {viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks)}
+              {queuedTab && <>
+                {!choosingNext && pinnedNext && <UpNext book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/>}
+                <NextReadHeader choosing={choosingNext} hasChoice={!!pinnedNext} disabled={loading||loadError||nextRead.loading||nextRead.error||nextBusy||!books.queued.length} onChoose={beginNextChoice} onCancel={() => {if (!nextBusy) {setChoosingNext(false);setNextError("")}}}/>
+                {nextRead.error && <p role="alert" className="text-sm mt-2">Could not load your next read. <button type="button" className="underline" onClick={() => void nextRead.read()}>Try again</button></p>}
+                {nextError && <p role="alert" className="text-sm mt-2 text-red-600 dark:text-red-300">{nextError}</p>}
+              </>}
+              {queuedTab && pinnedNext && !choosingNext && (listSearch.trim() || myBooksGenreFilter!=="All") && <p className="text-xs text-muted-foreground mt-2">Up next stays pinned. Filters apply to other queued books.</p>}
+              {queuedTab && !choosingNext && pinnedNext && !filteredBooks.length ? <p className="text-sm text-muted-foreground py-8">{books.queued.length===1?"No other queued books.":"No other queued books match these filters."}</p> : queuedTab && choosingNext ? <div role="radiogroup" aria-label="Choose next read" className="flex flex-col gap-2 mt-4 pb-28">
+                {paginatedBooks.map(book => <NextReadChoice key={book.id} book={book} checked={pendingNext===book.id} onSelect={() => {if(!nextBusy)setPendingNext(book.id)}}/>)}
+                {!paginatedBooks.length && <p className="text-sm text-muted-foreground py-8">No queued books match these filters.</p>}
+              </div> : (viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks))}
               <PaginationBar />
+              {queuedTab && choosingNext && <NextReadConfirmation selected={!!pendingNext&&books.queued.some(b=>b.id===pendingNext)} busy={nextBusy} onSave={() => void saveNextChoice()}/>}
+
             </>
           )}
 
@@ -979,4 +1025,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
+          }
