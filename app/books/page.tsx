@@ -955,11 +955,12 @@ function BooksLibraryContent() {
                 {nextError && <p role="alert" className="text-sm mt-2 text-red-600 dark:text-red-300">{nextError}</p>}
               </>}
               {queuedTab && pinnedNext && !choosingNext && (listSearch.trim() || myBooksGenreFilter!=="All") && <p className="text-xs text-muted-foreground mt-2">Up next stays pinned. Filters apply to other queued books.</p>}
-              {queuedTab && !choosingNext && pinnedNext && !filteredBooks.length ? <p className="text-sm text-muted-foreground py-8">{books.queued.length===1?"No other queued books.":"No other queued books match these filters."}</p> : queuedTab && choosingNext ? <div role="radiogroup" aria-label="Choose next read" className="flex flex-col gap-2 mt-4 pb-28">
+              {queuedTab && !choosingNext && pinnedNext && !filteredBooks.length ? <p className="text-sm text-muted-foreground py-8">{books.queued.length===1?"No other queued books.":"No other queued books match these filters."}</p> : queuedTab && choosingNext ? <div role="radiogroup" aria-label="Choose next read" className="flex flex-col gap-2 mt-4">
                 {paginatedBooks.map(book => <NextReadChoice key={book.id} book={book} checked={pendingNext===book.id} onSelect={() => {if(!nextBusy)setPendingNext(book.id)}}/>)}
                 {!paginatedBooks.length && <p className="text-sm text-muted-foreground py-8">No queued books match these filters.</p>}
               </div> : (viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks))}
               <PaginationBar />
+              {queuedTab && choosingNext && <div aria-hidden="true" className="h-28 shrink-0"/>}
               {queuedTab && choosingNext && <NextReadConfirmation selected={!!pendingNext&&books.queued.some(b=>b.id===pendingNext)} busy={nextBusy} onSave={() => void saveNextChoice()}/>}
 
             </>
@@ -1025,4 +1026,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-          }
+}
