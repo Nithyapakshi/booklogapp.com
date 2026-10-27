@@ -1,4 +1,5 @@
 "use client"
+import { readLibrary } from "@/lib/library-read"
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
@@ -53,6 +54,11 @@ const BookContext = createContext<BookContextType | undefined>(undefined)
 const healedUsers = new Set<string>() // auto-heal runs once per page load per user
 
 export function BookProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  return <AccountBookProvider key={user?.id ?? "signed-out"}>{children}</AccountBookProvider>
+}
+
+function AccountBookProvider({ children }: { children: React.ReactNode }) {
   const [books, setBooks] = useState<Record<BookStatus, Book[]>>(emptyBooks)
   const { user, isLoading: authLoading } = useAuth()
   const userId = user?.id ?? null
@@ -77,26 +83,15 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
 
     const supabase = createClientSupabaseClient()
+    let active = true
 
     async function loadBooks() {
       setLoading(true)
       setLoadError(false)
       try {
-        const { data, error } = await supabase
-          .from("books")
-          .select("*")
-          .eq("user_id", userId)
-
-        const { data: noteRows, error: notesError } = await supabase.from("book_notes").select("book_id,notes").eq("user_id", userId!)
-
-        // A failed read must never look like an empty library: keep what is on screen and say so.
-        if (error || notesError || !data) {
-          console.error("Error loading books:", error || notesError)
-          setLoadError(true)
-          setLoading(false)
-          return
-        }
-        const notesByBook = new Map((noteRows || []).map(row => [row.book_id, row.notes]))
+        const { rows: data, noteRows } = await readLibrary(supabase, userId!)
+        if (!active) return
+        const notesByBook = new Map<string, string>((noteRows || []).map((row: any) => [row.book_id, row.notes]))
 
         const grouped: Record<BookStatus, Book[]> = {
           reading: [], queued: [], completed: [], recommended: [], onHold: [],
@@ -128,6 +123,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
 
         setBooks(grouped)
       } catch (error) {
+        if (!active) return
         console.error("Error loading books:", error)
         setLoadError(true)
       }
@@ -135,6 +131,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadBooks()
+    return () => { active = false }
   }, [userId, authLoading, reloadTick])
 
   const addBook = useCallback(async (book: any, status: BookStatus) => {
