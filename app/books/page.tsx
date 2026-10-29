@@ -1,4 +1,5 @@
 "use client"
+import { LibraryLoading } from "@/components/library-loading"
 import { useNextRead } from "@/hooks/use-next-read"
 import { nextReadBook, otherQueued } from "@/lib/next-read"
 import { NextReadHeader, NextReadChoice, UpNext, NextReadConfirmation } from "@/components/next-read-controls"
@@ -620,7 +621,6 @@ function BooksLibraryContent() {
     genres.sort()
     return ["All", ...genres]
   }, [books])
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
   const [shareUsername, setShareUsername] = useState("")
   const [sharingOn, setSharingOn]         = useState(false)
   const router = useRouter()
@@ -697,7 +697,7 @@ function BooksLibraryContent() {
   }
 
 
-  useEffect(() => {
+  const filteredBooks = React.useMemo(() => {
     const genreFilter = sidebarTab === "recommended" ? recommendedGenreFilter : myBooksGenreFilter
     const raw = sidebarTab === "recommended"
       ? getBooksByStatus("recommended")
@@ -705,9 +705,9 @@ function BooksLibraryContent() {
     const visible = activeTab === "Queued" && sidebarTab === "my-books" && !choosingNext ? otherQueued(raw, pinnedNext) : raw
     const byGenre = genreFilter === "All" ? visible : visible.filter(b => b.genre === genreFilter)
     const q = listSearch.trim().toLowerCase()
-    setFilteredBooks(q ? byGenre.filter(b => `${b.title} ${b.author}`.toLowerCase().includes(q)) : byGenre)
-    setCurrentPage(1)
-  }, [activeTab, sidebarTab, getBooksByStatus, myBooksGenreFilter, recommendedGenreFilter, listSearch, choosingNext, pinnedNext?.id])
+    return q ? byGenre.filter(b => `${b.title} ${b.author}`.toLowerCase().includes(q)) : byGenre
+  }, [activeTab, sidebarTab, books, myBooksGenreFilter, recommendedGenreFilter, listSearch, choosingNext, pinnedNext?.id])
+  useEffect(() => { setCurrentPage(1) }, [activeTab, sidebarTab, myBooksGenreFilter, recommendedGenreFilter, listSearch, choosingNext, pinnedNext?.id])
 
   const tabs = [
     { name: "Reading",   count: getBookCountByStatus("reading")   },
@@ -739,11 +739,14 @@ function BooksLibraryContent() {
     </div>
   )
 
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredBooks.length / (pageSize as number)))
+  // Clamp during render, not one effect later: deleting the last item on a
+  // later page must immediately show the last remaining valid page.
+  const effectivePage = Math.max(1, Math.min(currentPage, totalPages))
   const paginatedBooks = pageSize === "all"
     ? filteredBooks
-    : filteredBooks.slice((currentPage - 1) * (pageSize as number), currentPage * (pageSize as number))
-
-  const totalPages = pageSize === "all" ? 1 : Math.ceil(filteredBooks.length / (pageSize as number))
+    : filteredBooks.slice((effectivePage - 1) * (pageSize as number), effectivePage * (pageSize as number))
+  useEffect(() => { if (currentPage !== effectivePage) setCurrentPage(effectivePage) }, [currentPage, effectivePage])
 
   const handlePageSizeChange = (val: string) => {
     const next = val === "all" ? "all" : parseInt(val)
@@ -754,15 +757,15 @@ function BooksLibraryContent() {
 
   const PaginationBar = () => {
     if (filteredBooks.length === 0) return null
-    const start = pageSize === "all" ? 1 : (currentPage - 1) * (pageSize as number) + 1
-    const end   = pageSize === "all" ? filteredBooks.length : Math.min(currentPage * (pageSize as number), filteredBooks.length)
+    const start = pageSize === "all" ? 1 : (effectivePage - 1) * (pageSize as number) + 1
+    const end   = pageSize === "all" ? filteredBooks.length : Math.min(effectivePage * (pageSize as number), filteredBooks.length)
     const showPages = totalPages > 1
 
     const pageButtons = () => {
       if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
-      if (currentPage <= 3) return [1, 2, 3, null, totalPages]
-      if (currentPage >= totalPages - 2) return [1, null, totalPages - 2, totalPages - 1, totalPages]
-      return [1, null, currentPage - 1, currentPage, currentPage + 1, null, totalPages]
+      if (effectivePage <= 3) return [1, 2, 3, null, totalPages]
+      if (effectivePage >= totalPages - 2) return [1, null, totalPages - 2, totalPages - 1, totalPages]
+      return [1, null, effectivePage - 1, effectivePage, effectivePage + 1, null, totalPages]
     }
 
     const btnBase: React.CSSProperties = {
@@ -808,13 +811,13 @@ function BooksLibraryContent() {
           </div>
           {showPages && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-              <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
+              <button style={effectivePage === 1 ? btnDisabled : btnBase} onClick={() => effectivePage > 1 && setCurrentPage(effectivePage - 1)}>‹</button>
               {pageButtons().map((p, i) =>
                 p === null
                   ? <span key={"e"+i} style={{ fontSize: "11px", color: "var(--bl-8a7560)", padding: "0 2px" }}>…</span>
-                  : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
+                  : <button key={p} style={p === effectivePage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
               )}
-              <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
+              <button style={effectivePage === totalPages ? btnDisabled : btnBase} onClick={() => effectivePage < totalPages && setCurrentPage(effectivePage + 1)}>›</button>
             </div>
           )}
         </div>
@@ -823,13 +826,13 @@ function BooksLibraryContent() {
           <span style={{ fontSize: "11px", color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", flex: 1 }}>Showing {start}–{end} of {filteredBooks.length}</span>
           {showPages && (
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <button style={currentPage === 1 ? btnDisabled : btnBase} onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}>‹</button>
+              <button style={effectivePage === 1 ? btnDisabled : btnBase} onClick={() => effectivePage > 1 && setCurrentPage(effectivePage - 1)}>‹</button>
               {pageButtons().map((p, i) =>
                 p === null
                   ? <span key={"e"+i} style={{ fontSize: "11px", color: "var(--bl-8a7560)", padding: "0 2px" }}>…</span>
-                  : <button key={p} style={p === currentPage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
+                  : <button key={p} style={p === effectivePage ? btnActive : btnBase} onClick={() => setCurrentPage(p)}>{p}</button>
               )}
-              <button style={currentPage === totalPages ? btnDisabled : btnBase} onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}>›</button>
+              <button style={effectivePage === totalPages ? btnDisabled : btnBase} onClick={() => effectivePage < totalPages && setCurrentPage(effectivePage + 1)}>›</button>
             </div>
           )}
           {sizeSelector}
@@ -871,14 +874,14 @@ function BooksLibraryContent() {
   const gridView = (books: Book[]) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
       {books.map((book) => <BookCard key={book.id} book={book} removeBook={removeBook} />)}
-      {books.length === 0 && (libraryEmpty ? firstBookPrompt(true) : <div className="col-span-full text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
+      {!loading && !loadError && books.length === 0 && (libraryEmpty ? firstBookPrompt(true) : <div className="col-span-full text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
     </div>
   )
 
   const listView = (books: Book[]) => (
     <div className="flex flex-col gap-2 mt-4">
       {books.map((book) => <BookListRow key={book.id} book={book} removeBook={removeBook} />)}
-      {books.length === 0 && (libraryEmpty ? firstBookPrompt(false) : <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
+      {!loading && !loadError && books.length === 0 && (libraryEmpty ? firstBookPrompt(false) : <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
     </div>
   )
 
@@ -892,7 +895,7 @@ function BooksLibraryContent() {
         <div className="px-8 py-8 w-full">
           {loadError && (
             <div role="alert" className="mb-4 rounded-lg border px-4 py-3 text-sm" style={{ background: "var(--bl-fdf3e7)", borderColor: "var(--bl-e8c9a0)", color: "var(--bl-6b4a1f)" }}>
-              We could not load your library just now. Your books are safe. <button type="button" onClick={reloadBooks} className="underline font-medium">Try again</button>
+              We could not load your library just now. <button type="button" onClick={reloadBooks} className="underline font-medium">Try again</button>
             </div>
           )}
 
@@ -925,12 +928,13 @@ function BooksLibraryContent() {
                         fontWeight: activeTab === tab.name ? "600"     : "500",
                       }}
                     >
-                      {tab.name} ({tab.count})
+                      {tab.name}{!loading && !loadError ? ` (${tab.count})` : ""}
                     </li>
                   ))}
                 </ul>
                 {viewToggle}
               </div>
+              {loading ? <LibraryLoading /> : loadError ? null : <>
               <div className="mb-3">
                 <input
                   type="search"
@@ -962,6 +966,7 @@ function BooksLibraryContent() {
               <PaginationBar />
               {queuedTab && choosingNext && <div aria-hidden="true" className="h-28 shrink-0"/>}
               {queuedTab && choosingNext && <NextReadConfirmation selected={!!pendingNext&&books.queued.some(b=>b.id===pendingNext)} busy={nextBusy} onSave={() => void saveNextChoice()}/>}
+              </>}
 
             </>
           )}
@@ -974,10 +979,11 @@ function BooksLibraryContent() {
               </div>
               <div className="flex items-center justify-between mb-3">
                 <span className="px-4 py-2 rounded-full text-sm" style={{ ...sans, background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", fontWeight: "600" }}>
-                  My Recommendations ({recommendedCount})
+                  My Recommendations{!loading && !loadError ? ` (${recommendedCount})` : ""}
                 </span>
                 {viewToggle}
               </div>
+              {loading ? <LibraryLoading /> : loadError ? null : <>
               <div className="mb-3">
                 <input
                   type="search"
@@ -997,6 +1003,7 @@ function BooksLibraryContent() {
               />
               {viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks)}
               <PaginationBar />
+              </>}
             </>
           )}
 
@@ -1026,4 +1033,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-}
+        }

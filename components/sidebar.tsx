@@ -32,20 +32,24 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
+    let active = true
+    setDisplayName("")
     async function fetchProfile() {
-      if (!user) return
+      if (!user?.id) return
       const supabase = createClientSupabaseClient()
       const { data } = await supabase
         .from("profiles")
         .select("name, username")
         .eq("user_id", user.id)
         .single()
+      if (!active) return
       if (data?.name) setDisplayName(data.name)
       else if (data?.username) setDisplayName(data.username)
       else setDisplayName(user.email?.split("@")[0] || "")
     }
     fetchProfile()
-  }, [user])
+    return () => { active = false }
+  }, [user?.id])
 
   const firstName = displayName.split(" ")[0] || displayName
 
@@ -290,7 +294,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                 flexShrink: 0,
               }}
             >
-              {mounted && firstName ? firstName[0].toUpperCase() : "?"}
+              {mounted && firstName ? firstName[0].toUpperCase() : "…"}
             </div>
             {!collapsed && (
               <span
@@ -302,7 +306,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               >
-                {mounted ? firstName : ""}
+                {mounted && firstName ? firstName : "Account loading..."}
               </span>
             )}
           </button>
@@ -401,9 +405,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               color: "var(--bl-primary-ink)",
             }}
           >
-            {mounted && firstName ? firstName[0].toUpperCase() : "?"}
+            {mounted && firstName ? firstName[0].toUpperCase() : "…"}
           </div>
-          <span>{mounted ? firstName : ""}</span>
+          <span>{mounted && firstName ? firstName : "Loading..."}</span>
         </Link>
       </nav>
     </>
