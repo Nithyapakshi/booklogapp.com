@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+<rect width="600" height="900" fill="#eee6d5"/>
+<rect x="28" y="28" width="544" height="844" fill="none" stroke="#bba77c" stroke-width="2"/>
+<text x="300" y="102" fill="#465746" font-family="Georgia,serif" font-size="22" letter-spacing="6" text-anchor="middle">JANE AUSTEN</text>
+<text x="300" y="210" fill="#273e35" font-family="Georgia,serif" font-size="72" text-anchor="middle">Pride and</text>
+<text x="300" y="290" fill="#273e35" font-family="Georgia,serif" font-size="72" text-anchor="middle">Prejudice</text>
+<path d="M113 766V527a187 187 0 0 1 374 0v239Z" fill="#304c42"/>
+<path d="M300 742c-64-101-58-212 7-336M300 742c65-103 52-211-4-285" fill="none" stroke="#cbb98b" stroke-width="4"/>
+<g fill="#d5c59d">
+<path d="M278 673c-76 0-101-46-95-81 47 3 81 31 95 81Z"/>
+<path d="M285 604c-73-13-90-57-79-89 44 9 72 41 79 89Z"/>
+<path d="M299 529c-57-25-63-68-45-95 36 16 56 51 45 95Z"/>
+<path d="M319 692c73-7 94-52 85-85-45 7-76 36-85 85Z"/>
+<path d="M324 616c66-17 79-59 66-88-41 12-65 43-66 88Z"/>
+<path d="M312 549c48-25 51-63 34-86-30 16-47 47-34 86Z"/>
+</g>
+<path d="M216 803h168" stroke="#bba77c" stroke-width="2"/>
+<text x="300" y="840" fill="#465746" font-family="Arial,sans-serif" font-size="15" letter-spacing="4" text-anchor="middle">A NOVEL</text>
+</svg>
