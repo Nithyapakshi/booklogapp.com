@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import styles from "./home.module.css"
+import HomeSections from "./home-sections"
 import { PUBLIC_ORIGIN, HOME_DESCRIPTION, HOME_TITLE } from "@/lib/public-discovery"
 
 export const metadata: Metadata = {
@@ -80,6 +81,7 @@ export default function HomePage() {
           </article>
         </section>
       </main>
+      <HomeSections />
       <footer className={styles.footer}>
         <span>© {new Date().getFullYear()} BookLog</span>
         <span><Link href="/privacy">Privacy</Link></span>
