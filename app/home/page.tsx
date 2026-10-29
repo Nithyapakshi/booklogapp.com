@@ -82,7 +82,7 @@ export default function HomePage() {
       </main>
       <footer className={styles.footer}>
         <span>© {new Date().getFullYear()} BookLog</span>
-        <span>Example content · Illustrative shelves · <Link href="/privacy">Privacy</Link></span>
+        <span><Link href="/privacy">Privacy</Link></span>
       </footer>
     </div>
   )
