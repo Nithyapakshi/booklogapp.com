@@ -40,8 +40,10 @@ test('crawler policy excludes every existing non-public directory, assets remain
   assert.equal(s.includes('"/s"'), false, 'do not collide with /sitemap.xml or /signup')
 })
 
-test('legacy learn-more converges on the existing home route without loops', () => {
+test('root and legacy learn-more permanently converge on the canonical home without loops', () => {
   assert.ok(read('app/learn-more/page.tsx').includes('permanentRedirect("/home")'))
-  assert.ok(read('app/page.tsx').includes('redirect("/home")'))
+  assert.ok(read('app/page.tsx').includes('permanentRedirect("/home")'))
+  assert.ok(read('app/page.tsx').includes('import { permanentRedirect } from "next/navigation"'))
+  assert.equal(read('app/page.tsx').includes('getUser'), false)
   assert.equal(read('app/home/page.tsx').includes('redirect('), false)
 })
