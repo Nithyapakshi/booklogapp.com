@@ -179,10 +179,14 @@ booklogapp.com  ·  Last updated: 27 October 2026
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
 | BookLog Social Content Tool | Daily email digest: auto-generated visual card + caption + comment suggestions for X and Instagram | 🔜  PLANNED | Separate growth tool, not a reader feature; no dated build commitment. |
-| Auto-post to X | Automatically post daily book content to BookLog X account | 🔜  PLANNED | Phase 2 of Social Content Tool |
+| Auto-post to X | Automatically post daily book content to BookLog X account | 🔜  PLANNED | Phase 2 of Social Content Tool. Interim from 30 Oct: hand-written posts scheduled in Buffer (see X account row). |
 | Auto-post to Instagram | Auto-post to BookLog Instagram via Graph API | 🔜  PLANNED | Phase 3 of Social Content Tool |
-| Auto-comment on book posts | 2–3 daily comments on relevant posts on X and Instagram | 🔜  PLANNED | Not launched; separate approval required. |
-| Public web discovery | Server-rendered homepage, metadata, canonical and public sitemap | DONE | Live 29 Oct: complete homepage with Keep, Share, connected Discover, seven-question FAQ and signup ending; original covers and sticky header. No indexing or ranking guarantee. Live 30 Oct: root now uses permanent 308 to /home; homepage unchanged. |
+| Auto-comment on book posts | 2–3 daily comments on relevant posts on X and Instagram | 🔜  PLANNED | Not launched; separate approval required. Interim from 30 Oct: approval-gated reply drafts on X (see row below). Fully automatic replies not advised: X treats automated replies as spam. |
+| Public web discovery | Server-rendered homepage, metadata, canonical and public sitemap | DONE | Live 29 Oct: complete homepage with Keep, Share, connected Discover, seven-question FAQ and signup ending; original covers and sticky header. No indexing or ranking guarantee. Live 30 Oct: root now uses permanent 308 to /home; homepage unchanged. Live 30 Oct (#67, #68): clearer site description, eighth FAQ "What is BookLog?", and FAQPage plus richer SoftwareApplication structured data (free, feature list). No visible layout change. |
+| AI search visibility | Help Claude, ChatGPT, Google AI, Grok and Perplexity find and recommend BookLog | IN PROGRESS | Plan, baseline and progress log: [AI Search Visibility: Research & Action Plan](https://claude.ai/artifact/62D9QYZTyaSvdv1Y1cSePp). On-site steps done 30 Oct (description, FAQ, structured data, Brave submission). Off-site listings and X in progress. Name stays "BookLog"; use "BookLog (booklogapp.com)" on first mention in listings and intros. Re-run the AI baseline monthly. |
+| AlternativeTo listing | Public BookLog listing on alternativeto.net | SUBMITTED | Submitted 30 Oct; awaiting approval. Check "My submissions" monthly. |
+| X account @booklogapp | Official BookLog presence on X | LIVE | Created 30 Oct: profile, bio link and banner. Intro post live 30 Oct. Nine posts queued in Buffer (free plan, max 10 queued): every two days at 5 PM Dubai, 2–18 Nov. No links in post bodies; tags #BookTwitter #BookX on question posts. Following 8 active book accounts (incl. Reese's and Oprah's book clubs); next batch in a few days, 10–15 at a time. |
+| X reply drafts | Daily drafts of replies to followed book accounts and to replies on our posts | LIVE | Scheduled task, weekdays 4:43 PM Dubai, needs the laptop on with Chrome signed in to X. Up to 3 drafts sent to phone; posts only what Pakshi approves. |
 
 ### 15. Partnerships
 
