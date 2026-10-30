@@ -1,0 +1,14 @@
+/* On phones, book details get full width; only the genre shares a row with ratings. */
+@media (max-width: 767px) {
+  .bl-list-row { position: relative; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; }
+  .bl-list-row > :first-child { grid-column: 1; grid-row: 1 / 6; }
+  .bl-list-details { display: contents; }
+  .bl-list-title { grid-column: 2 / 4; grid-row: 1; padding-right: 32px; min-width: 0; }
+  .bl-list-author { grid-column: 2 / 4; grid-row: 2; }
+  .bl-list-date { grid-column: 2 / 4; grid-row: 3; }
+  .bl-list-genre { grid-column: 2 / 4; grid-row: 4; justify-self: start; }
+  .bl-list-row-rated .bl-list-genre { grid-column: 2; }
+  .bl-list-stars { grid-column: 3; grid-row: 4; justify-self: end; }
+  .bl-list-amazon { grid-column: 2 / 4; grid-row: 5; }
+  .bl-list-menu { position: absolute; top: 8px; right: 12px; }
+}
