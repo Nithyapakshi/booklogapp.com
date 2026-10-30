@@ -1,0 +1,16 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const page = fs.readFileSync('app/books/page.tsx', 'utf8')
+const row = page.slice(page.indexOf('function BookListRow('), page.indexOf('function generateBookColor'))
+test('phone list rows reserve a separate rating line without changing desktop flex rows', () => {
+  assert.match(row, /grid grid-cols-\[2\.5rem_minmax\(0,1fr\)_auto\]/)
+  assert.match(row, /md:flex md:gap-4/)
+  assert.match(row, /col-start-2 row-start-2 flex items-center flex-shrink-0/)
+  assert.match(row, /col-start-3 row-start-1 relative flex-shrink-0/)
+})
+test('genre chip keeps the whole stored genre and can wrap inside its column', () => {
+  assert.match(row, /maxWidth: "100%"/)
+  assert.match(row, /overflowWrap: "anywhere"/)
+  assert.match(row, /\{book\.genre\}/)
+})
