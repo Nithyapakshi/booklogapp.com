@@ -65,7 +65,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
     <>
       {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
-        className="flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
+        className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 md:flex md:gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setDialogOpen(true)}
       >
         <div className="w-10 h-14 flex-shrink-0 bg-muted rounded overflow-hidden">
@@ -82,6 +82,9 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           {book.genre && (
             <span style={{
               display: "inline-block",
+              maxWidth: "100%",
+              overflowWrap: "anywhere",
+              verticalAlign: "top",
               fontSize: "10px",
               fontWeight: 500,
               color: "var(--bl-8a5a1e)",
@@ -116,7 +119,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         )}
         </div>
         {(book.status === "completed" || book.status === "recommended") && (
-          <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="col-start-2 row-start-2 flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {[1, 2, 3, 4, 5].map((star) => (
               <span
                 key={star}
@@ -129,7 +132,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           </div>
         )}
 
-        <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="col-start-3 row-start-1 relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             className="p-1 rounded hover:bg-accent text-muted-foreground"
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -1033,4 +1036,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-        }
+            }
