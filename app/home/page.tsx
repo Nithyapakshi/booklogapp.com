@@ -3,6 +3,7 @@ import Link from "next/link"
 import styles from "./home.module.css"
 import HomeSections from "./home-sections"
 import { PUBLIC_ORIGIN, HOME_DESCRIPTION, HOME_TITLE } from "@/lib/public-discovery"
+import { HOME_FAQ, faqAnswerText } from "@/lib/home-faq"
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
@@ -19,6 +20,25 @@ const application = {
   description: HOME_DESCRIPTION,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  featureList: [
+    "Reading log for books you want to read, are reading and have finished",
+    "Ratings and private notes for each book",
+    "Shareable recommendations shelf and profile link",
+    "Book recommendations based on your library and reading mood",
+    "CSV export of your library",
+  ],
+}
+
+const faq = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: HOME_FAQ.map(item => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: faqAnswerText(item.answerParts) },
+  })),
 }
 
 function BookLogLogo() {
@@ -33,6 +53,7 @@ export default function HomePage() {
   return (
     <div className={styles.home}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(application).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faq).replace(/</g, "\\u003c") }} />
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <div className={styles.brand}><BookLogLogo />BookLog</div>
