@@ -1,4 +1,5 @@
 "use client"
+import "./list-row.css"
 import { LibraryLoading } from "@/components/library-loading"
 import { useNextRead } from "@/hooks/use-next-read"
 import { nextReadBook, otherQueued } from "@/lib/next-read"
@@ -65,7 +66,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
     <>
       {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
-        className="flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow"
+        className={`bl-list-row flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow ${(book.status === "completed" || book.status === "recommended") ? "bl-list-row-rated" : ""}`}
         onClick={() => setDialogOpen(true)}
       >
         <div className="w-10 h-14 flex-shrink-0 bg-muted rounded overflow-hidden">
@@ -75,13 +76,16 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">?</div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate" style={sans}>{book.title}</p>
-          <p className="text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
-          {readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision) && <p className="text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision)}</p>}
+        <div className="bl-list-details flex-1 min-w-0">
+          <p className="bl-list-title font-semibold text-sm truncate" style={sans}>{book.title}</p>
+          <p className="bl-list-author text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
+          {readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision) && <p className="bl-list-date text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision)}</p>}
           {book.genre && (
-            <span style={{
+            <span className="bl-list-genre" style={{
               display: "inline-block",
+              maxWidth: "100%",
+              overflowWrap: "anywhere",
+              verticalAlign: "top",
               fontSize: "10px",
               fontWeight: 500,
               color: "var(--bl-8a5a1e)",
@@ -97,6 +101,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           )}
         {(book.status === "queued" || book.status === "recommended") && (
           <a
+            className="bl-list-amazon"
             href={amazonUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -116,7 +121,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         )}
         </div>
         {(book.status === "completed" || book.status === "recommended") && (
-          <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="bl-list-stars flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             {[1, 2, 3, 4, 5].map((star) => (
               <span
                 key={star}
@@ -129,7 +134,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
           </div>
         )}
 
-        <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="bl-list-menu relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             className="p-1 rounded hover:bg-accent text-muted-foreground"
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -1033,4 +1038,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-        }
+                                                                     }
