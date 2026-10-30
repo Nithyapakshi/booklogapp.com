@@ -6,7 +6,7 @@ test('public home is server-rendered without the auth loading gate', () => {
   for (const forbidden of ['"use client"','useEffect','useRouter','getUser','setLoading','Loading...']) assert.equal(s.includes(forbidden), false, forbidden)
   assert.ok(s.includes('Keep. Share.'))
   assert.ok(s.includes('A place for your reading list, your thoughts on every book, and ideas for what to read next.'))
-  assert.ok(read('lib/public-discovery.ts').includes('A simple book tracker and reading log.'))
+  assert.ok(read('lib/public-discovery.ts').includes('BookLog is a free web app to track the books you read, keep ratings and notes, share recommendations, and get picks based on your library and mood.'))
   for (const href of ['/login','/signup','/privacy']) assert.ok(s.includes(`href="${href}"`))
 })
 
