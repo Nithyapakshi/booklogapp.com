@@ -1,5 +1,12 @@
 # BookLog — project handover
 
+## Current roadmap and sync
+
+Read [ROADMAP.md](ROADMAP.md) for the current feature tables and statuses. It mirrors the canonical [Google Doc](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit). Historical roadmap summaries elsewhere in this repository can lag; use ROADMAP.md for roadmap review.
+
+Whenever an approved change updates roadmap content or status, update the Google Doc and ROADMAP.md together, including the sync date. Reconcile any conflict against the current canonical Doc before editing. This is a working convention, not an automated sync or permission to build planned features.
+
+
 Onboarding for anyone (human or AI tool) picking up this codebase. Last updated 21 Oct 2026.
 
 ## What this is
