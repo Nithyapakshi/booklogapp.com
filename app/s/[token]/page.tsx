@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import { SharedBook } from "@/components/shared-book"
 import { readSharedBook } from "@/lib/shared-book-server"
 type Props = { params: Promise<{ token: string }> }
+// Shares are fixed snapshots: build each page on its first visit and serve the saved copy after that,
+// so link-preview bots (WhatsApp, X) never wait for a sleeping server.
+export const revalidate = 86400
+export async function generateStaticParams() { return [] }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params
   const book = await readSharedBook(token)

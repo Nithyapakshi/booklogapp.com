@@ -4,6 +4,10 @@ import { readSharedBook } from "@/lib/shared-book-server"
 import { SharedBook } from "@/components/shared-book"
 import { publicBookSlug, RESERVED_SHARE_SLUGS, tokenFromShareCode } from "@/lib/public-share-path"
 type Props={params:Promise<{bookSlug:string;shareCode:string}>}
+// Shares are fixed snapshots: build each page on its first visit and serve the saved copy after that,
+// so link-preview bots (WhatsApp, X) never wait for a sleeping server.
+export const revalidate = 86400
+export async function generateStaticParams() { return [] }
 async function resolve({params}:Props){
   const {bookSlug:slug,shareCode:code}=await params
   if(!/^[a-z0-9][a-z0-9-]{0,199}$/.test(slug)||RESERVED_SHARE_SLUGS.some(s=>slug===s||slug.startsWith(s+"-")))return null
