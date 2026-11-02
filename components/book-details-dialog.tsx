@@ -1,5 +1,6 @@
 "use client"
 
+import { BookDescription } from "@/components/book-description"
 import { BookShareControls } from "@/components/book-share-controls"
 import { nearDuplicate } from "@/lib/book-identity"
 import Link from "next/link"
@@ -134,21 +135,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
             {mode === "add" ? (
               <div className="space-y-4">
                 {latestEditionNotice && <div className="rounded-md bg-amber-50 border-l-2 border-amber-600 px-3 py-2 text-sm text-amber-900"><span className="font-medium">Latest available edition</span><br />May differ from your copy.</div>}
-                {/* Add book description */}
-                {book?.description && (
-                  <div className="mb-4">
-                    <h3 className="font-medium mb-2">Description</h3>
-                    <p className={showFullDescription ? "text-sm text-muted-foreground leading-relaxed" : "text-sm text-muted-foreground leading-relaxed line-clamp-3"}>{book.description}</p>
-                    {book.description && book.description.length > 200 && (
-                      <button
-                        onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="text-primary text-xs mt-1 hover:underline"
-                      >
-                        {showFullDescription ? "Show less" : "Show more"}
-                      </button>
-                    )}
-                  </div>
-                )}
+                {book?.description && <BookDescription key={book.id} description={book.description} />}
 
                 <div className="flex flex-col space-y-1.5">
                   <label htmlFor="status" className="text-sm font-medium">

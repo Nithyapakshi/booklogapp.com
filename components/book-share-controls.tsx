@@ -1,6 +1,8 @@
 "use client"
 import { useRef } from "react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { codedSharePath } from "@/lib/public-share-path"
+import { safeCover } from "@/lib/shared-book"
 import { ShareControls } from "@/components/share-controls"
 export function BookShareControls({book}:{book:{id:string;title:string;author:string;cover?:string}}) {
   const saved=useRef<{key:string;url:string}|null>(null)
@@ -12,10 +14,11 @@ export function BookShareControls({book}:{book:{id:string;title:string;author:st
     const {data:profile,error:profileError}=await db.from("profiles").select("name").eq("user_id",user.id).single()
     const name=profile?.name?.trim()
     if(profileError||!name) throw new Error("Add your display name in Settings before sharing. Your email is never used.")
-    const {data,error}=await db.from("book_shares").insert({owner_id:user.id,display_name:name.slice(0,80),title:book.title,author:book.author,cover:book.cover?.startsWith("https://")?book.cover:""}).select("token").single()
+    const cover=safeCover(book.cover?.replace(/^http:\/\//,"https://"))
+    const {data,error}=await db.from("book_shares").insert({owner_id:user.id,display_name:name.slice(0,80),title:book.title,author:book.author,cover:safeCover(book.cover?.replace(/^http:\/\//,"https://"))}).select("token").single()
     if(error||!data) throw new Error("The sharing link was not created. Please try again.")
-    const url=`${window.location.origin}/s/${data.token}`
+    const url=`${window.location.origin}${codedSharePath(book.title,data.token)}`
     saved.current={key,url};return url
   }
-  return <div className="book-share-header"><div className="-mt-2 flex min-h-11 justify-end pr-11"><ShareControls getUrl={getUrl} label="book"/></div><p className="mt-1 text-left" style={{fontSize:11,lineHeight:1.5,color:"var(--bl-8a7560)"}}>Shares this book and your Settings display name, not your library, notes or rating. Anyone with the link can view it.</p></div>
+  return <div className="book-share-header"><div className="-mt-2 flex min-h-11 justify-end pr-11"><ShareControls getUrl={getUrl} label="book"/></div><p className="mt-1 text-left" style={{fontSize:11,lineHeight:1.5,color:"var(--bl-8a7560)"}}>Shares this book and your Settings display name, not your library, notes or rating. Anyone with the link can view the recommendation.</p></div>
 }
