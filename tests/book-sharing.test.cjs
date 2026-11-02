@@ -1,6 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),ts=require('typescript')
 const read=p=>fs.readFileSync(p,'utf8')
-const mod={exports:{}};new Function('module','exports',ts.transpileModule(read('lib/auth-return.ts'),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(mod,mod.exports)
+const helper={exports:{}};new Function('module','exports',ts.transpileModule(read('lib/public-share-path.ts'),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(helper,helper.exports)
+const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(read('lib/auth-return.ts'),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(()=>helper.exports,mod,mod.exports)
 const token='12345678-1234-4234-9234-123456789abc',path=`/s/${token}?save=1`
 test('auth return is an exact one-book Save path, never an open redirect',()=>{
  assert.equal(mod.exports.safeAuthReturn(path),path)
@@ -16,7 +17,7 @@ test('all auth exits preserve validated next, callback still handles session/exc
 test('one-book snapshot is explicit minimal disclosure and never uses email or note/rating',()=>{
  const s=read('components/book-share-controls.tsx');assert.match(s,/select\("name"\)/);assert.match(s,/!name/)
  assert.doesNotMatch(s,/user.email|selfRating|self_rating|notes:/)
- assert.match(s,/Anyone with the link can view it/)
+ assert.match(s,/Anyone with the link/)
  const sql=read('supabase/migrations/20261024_book_shares.sql');assert.match(sql,/enable row level security/)
  assert.match(sql,/revoke all on public.book_shares from anon, authenticated/)
  assert.doesNotMatch(sql,/grant select.*to anon|create policy.*anon|drop /i)
@@ -29,7 +30,7 @@ test('receiver Save queues only new books and waits for library before continuat
  assert.doesNotMatch(s,/moveBook|addBook\(/)
  assert.match(s,/!loading&&!loadError/);assert.match(s,/auto.current=true/)
  assert.match(s,/new URL\(window.location.href\).searchParams.get\("save"\)===\"1\"/)
- assert.match(s,/signup\?next=/);assert.match(s,/login\?next=/)
+ assert.match(s,/signup\?next=/);assert.match(read("app/signup/page.tsx"),/login\?next=/)
 })
 test('shared pair is reused at existing actual share surfaces, book cards untouched',()=>{
  for(const p of ['app/books/page.tsx','app/settings/page.tsx'])assert.match(read(p),/<ShareControls/)

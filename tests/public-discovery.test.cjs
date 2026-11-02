@@ -33,6 +33,7 @@ test('crawler policy excludes every existing non-public directory, assets remain
   assert.ok(s.includes('sitemap: `${PUBLIC_ORIGIN}/sitemap.xml`'))
   for (const item of fs.readdirSync('app', {withFileTypes: true})) {
     if (!item.isDirectory() || ['home','privacy','learn-more'].includes(item.name)) continue
+    if(item.name === '[bookSlug]'){assert.match(read('app/[bookSlug]/[shareCode]/page.tsx'),/index:false/);continue}
     const path = ['s','u'].includes(item.name) ? `/${item.name}/` : `/${item.name}`
     assert.ok(s.includes(JSON.stringify(path)), `${path} excluded`)
   }

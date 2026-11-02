@@ -1,5 +1,6 @@
 "use client"
 
+import { SharedBookContext } from "@/components/shared-book-context"
 import { authReturnFromLocation } from "@/lib/auth-return"
 import type React from "react"
 import Link from "next/link"
@@ -106,7 +107,9 @@ export default function SignupPage() {
       {/* Card */}
       <div className="w-full" style={{ maxWidth: "400px", background: "var(--bl-fff)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "12px", padding: "2rem" }}>
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--bl-1a1208)", fontWeight: "normal", marginBottom: "4px" }}>Create your account</h1>
-        <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", marginBottom: "1.5rem" }}>Start tracking your reading today</p>
+        {nextPath === "/books" ? <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", marginBottom: "1.5rem" }}>Start tracking your reading today</p> : <div className="h-5" />}
+
+        <SharedBookContext nextPath={nextPath} />
 
         {error && (
           <div style={{ padding: "10px 14px", background: "var(--bl-fdf2f2)", border: "0.5px solid var(--bl-e8c4c4)", color: "var(--bl-a04040)", borderRadius: "7px", fontSize: "13px", marginBottom: "1rem" }}>

@@ -145,18 +145,18 @@ async function openLibrarySearch(query: string): Promise<BookSearchResult[]> {
 }
 
 // Function to search for books
-export async function searchBooks(query: string): Promise<BookSearchResult[]> {
+export async function searchBooks(query: string, apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY): Promise<BookSearchResult[]> {
   if (!query.trim()) return []
-  return rankSearchResults(query, await searchBooksRaw(query))
+  return rankSearchResults(query, await searchBooksRaw(query, apiKey))
 }
 
 // Unranked Google Books results. Used where the caller does its own (fuzzy) matching.
-export async function searchBooksRaw(query: string): Promise<BookSearchResult[]> {
+export async function searchBooksRaw(query: string, apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY): Promise<BookSearchResult[]> {
   if (!query.trim()) return []
   try {
     if (googleDown()) throw new Error(CIRCUIT_OPEN_ERROR)
     const response = await fetchWithRetry(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`,
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&printType=books&key=${apiKey}`,
     )
 
     if (!response.ok) {
@@ -192,10 +192,10 @@ export async function searchBooksRaw(query: string): Promise<BookSearchResult[]>
 }
 
 // Function to get a book by ID
-export async function getBookById(id: string): Promise<BookSearchResult | null> {
+export async function getBookById(id: string, apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY): Promise<BookSearchResult | null> {
   if (googleDown()) return null
   try {
-    const response = await fetchWithRetry(`https://www.googleapis.com/books/v1/volumes/${id}?key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`)
+    const response = await fetchWithRetry(`https://www.googleapis.com/books/v1/volumes/${id}?key=${apiKey}`)
 
     if (!response.ok) {
       throw new Error(`Google Books API error: ${response.status}`)

@@ -1,6 +1,17 @@
+import type { Metadata } from "next"
 import { SharedBook } from "@/components/shared-book"
-export const metadata={title:"A book shared with you - BookLog",robots:{index:false,follow:false}}
-export default async function SharedPage({params}:{params:Promise<{token:string}>}) {
-  const {token}=await params
-  return <SharedBook token={token}/>
+import { readSharedBook } from "@/lib/shared-book-server"
+type Props = { params: Promise<{ token: string }> }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { token } = await params
+  const book = await readSharedBook(token)
+  if (!book) return { title: "A book shared with you - BookLog", robots: { index: false, follow: false } }
+  const title = `${book.title} - ${book.author} | BookLog`
+  return { title, description: `${book.title} by ${book.author}. Save it to your BookLog queue.`, robots: { index: false, follow: false },
+    openGraph: { title, description: `${book.title} by ${book.author}`, type: "website", images: book.cover ? [{ url: book.cover, alt: book.title }] : [] },
+    twitter: { card: "summary_large_image", title, images: book.cover ? [book.cover] : [] } }
+}
+export default async function Page({ params }: Props) {
+  const { token } = await params
+  return <SharedBook token={token} initialBook={await readSharedBook(token)} />
 }
