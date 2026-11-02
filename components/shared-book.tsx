@@ -11,7 +11,7 @@ import { BookDescription } from "@/components/book-description"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 type Snapshot = SharedSnapshot & { description?: string }
 export function SharedBook({token,initialBook,coded=false}:{token:string;initialBook?:Snapshot|null;coded?:boolean}) {
-  const [detailOpen,setDetailOpen]=useState(false),[libraryId,setLibraryId]=useState<string|null>(null)
+  const [detailOpen,setDetailOpen]=useState(false)
   const [book,setBook]=useState<Snapshot|null>(initialBook||null),[state,setState]=useState(initialBook?"":"Loading book..."),[busy,setBusy]=useState(false),[done,setDone]=useState(false)
   const {user,isLoading}=useAuth(),{books,loading,loadError,createBook}=useBooks(),auto=useRef(false),saveLock=useRef(false)
   const cleanPath=coded&&initialBook?codedSharePath(initialBook.title,token):`/s/${token}`
@@ -44,8 +44,8 @@ export function SharedBook({token,initialBook,coded=false}:{token:string;initial
       if(!sameBook(book,data[0])){setState("This recommendation changed. Refresh before saving.");return}
     }
     const existing=Object.values(books).flat().find(b=>sameBook(b,{title:book.title,author:book.author}))
-    if(existing){setLibraryId(existing.id);setState("Already in your library. Your shelf is unchanged.");setDone(true);window.history.replaceState(null,"",cleanPath);return}
-    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},"queued");setLibraryId(result.books.find(b=>sameBook(b,book))?.id||null);setDone(true);setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":"Saved to Queued.");window.history.replaceState(null,"",cleanPath)
+    if(existing){setState("Already in your library. Your shelf is unchanged.");setDone(true);window.history.replaceState(null,"",cleanPath);return}
+    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},"queued");setDone(true);setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":"Saved to Queued.");window.history.replaceState(null,"",cleanPath)
     } catch{setState("The book was not saved. Please try again.")}
     finally{saveLock.current=false;setBusy(false)}
   }
@@ -60,7 +60,7 @@ export function SharedBook({token,initialBook,coded=false}:{token:string;initial
         <p style={{color:"var(--bl-8a7560)",fontSize:15,marginTop:10}}>{book.author}</p>
       </button>
       {done&&state&&<p role="status" className="border border-green-700/40 bg-green-50 text-green-900 dark:border-green-300/40 dark:bg-green-200/10 dark:text-green-100" style={{padding:"14px 16px",borderRadius:9,maxWidth:320,margin:"28px auto 0",textAlign:"left",fontSize:15}}><span aria-hidden="true">✓ </span>{state}</p>}
-      {done&&libraryId?<Link href={`/books?show=${encodeURIComponent(libraryId)}`} style={{display:"block",padding:"14px 24px",width:"100%",maxWidth:320,background:"var(--bl-f5ede0)",color:"var(--bl-6b5c42)",borderRadius:8,margin:"20px auto 0",textDecoration:"none"}}>In your library &rarr;</Link>:<button type="button" disabled={busy||done||isLoading||!!user&&loading} onClick={()=>void save()} style={{padding:"14px 24px",width:"100%",maxWidth:320,background:done?"var(--bl-f5ede0)":"var(--bl-c17f3e)",color:done?"var(--bl-6b5c42)":"var(--bl-primary-ink)",border:0,borderRadius:8,marginTop:done?20:32,cursor:busy||done?"default":"pointer",opacity:busy?.7:1}}>{busy?"Saving...":done?"In your library":"Save to Queued"}</button>}
+      <button type="button" disabled={busy||done||isLoading||!!user&&loading} onClick={()=>void save()} style={{padding:"14px 24px",width:"100%",maxWidth:320,background:done?"var(--bl-f5ede0)":"var(--bl-c17f3e)",color:done?"var(--bl-6b5c42)":"var(--bl-primary-ink)",border:0,borderRadius:8,marginTop:done?20:32,cursor:busy||done?"default":"pointer",opacity:busy?.7:1}}>{busy?"Saving...":done?"In your library":"Save to Queued"}</button>
       {!done&&<p style={{fontSize:12,color:"var(--bl-a8927a)",marginTop:10}}>Tap the cover to read a summary</p>}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}><DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto" style={{background:"var(--bl-faf7f2)",color:"var(--bl-1a1208)"}}>
         <DialogHeader><DialogTitle className="font-serif text-2xl font-normal pr-6">{book.title}</DialogTitle><DialogDescription>{book.author}</DialogDescription></DialogHeader>{book.cover&&<img src={book.cover} alt="" className="h-48 w-32 object-contain mx-auto my-3"/>}

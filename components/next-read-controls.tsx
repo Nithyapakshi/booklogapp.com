@@ -34,7 +34,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
     catch {setError("Book was not changed. Please try again.")}
     finally {setWorking(false)}
   }
-  return <><section data-book-id={book.id} aria-label="Up next" className="flex gap-3 items-start border-y border-border py-4 mt-5">
+  return <><section aria-label="Up next" className="flex gap-3 items-start border-y border-border py-4 mt-5">
     {book.cover&&<button type="button" aria-label={`Open details for ${book.title}`} disabled={busy||working} onClick={()=>setDetailsOpen(true)}><img src={book.cover} alt="" style={{width:52,height:78,objectFit:"contain",flexShrink:0}}/></button>}
     <div className="min-w-0 flex-1"><h2 className="text-xs text-muted-foreground uppercase mb-1">Up next</h2><button type="button" disabled={busy||working} onClick={()=>setDetailsOpen(true)} className="text-sm font-semibold break-words text-left hover:underline">{book.title}</button>
       <div className="flex flex-wrap items-center gap-4 mt-2"><button type="button" disabled={busy||working} onClick={onStart} className="text-sm font-semibold rounded border border-border px-3 min-h-11" style={{color:"var(--bl-c17f3e)"}}>{busy?"Starting...":working?"Updating...":"Start reading"}</button><button type="button" disabled={busy||working} onClick={onChange} style={quiet}>Change</button></div>
