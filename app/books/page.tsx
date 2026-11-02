@@ -66,6 +66,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
     <>
       {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
+        data-book-id={book.id}
         className={`bl-list-row flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow ${(book.status === "completed" || book.status === "recommended") ? "bl-list-row-rated" : ""}`}
         onClick={() => setDialogOpen(true)}
       >
@@ -618,6 +619,11 @@ function BooksLibraryContent() {
     setLinkedBookId(requestedBookId)
   }, [requestedBookId])
   const linkedBook = linkedBookId ? Object.values(books).flat().find(b => b.id === linkedBookId) : null
+  // /books?show=<id> (from a shared book's "In your library"): open the shelf and page holding the book, then scroll to it.
+  // Separate from ?book=, which opens the details dialog and is used by duplicate warnings.
+  const [locateId, setLocateId] = useState<string | null>(null)
+  const [locateStage, setLocateStage] = useState<"tab" | "page" | "scroll" | null>(null)
+  useEffect(() => { const id = new URLSearchParams(window.location.search).get("show"); if (id) { setLocateId(id); setLocateStage("tab") } }, [])
 
 
   const userGenres = React.useMemo(() => {
@@ -752,6 +758,34 @@ function BooksLibraryContent() {
     ? filteredBooks
     : filteredBooks.slice((effectivePage - 1) * (pageSize as number), effectivePage * (pageSize as number))
   useEffect(() => { if (currentPage !== effectivePage) setCurrentPage(effectivePage) }, [currentPage, effectivePage])
+  // Declared after the tab-change page reset so the located page wins in the same commit.
+  useEffect(() => {
+    if (locateStage !== "tab" || !locateId || loading || loadError) return
+    const status = (Object.keys(books) as BookStatus[]).find(st => books[st]?.some(x => x.id === locateId))
+    if (!status) { setLocateStage(null); window.history.replaceState(null, "", "/books"); return }
+    setListSearch(""); setChoosingNext(false)
+    if (status === "recommended") { setSidebarTab("recommended"); setRecommendedGenreFilter("All") }
+    else { setSidebarTab("my-books"); setMyBooksGenreFilter("All"); setActiveTab(({ reading: "Reading", queued: "Queued", completed: "Completed", onHold: "On Hold" } as Record<string, string>)[status] || "Reading") }
+    setLocateStage("page")
+  }, [locateStage, locateId, loading, loadError, books])
+  useEffect(() => {
+    if (locateStage !== "page" || !locateId) return
+    const index = filteredBooks.findIndex(x => x.id === locateId)
+    if (index >= 0 && pageSize !== "all") setCurrentPage(Math.floor(index / pageSize) + 1)
+    setLocateStage("scroll")
+  }, [locateStage, locateId, filteredBooks, pageSize])
+  useEffect(() => {
+    if (locateStage !== "scroll" || !locateId) return
+    setLocateStage(null)
+    window.history.replaceState(null, "", "/books")
+    window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-book-id="${CSS.escape(locateId)}"]`)
+      if (!el) return
+      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      el.style.outline = "2px solid var(--bl-c17f3e)"; el.style.outlineOffset = "3px"
+      window.setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = "" }, 2500)
+    }, 80)
+  }, [locateStage, locateId])
 
   const handlePageSizeChange = (val: string) => {
     const next = val === "all" ? "all" : parseInt(val)
