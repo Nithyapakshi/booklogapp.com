@@ -95,7 +95,6 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
     <>
       {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
-        data-book-id={book.id}
         className="bg-card rounded-lg shadow-md overflow-hidden relative cursor-pointer"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
