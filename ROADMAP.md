@@ -2,13 +2,13 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 30 October 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. Its cover still says 27 October; the synced content below includes the 29 and 30 October live notes. No automated sync is installed.
+Last synced: 2 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 27 October 2026
+booklogapp.com  ·  Last updated: 2 November 2026
 
 ## Part 1 — Live Features
 
