@@ -27,16 +27,17 @@ async function coverFallback(snapshot: SharedSnapshot): Promise<SharedCatalog | 
 }
 
 // Use the same existing anonymous exact-token RPC, never a service-role/table read.
+// Share pages are cached as finished copies (see the page files), so a failed read throws instead of
+// returning "not found": an error is retried on the next visit, a cached empty page would stick.
 export const readSharedBook = cache(async (token: string) => {
   if (!isShareToken(token)) return null
-  try {
-    const db = await createServerSupabaseClient()
-    const { data, error } = await db.rpc("read_book_share", { p_token: token }).abortSignal(AbortSignal.timeout(5000))
-    if (error || !data?.[0]) return null
-    const row = data[0]
-    const snapshot: SharedSnapshot = { display_name: row.display_name, title: row.title, author: row.author, cover: safeCover(row.cover) }
-    if (snapshot.cover) return snapshot
-    const catalog = await coverFallback(snapshot)
-    return catalog ? { ...snapshot, cover: catalog.cover, description: catalog.description } : snapshot
-  } catch { return null }
+  const db = await createServerSupabaseClient()
+  const { data, error } = await db.rpc("read_book_share", { p_token: token }).abortSignal(AbortSignal.timeout(5000))
+  if (error) throw new Error("Shared book could not be read")
+  if (!data?.[0]) return null
+  const row = data[0]
+  const snapshot: SharedSnapshot = { display_name: row.display_name, title: row.title, author: row.author, cover: safeCover(row.cover) }
+  if (snapshot.cover) return snapshot
+  const catalog = await coverFallback(snapshot)
+  return catalog ? { ...snapshot, cover: catalog.cover, description: catalog.description } : snapshot
 })

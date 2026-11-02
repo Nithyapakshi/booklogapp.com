@@ -64,3 +64,8 @@ test('In your library links to the exact shelf position; ?book= dialog links are
  for(const f of ['components/book-card.tsx','components/next-read-controls.tsx'])assert.match(fs.readFileSync(f,'utf8'),/data-book-id=\{book\.id\}/)
  assert.match(page,/data-book-id=\{book\.id\}/)
 })
+test('share pages are saved copies, read errors are never cached, new links are warmed at creation',()=>{
+ for(const p of ['app/s/[token]/page.tsx','app/[bookSlug]/[shareCode]/page.tsx']){const s=fs.readFileSync(p,'utf8');assert.match(s,/export const revalidate = 86400/);assert.match(s,/export async function generateStaticParams\(\) \{ return \[\] \}/);assert.doesNotMatch(s,/cookies\(|headers\(/)}
+ const server=fs.readFileSync('lib/shared-book-server.ts','utf8');assert.match(server,/if \(error\) throw new Error/);assert.doesNotMatch(server,/catch \{ return null \}\n\}\)/)
+ assert.match(fs.readFileSync('components/book-share-controls.tsx','utf8'),/void fetch\(url,\{credentials:"omit"\}\)\.catch/)
+})

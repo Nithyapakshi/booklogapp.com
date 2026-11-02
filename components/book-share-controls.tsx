@@ -18,6 +18,8 @@ export function BookShareControls({book}:{book:{id:string;title:string;author:st
     const {data,error}=await db.from("book_shares").insert({owner_id:user.id,display_name:name.slice(0,80),title:book.title,author:book.author,cover:safeCover(book.cover?.replace(/^http:\/\//,"https://"))}).select("token").single()
     if(error||!data) throw new Error("The sharing link was not created. Please try again.")
     const url=`${window.location.origin}${codedSharePath(book.title,data.token)}`
+    // Load the new page once in the background so its saved copy exists before the link is pasted.
+    void fetch(url,{credentials:"omit"}).catch(()=>{})
     saved.current={key,url};return url
   }
   return <div className="book-share-header"><div className="-mt-2 flex min-h-11 justify-end pr-11"><ShareControls getUrl={getUrl} label="book"/></div><p className="mt-1 text-left" style={{fontSize:11,lineHeight:1.5,color:"var(--bl-8a7560)"}}>Shares this book and your Settings display name, not your library, notes or rating. Anyone with the link can view the recommendation.</p></div>
