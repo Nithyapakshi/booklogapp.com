@@ -907,6 +907,12 @@ function BooksLibraryContent() {
         </Link>{" "}
         - ideas picked for you.
       </p>
+      <p style={{ fontSize: "13px", color: "var(--bl-6b5c42)", marginTop: "6px" }}>
+        Coming from Goodreads?{" "}
+        <Link href="/settings#goodreads-import" style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}>
+          Import your library
+        </Link>
+      </p>
     </div>
   )
 

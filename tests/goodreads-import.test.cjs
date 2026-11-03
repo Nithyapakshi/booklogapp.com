@@ -175,3 +175,12 @@ test("server lookup is read-only, signed-in only, and limited to the reader's ow
   assert.match(a, /GOOGLE_BOOKS_SERVER_KEY/)
   assert.doesNotMatch(a, /\.update\(|\.insert\(|\.upsert\(|\.delete\(/)
 })
+
+test("empty shelf offers a Goodreads import link that lands on the import card", () => {
+  const page = fs.readFileSync("app/books/page.tsx", "utf8")
+  const prompt = page.slice(page.indexOf("const firstBookPrompt"), page.indexOf("const gridView"))
+  assert.match(prompt, /Coming from Goodreads\?/)
+  assert.match(prompt, /href="\/settings#goodreads-import"/)
+  const card = fs.readFileSync("components/goodreads-import.tsx", "utf8")
+  assert.match(card, /id="goodreads-import"/)
+})
