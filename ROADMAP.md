@@ -8,7 +8,7 @@ BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 2 November 2026
+booklogapp.com  ·  Last updated: 3 November 2026
 
 ## Part 1 — Live Features
 
@@ -34,7 +34,7 @@ booklogapp.com  ·  Last updated: 2 November 2026
 | Duplicate guard toast | Warn if a book already exists in the library | ✅  DONE | Inline message and View existing book. |
 | Manually add a book | Add books not in Google Books by typing details manually | ✅  DONE | Title, optional author, status including Recommended; rating prompt and blank-only enrichment. |
 | Scan barcode to add | Use phone camera to scan a book barcode and add it instantly | ✅  DONE | Camera or typed ISBN with search/manual fallback. Real phone-camera owner test remains pending. |
-| First-book help | Empty-library search prompt and dismissible starter titles | DONE | Starter titles disappear as the shelf grows. |
+| First-book help | Empty-library search prompt and dismissible starter titles | DONE | Starter titles disappear as the shelf grows. Live 3 Nov (#77): empty shelf also shows "Coming from Goodreads? Import your library", linking to the import card in Settings. |
 | Cover photo to add | Identify a book from a cover photo | CANDIDATE | Not built. Paid fallback after barcode value is proven; confirm match. |
 
 ### 3. Reading Status & Organisation
@@ -56,6 +56,7 @@ booklogapp.com  ·  Last updated: 2 November 2026
 | Within-library search | Search within your own collection by title or author | ✅  DONE | Title/author filter above each list. |
 | Library load recovery | Parallel books/notes reads, clear loading state and safe Retry. Live 29 Oct 2026; saved libraries unchanged. | DONE |  |
 | Metadata and duplicate safety | Fill missing details only; latest-edition results; near-duplicate warning | DONE | Never overwrite entered details or block Add anyway. |
+| Fill details when a book is opened | Opening your own book with no description or cover looks it up once and fills the blanks (also genre and year if empty) | DONE | Live 3 Nov (#76). Fill-only, never overwrites. Server-side lookup with the server Google Books key; at most once per book every 6 hours. Applies to any book missing details, not only imports. |
 | Did Not Finish | Separate a stopped book from On Hold | CANDIDATE | Not built; no build approval. |
 | Reading progress / journal | Optional page or percentage progress with dated notes | CANDIDATE | Not built; no build approval. |
 | Reread history | Keep earlier reading dates when rereading | CANDIDATE | Not built. |
@@ -144,7 +145,7 @@ booklogapp.com  ·  Last updated: 2 November 2026
 
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
-| Goodreads import | Import reading history and library from Goodreads with one click | ✅  DONE | Settings › Your data. Goodreads CSV export: read → Completed only, currently-reading → Reading, to-read → Queued, other shelves → On Hold; ratings, read dates and reviews (as private notes). Only adds books; existing ones are left untouched; safe to re-run. Covers from Open Library (no Google Books quota). Up to 1000 books per import and 1000 rows per library. |
+| Goodreads import | Import reading history and library from Goodreads with one click | ✅  DONE | Live 3 Nov (#75). Settings › Your data. Goodreads CSV export: read → Completed only, currently-reading → Reading, to-read → Queued, other shelves → On Hold; ratings, read dates and reviews (as private notes). Shows a summary before saving; Stop button. Only adds books; existing ones are left untouched; safe to re-run. Covers from Open Library (no Google Books quota); uncertain genres left blank. Descriptions fill when a book is opened (#76). Empty-shelf link (#77). Up to 1000 books per import and 1000 rows per library. |
 | Export reading list | Download entire collection as CSV or PDF | 🟡  PARTIAL | CSV is live (Settings, Your data). PDF is not built. |
 | Other imports | StoryGraph / standard CSV / Bookcase / Amazon import | PARKED / CANDIDATE | Not built; review and reconciliation required. |
 
