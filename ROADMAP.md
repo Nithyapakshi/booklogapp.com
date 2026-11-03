@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 2 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 3 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -144,7 +144,7 @@ booklogapp.com  ·  Last updated: 2 November 2026
 
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
-| Goodreads import | Import reading history and library from Goodreads with one click | PARKED | Not built; discussion only, no implementation approved. |
+| Goodreads import | Import reading history and library from Goodreads with one click | ✅  DONE | Settings › Your data. Goodreads CSV export: read → Completed only, currently-reading → Reading, to-read → Queued, other shelves → On Hold; ratings, read dates and reviews (as private notes). Only adds books; existing ones are left untouched; safe to re-run. Covers from Open Library (no Google Books quota). Up to 1000 books per import and 1000 rows per library. |
 | Export reading list | Download entire collection as CSV or PDF | 🟡  PARTIAL | CSV is live (Settings, Your data). PDF is not built. |
 | Other imports | StoryGraph / standard CSV / Bookcase / Amazon import | PARKED / CANDIDATE | Not built; review and reconciliation required. |
 

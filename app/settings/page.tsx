@@ -7,6 +7,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookOpen, Heart, Sparkles, Settings, MessageSquare } from "lucide-react"
 import { ThemePreference } from "@/components/theme-preference"
 import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
+import { GoodreadsImport } from "@/components/goodreads-import"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -283,6 +284,8 @@ export default function SettingsPage() {
               {exporting ? "Preparing…" : "Download CSV"}
             </button>
             {exportMsg && <p role="status" style={{ fontSize: "12px", color: "var(--bl-6b5c42)", margin: "10px 0 0" }}>{exportMsg}</p>}
+            <div style={{ borderTop: "0.5px solid var(--bl-e0d5c4)", margin: "16px 0" }} />
+            <GoodreadsImport />
           </div>
         </div>
 
