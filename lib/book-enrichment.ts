@@ -80,13 +80,14 @@ export function matchEnrichment(title: string, author: string, results: BookSear
 }
 
 // Best effort. Never throws: a failed lookup just means the book keeps blank details.
-export async function lookupEnrichment(title: string, author: string): Promise<Enrichment | null> {
+// apiKey: omitted in the browser (default public key); the server passes its own key.
+export async function lookupEnrichment(title: string, author: string, apiKey?: string): Promise<Enrichment | null> {
   try {
-    if (isUnknownAuthor(author)) return matchEnrichment(title, author, await searchBooksRaw(title))
-    const found = matchEnrichment(title, author, await searchBooksRaw(`${title} ${author}`))
+    if (isUnknownAuthor(author)) return matchEnrichment(title, author, await searchBooksRaw(title, apiKey))
+    const found = matchEnrichment(title, author, await searchBooksRaw(`${title} ${author}`, apiKey))
     if (found) return found
     // A misspelled author can throw off the combined query, so retry on the title alone.
-    return matchEnrichment(title, author, await searchBooksRaw(title))
+    return matchEnrichment(title, author, await searchBooksRaw(title, apiKey))
   } catch {
     return null
   }

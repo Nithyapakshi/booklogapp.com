@@ -5,7 +5,8 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { validateBookDetails } from "@/lib/book-identity"
-import { lookupEnrichment, isUnknownAuthor, UNKNOWN_AUTHOR } from "@/lib/book-enrichment"
+import { lookupEnrichment, isUnknownAuthor, UNKNOWN_AUTHOR, type Enrichment } from "@/lib/book-enrichment"
+import { lookupOwnBookDetails } from "@/app/actions/book-details-lookup"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -233,10 +234,10 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
 
   // Best effort, after the book is already saved. Fills only blank fields, only while the title and author are unchanged,
   // and any failure leaves the book exactly as saved.
-  const enrichMissing = useCallback(async (saved: Book) => {
+  const enrichMissing = useCallback(async (saved: Book, lookup: (b: Book) => Promise<Enrichment | null> = (b) => lookupEnrichment(b.title, b.author)) => {
     try {
       if (!userId || (saved.cover && saved.description && !isUnknownAuthor(saved.author))) return
-      const found = await lookupEnrichment(saved.title, saved.author)
+      const found = await lookup(saved)
       if (!found) return
       const supabase = createClientSupabaseClient()
       const applied: Partial<Book> = {}
@@ -303,7 +304,12 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
       if (Date.now() - Number(localStorage.getItem(key) || 0) < spacing) return
       localStorage.setItem(key, String(Date.now()))
     } catch {}
-    void enrichMissing(book)
+    // Looked up on the server with the server key (works on previews too, and keeps the browser key's quota for search).
+    void enrichMissing(book, async (b) => {
+      const { data } = await createClientSupabaseClient().auth.getSession()
+      const token = data.session?.access_token
+      return token ? lookupOwnBookDetails(token, b.id) : null
+    })
   }, [loading, authLoading, userId, books, enrichMissing])
 
   const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean }): Promise<BookSaveResult> => {
