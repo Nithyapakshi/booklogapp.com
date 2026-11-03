@@ -44,6 +44,7 @@ type BookContextType = {
   reloadBooks: () => void
   updateNote: (bookId: string, note: string) => Promise<void>
   updateRating: (bookId: string, rating: number) => Promise<void>
+  fillMissingDetails: (bookId: string) => void
 }
 
 const emptyBooks: Record<BookStatus, Book[]> = {
@@ -52,6 +53,7 @@ const emptyBooks: Record<BookStatus, Book[]> = {
 
 const BookContext = createContext<BookContextType | undefined>(undefined)
 const healedUsers = new Set<string>() // auto-heal runs once per page load per user
+const fillAttempts = new Map<string, number>()
 
 export function BookProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -286,6 +288,24 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
     })()
   }, [loading, authLoading, userId, books, enrichMissing])
 
+  // When a reader opens a book that is missing its description or cover (for example a Goodreads import), look it up
+  // once and fill the blanks (a blank genre is filled in the same lookup). Same fill-only rules and 6-hour per-book spacing as the heal on app open.
+  const fillMissingDetails = useCallback((bookId: string) => {
+    if (loading || authLoading || !userId) return
+    const book = Object.values(books).flat().find(b => b.id === bookId)
+    if (!book || (book.cover && book.description && !isUnknownAuthor(book.author))) return
+    const key = `booklog.heal:${userId}:${book.id}`
+    const spacing = 6 * 60 * 60 * 1000
+    // The in-memory note blocks repeats even when the browser cannot save to localStorage.
+    if (Date.now() - (fillAttempts.get(key) || 0) < spacing) return
+    fillAttempts.set(key, Date.now())
+    try {
+      if (Date.now() - Number(localStorage.getItem(key) || 0) < spacing) return
+      localStorage.setItem(key, String(Date.now()))
+    } catch {}
+    void enrichMissing(book)
+  }, [loading, authLoading, userId, books, enrichMissing])
+
   const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean }): Promise<BookSaveResult> => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
     const errorText = validateBookDetails(book.title, book.author || "", book.cover || "")
@@ -459,7 +479,7 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, saveDates, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating }}>
+    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, saveDates, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating, fillMissingDetails }}>
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
       {finishPrompt && !ratingPrompt && <FinishBookDialog key={finishPrompt.id} book={finishPrompt} direct={finishPrompt.direct} onSave={(rating, date, precision) => saveFinish(finishPrompt.id, rating, date, finishPrompt.where, precision)} onClose={() => setFinishPrompt(null)} />}

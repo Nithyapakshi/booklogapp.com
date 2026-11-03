@@ -47,8 +47,12 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
-  const { createBook, updateNote, books } = useBooks()
+  const { createBook, updateNote, books, fillMissingDetails } = useBooks()
   const ownedBook = Object.values(books).flat().find(b => b.id === book?.id)
+  // Opening one of your own books with no description or cover fills the blanks once (fill-only).
+  useEffect(() => { if (open && mode === "view" && ownedBook) fillMissingDetails(ownedBook.id) }, [open, mode, ownedBook?.id, fillMissingDetails])
+  const description = book?.description || ownedBook?.description
+  const cover = book?.cover || ownedBook?.cover
   const [editing, setEditing] = useState(initialEdit)
   const [duplicate, setDuplicate] = useState<Book | null>(null)
   const [near, setNear] = useState<Book | null>(null)
@@ -101,9 +105,9 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
         {editing && ownedBook ? <BookEditForm key={ownedBook.id} book={ownedBook} onDone={() => {setEditing(false); onClose()}} /> : <div className="flex flex-col md:flex-row gap-6">
           {/* Book cover image */}
           <div className="w-full md:w-1/3 max-w-[180px] mx-auto md:mx-0">
-            {book?.cover ? (
+            {cover ? (
               <img
-                src={book.cover || "/placeholder.svg"}
+                src={cover || "/placeholder.svg"}
                 alt={book?.title || "Book cover"}
                 className="w-full h-auto object-cover rounded-md shadow-md"
                 onError={(e) => {
@@ -175,12 +179,12 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                     <p className="px-3 py-2 border rounded-md bg-muted">{book?.publishedYear}</p>
                   </div>
                 )}
-                {book?.description && (
+                {description && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-foreground">Description</label>
                     <div className="text-sm text-muted-foreground leading-relaxed">
-                      <p className={showFullDescription ? "" : "line-clamp-3"}>{book.description}</p>
-                      {book.description && book.description.length > 200 && (
+                      <p className={showFullDescription ? "" : "line-clamp-3"}>{description}</p>
+                      {description.length > 200 && (
                         <button
                           onClick={() => setShowFullDescription(!showFullDescription)}
                           className="text-primary text-xs mt-1 hover:underline"
