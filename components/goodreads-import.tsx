@@ -26,6 +26,12 @@ export function GoodreadsImport() {
 
   useEffect(() => subscribeImport(setRun), [])
 
+  // Arriving from the empty-shelf "Import your library" link scrolls straight to this card.
+  const card = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (window.location.hash === "#goodreads-import") card.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [])
+
   // Closing or reloading the tab mid-import stops it; what was saved stays, and re-running the file skips those books.
   useEffect(() => {
     if (!running) return
@@ -70,7 +76,7 @@ export function GoodreadsImport() {
   const outcome = run?.kind === "finished" ? run.outcome : null
 
   return (
-    <div>
+    <div id="goodreads-import" ref={card}>
       <div style={{ fontSize: "13px", color: "var(--bl-1a1208)", fontWeight: "600" }}>Import from Goodreads</div>
       <div style={{ fontSize: "12px", color: "var(--bl-8a7560)", margin: "2px 0 12px" }}>
         On the Goodreads website, go to My Books › Import and export › Export Library, then choose that file here. Ratings, read dates and reviews come too; reviews are saved as private notes.
