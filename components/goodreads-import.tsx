@@ -114,7 +114,7 @@ export function GoodreadsImport() {
           </p>
           {outcome.partial.length > 0 && (
             <p style={{ margin: "6px 0 0" }}>
-              {plural(outcome.partial.length, "book")} came in without their read date or review: {outcome.partial.slice(0, 5).join(", ")}{outcome.partial.length > 5 ? "…" : ""}.
+              We couldn't bring over the review or read date for {outcome.partial.slice(0, 5).join(", ")}{outcome.partial.length > 5 ? ` and ${outcome.partial.length - 5} more` : ""}. You can add {outcome.partial.length === 1 ? "it" : "them"} from the book.
             </p>
           )}
           {outcome.failed.length > 0 && (
