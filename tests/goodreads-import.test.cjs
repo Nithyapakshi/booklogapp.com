@@ -147,3 +147,31 @@ test("planning with an empty library imports everything once", () => {
 test("numeric HTML entities in reviews are decoded", () => {
   assert.strictEqual(htmlToText("It&#8217;s great &#x2014; truly"), "It\u2019s great \u2014 truly")
 })
+
+test("imports leave an uncertain genre blank so the fill-on-open lookup can supply it", () => {
+  const run = fs.readFileSync("lib/goodreads-import-run.ts", "utf8")
+  assert.match(run, /g !== "General" \? g : null/)
+  assert.doesNotMatch(run, /normaliseGenre\(found/)
+})
+
+test("opening your own book with no description or cover fills the blanks once, fill-only", () => {
+  const ctx = fs.readFileSync("lib/book-context.tsx", "utf8")
+  const fill = ctx.slice(ctx.indexOf("const fillMissingDetails"), ctx.indexOf("const saveDetails"))
+  assert.match(fill, /book\.cover && book\.description && !isUnknownAuthor/)
+  assert.match(fill, /booklog\.heal:\$\{userId\}:\$\{book\.id\}/)
+  assert.match(fill, /6 \* 60 \* 60 \* 1000/)
+  assert.match(fill, /enrichMissing\(book, async/)
+  assert.match(fill, /lookupOwnBookDetails\(token, b\.id\)/)
+  assert.doesNotMatch(fill, /\.update\(|\.insert\(|\.delete\(/)
+  const dialog = fs.readFileSync("components/book-details-dialog.tsx", "utf8")
+  assert.match(dialog, /if \(open && mode === "view" && ownedBook\) fillMissingDetails\(ownedBook\.id\)/)
+})
+
+test("server lookup is read-only, signed-in only, and limited to the reader's own book", () => {
+  const a = fs.readFileSync("app/actions/book-details-lookup.ts", "utf8")
+  assert.match(a, /^"use server"/)
+  assert.match(a, /auth\.getUser\(accessToken\)/)
+  assert.match(a, /\.eq\("user_id", auth\.user\.id\)\.eq\("id", bookId\)/)
+  assert.match(a, /GOOGLE_BOOKS_SERVER_KEY/)
+  assert.doesNotMatch(a, /\.update\(|\.insert\(|\.upsert\(|\.delete\(/)
+})

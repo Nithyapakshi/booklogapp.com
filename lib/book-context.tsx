@@ -5,7 +5,8 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { validateBookDetails } from "@/lib/book-identity"
-import { lookupEnrichment, isUnknownAuthor, UNKNOWN_AUTHOR } from "@/lib/book-enrichment"
+import { lookupEnrichment, isUnknownAuthor, UNKNOWN_AUTHOR, type Enrichment } from "@/lib/book-enrichment"
+import { lookupOwnBookDetails } from "@/app/actions/book-details-lookup"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 
@@ -44,6 +45,7 @@ type BookContextType = {
   reloadBooks: () => void
   updateNote: (bookId: string, note: string) => Promise<void>
   updateRating: (bookId: string, rating: number) => Promise<void>
+  fillMissingDetails: (bookId: string) => void
 }
 
 const emptyBooks: Record<BookStatus, Book[]> = {
@@ -52,6 +54,7 @@ const emptyBooks: Record<BookStatus, Book[]> = {
 
 const BookContext = createContext<BookContextType | undefined>(undefined)
 const healedUsers = new Set<string>() // auto-heal runs once per page load per user
+const fillAttempts = new Map<string, number>()
 
 export function BookProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -231,10 +234,10 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
 
   // Best effort, after the book is already saved. Fills only blank fields, only while the title and author are unchanged,
   // and any failure leaves the book exactly as saved.
-  const enrichMissing = useCallback(async (saved: Book) => {
+  const enrichMissing = useCallback(async (saved: Book, lookup: (b: Book) => Promise<Enrichment | null> = (b) => lookupEnrichment(b.title, b.author)) => {
     try {
       if (!userId || (saved.cover && saved.description && !isUnknownAuthor(saved.author))) return
-      const found = await lookupEnrichment(saved.title, saved.author)
+      const found = await lookup(saved)
       if (!found) return
       const supabase = createClientSupabaseClient()
       const applied: Partial<Book> = {}
@@ -284,6 +287,29 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
         await enrichMissing(book)
       }
     })()
+  }, [loading, authLoading, userId, books, enrichMissing])
+
+  // When a reader opens a book that is missing its description or cover (for example a Goodreads import), look it up
+  // once and fill the blanks (a blank genre is filled in the same lookup). Same fill-only rules and 6-hour per-book spacing as the heal on app open.
+  const fillMissingDetails = useCallback((bookId: string) => {
+    if (loading || authLoading || !userId) return
+    const book = Object.values(books).flat().find(b => b.id === bookId)
+    if (!book || (book.cover && book.description && !isUnknownAuthor(book.author))) return
+    const key = `booklog.heal:${userId}:${book.id}`
+    const spacing = 6 * 60 * 60 * 1000
+    // The in-memory note blocks repeats even when the browser cannot save to localStorage.
+    if (Date.now() - (fillAttempts.get(key) || 0) < spacing) return
+    fillAttempts.set(key, Date.now())
+    try {
+      if (Date.now() - Number(localStorage.getItem(key) || 0) < spacing) return
+      localStorage.setItem(key, String(Date.now()))
+    } catch {}
+    // Looked up on the server with the server key (works on previews too, and keeps the browser key's quota for search).
+    void enrichMissing(book, async (b) => {
+      const { data } = await createClientSupabaseClient().auth.getSession()
+      const token = data.session?.access_token
+      return token ? lookupOwnBookDetails(token, b.id) : null
+    })
   }, [loading, authLoading, userId, books, enrichMissing])
 
   const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean }): Promise<BookSaveResult> => {
@@ -459,7 +485,7 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
   const getBookCountByStatus = (status: BookStatus) => books[status]?.length || 0
 
   return (
-    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, saveDates, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating }}>
+    <BookContext.Provider value={{ books, addBook, moveBook: addBook, createBook, editBook, saveDates, removeBook, getBooksByStatus, getBookCountByStatus, loading, loadError, reloadBooks, updateNote, updateRating, fillMissingDetails }}>
       {children}
       {ratingPrompt && <RecommendationRatingDialog key={ratingPrompt.id} book={ratingPrompt} onSave={(rating) => updateRating(ratingPrompt.id, rating)} onClose={() => setRatingPrompt(null)} />}
       {finishPrompt && !ratingPrompt && <FinishBookDialog key={finishPrompt.id} book={finishPrompt} direct={finishPrompt.direct} onSave={(rating, date, precision) => saveFinish(finishPrompt.id, rating, date, finishPrompt.where, precision)} onClose={() => setFinishPrompt(null)} />}

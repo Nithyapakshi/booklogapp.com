@@ -3,7 +3,8 @@
 // - Only ever ADDS books. Books already in the library are left exactly as they are.
 // - Each book is saved through the same save_book_details function as Add manually, which re-checks duplicates in the database.
 // - The import itself looks up covers on Open Library only, never Google Books, so it cannot use up the Google quota
-//   that live search depends on. Books still without a cover are filled later by the existing, rate-limited cover healing.
+//   that live search depends on. Missing descriptions, covers and genres are filled later, one book at a time, when the
+//   reader opens the book (fillMissingDetails) and by the existing rate-limited cover healing on app open.
 // - Safe to re-run: books already imported are skipped.
 // - One import at a time per browser tab; its progress survives navigating away and back within the app.
 import { createClientSupabaseClient } from "@/lib/supabase/client"
@@ -40,6 +41,13 @@ async function getJson(url: string): Promise<any> {
   } catch { return null }
 }
 
+// Open Library subjects are loose. Only keep a genre when they map to a real category; otherwise leave it blank
+// so the fill-on-open lookup can supply a better one ("General" would block that, as fills never overwrite).
+function confidentGenre(subjects: string[]): string | null {
+  const g = subjects.length ? normaliseGenre(subjects.slice(0, 1)) : ""
+  return g && g !== "General" ? g : null
+}
+
 // Best effort: a cover and genre from Open Library. Never throws; returns blanks when nothing is found.
 async function lookupDetails(b: ImportBook): Promise<{ cover: string; genre: string | null }> {
   const isbn = b.isbn13 || b.isbn10
@@ -48,14 +56,14 @@ async function lookupDetails(b: ImportBook): Promise<{ cover: string; genre: str
     const cover = String(d?.cover?.medium || d?.cover?.large || "").replace(/^http:/, "https:")
     if (cover) {
       const subjects = Array.isArray(d.subjects) ? d.subjects.map((s: any) => s?.name).filter(Boolean) : []
-      return { cover, genre: subjects.length ? normaliseGenre(subjects.slice(0, 1)) : null }
+      return { cover, genre: confidentGenre(subjects) }
     }
   }
   const q = new URLSearchParams({ title: b.title.split(":")[0], author: b.author, limit: "1", fields: "cover_i,subject" })
   const found = (await getJson(`https://openlibrary.org/search.json?${q}`))?.docs?.[0]
   return {
     cover: found?.cover_i ? `https://covers.openlibrary.org/b/id/${found.cover_i}-M.jpg` : "",
-    genre: Array.isArray(found?.subject) && found.subject.length ? normaliseGenre(found.subject.slice(0, 1)) : null,
+    genre: confidentGenre(Array.isArray(found?.subject) ? found.subject : []),
   }
 }
 
