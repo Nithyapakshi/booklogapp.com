@@ -73,11 +73,13 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
   }
 
   const topGenreMax = s.genres[0]?.count || 1
+  const tileCount = 2 + (s.topGenre ? 1 : 0) + (s.averageRating !== null ? 1 : 0)
+  const tileColumns = tileCount === 4 ? "lg:grid-cols-4" : tileCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "960px" }}>
       <p style={{ ...sans, ...muted, fontSize: "15px", margin: 0 }}>From the {s.finished} books you’ve finished.</p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-2 ${tileColumns} gap-3`}>
         <Tile label="Books finished" value={String(s.finished)} sub="all time" />
         {s.topGenre && <Tile label="Top genre" value={s.topGenre.name} sub={`${s.topGenre.count} of ${s.finished} books`} />}
         {ratingTile}

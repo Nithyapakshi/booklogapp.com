@@ -96,7 +96,8 @@ export function readingStats(shelves: Shelves): ReadingStats {
     rated,
     unrated: finished - rated,
     averageRating,
-    topGenre: genres[0] || null,
+    // A top genre only when one clearly leads: 2+ books and no tie for first.
+    topGenre: genres[0] && genres[0].count >= 2 && (genres[1]?.count ?? 0) < genres[0].count ? genres[0] : null,
     genres: genres.slice(0, 5),
     authorsRead: authors.length,
     repeatAuthors: returned.length,

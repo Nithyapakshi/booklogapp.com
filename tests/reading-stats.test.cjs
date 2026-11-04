@@ -40,6 +40,15 @@ test("average needs 3 rated books and rounds to one decimal", () => {
   assert.equal(readingStats({ completed: [book({ selfRating: 5 }), book({ selfRating: 4 }), book({ selfRating: 4 })] }).averageRating, 4.3)
 })
 
+test("top genre only when one clearly leads: 2+ books and no tie", () => {
+  assert.equal(readingStats({ completed: [book({ genre: "Business" }), book({ genre: "Fiction" }), ...many(3)] }).topGenre, null)
+  assert.equal(readingStats({ completed: [book({ genre: "Business" }), ...many(4)] }).topGenre, null)
+  assert.equal(readingStats({ completed: [book({ genre: "A" }), book({ genre: "A" }), book({ genre: "B" }), book({ genre: "B" }), book()] }).topGenre, null)
+  assert.deepEqual(readingStats({ completed: [book({ genre: "A" }), book({ genre: "A" }), book({ genre: "B" }), ...many(2)] }).topGenre, { name: "A", count: 2 })
+  // The Top genres list still shows every genre, ties included.
+  assert.equal(readingStats({ completed: [book({ genre: "Business" }), book({ genre: "Fiction" }), ...many(3)] }).genres.length, 2)
+})
+
 test("no genres means no top genre", () => {
   const s = readingStats({ completed: many(6) })
   assert.equal(s.topGenre, null)
