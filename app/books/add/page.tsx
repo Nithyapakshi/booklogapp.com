@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { useRouter } from "next/navigation"
+import { track } from "@/lib/usage"
 
 export default function AddBookPage() {
   const { createBook, loading, books } = useBooks()
@@ -42,6 +43,7 @@ export default function AddBookPage() {
     try {
       const result = await createBook({ id: crypto.randomUUID(), title: bookData.title.trim(), author: bookData.author.trim() }, bookData.status as BookStatus)
       if (result.outcome === "duplicate") { setDuplicate(result.books[0]); return }
+      track("book.added_from", { source: "manual", shelf: bookData.status })
       router.push("/books")
     } catch (e) { setError(e instanceof Error ? e.message : "Book was not saved. Please try again.") }
     finally { setSaving(false) }

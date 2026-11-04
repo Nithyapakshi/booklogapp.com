@@ -10,6 +10,7 @@ import { readingStats, STATS_MIN_DATED, type GapBook } from "@/lib/reading-stats
 import { isValidDate, todayLocal, formatReadingDate, type DatePrecision } from "@/lib/reading-dates"
 import { MonthDayPicker, type PickedDate } from "@/components/month-day-picker"
 import { serif, sans, card, muted, nudge, heading, primaryButton, linkButton, plural, Progress, Toggle } from "@/components/stats-ui"
+import { track } from "@/lib/usage"
 
 export type GapFilter = "dates" | "ratings"
 const PAGE = 20
@@ -68,9 +69,9 @@ export function StatsFillGaps({ initialFilter, onBack }: { initialFilter: GapFil
   const saveDate = (b: GapBook) => {
     const p = picked[b.id]
     if (!p || !isValidDate(p.value)) return
-    return run(b, () => saveDates(b.id, { finishedAt: p.value, finishedPrecision: p.precision }))
+    return run(b, async () => { await saveDates(b.id, { finishedAt: p.value, finishedPrecision: p.precision }); track("stats.gap_filled", { field: "finish_date" }, b.id) })
   }
-  const rate = (b: GapBook, n: number) => run(b, () => updateRating(b.id, n))
+  const rate = (b: GapBook, n: number) => run(b, async () => { await updateRating(b.id, n); track("stats.gap_filled", { field: "rating" }, b.id) })
 
   const isFuture = (p?: PickedDate) => !!p && isValidDate(p.value) && (p.precision === "month" ? p.value.slice(0, 7) > today.slice(0, 7) : p.value > today)
 
@@ -92,7 +93,7 @@ export function StatsFillGaps({ initialFilter, onBack }: { initialFilter: GapFil
             <button type="button" onClick={onBack} style={primaryButton}>See your stats</button>
           </div>)}
 
-      <Toggle label="Show" value={filter} onChange={f => { setFilter(f); setShown(PAGE) }}
+      <Toggle label="Show" value={filter} onChange={f => { track("stats.fill_gaps_filter", { filter: f }); setFilter(f); setShown(PAGE) }}
         options={[{ value: "dates", label: `Missing dates · ${remainingDates}` }, { value: "ratings", label: `Missing ratings · ${remainingRatings}` }]} />
 
       <section style={{ ...card, padding: "4px 20px" }}>

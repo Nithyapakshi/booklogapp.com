@@ -4,6 +4,7 @@ import { useBooks, type BookStatus } from "@/lib/book-context"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import type { Book } from "@/types"
+import { track } from "@/lib/usage"
 
 const quiet = {color:"var(--bl-c17f3e)",textDecoration:"underline",textUnderlineOffset:3,minHeight:44}
 export function NextReadHeader({choosing,hasChoice,disabled,onChoose,onCancel}:{choosing:boolean;hasChoice:boolean;disabled:boolean;onChoose:()=>void;onCancel:()=>void}) {
@@ -43,7 +44,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
       {menuOpen&&<div className="absolute right-0 top-11 z-30 w-48 bg-card border border-border rounded shadow-lg p-1 text-sm">
         <button className="block w-full text-left p-2" disabled={busy||working} onClick={()=>{setEditing(true);setDetailsOpen(true);setMenuOpen(false)}}>Edit details</button>
         {([['reading','Reading'],['completed','Completed'],['recommended','Recommendations'],['onHold','On Hold']] as const).map(([status,label])=><button key={status} disabled={busy||working} className="block w-full text-left p-2" onClick={()=>void act(status)}>Move to {label}</button>)}
-        <a href={amazonUrl} target="_blank" rel="noopener noreferrer" className="block p-2">Find on Amazon</a>
+        <a href={amazonUrl} target="_blank" rel="noopener noreferrer" className="block p-2" onClick={()=>track("amazon.clicked",{from:"next_read"},book.id)}>Find on Amazon</a>
         <button disabled={busy||working} className="block w-full text-left p-2 text-red-600 dark:text-red-300" onClick={()=>void act()}>Remove</button>
         <button className="block w-full text-left p-2" onClick={()=>setMenuOpen(false)}>Close</button>
       </div>}

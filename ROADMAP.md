@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 4 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 4 November 2026 (evening). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -122,8 +122,8 @@ booklogapp.com  ·  Last updated: 4 November 2026
 
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
-| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | ✅  DONE | Live 4 Nov (#79): Stats tab in the sidebar and as the fifth phone tab; read-only. All-time books finished, top genre (only when one clearly leads), average rating with rated and not-yet-rated counts, authors read, top genres, and authors you returned to (else top-rated books). Under 5 finished books: starter card with Goodreads import. Dates card and ratings line link to My Books › Completed. Opens from /books?section=stats. |
-| Monthly / yearly reading summary | Visual summary of books read by month and year | 🔜  PLANNED | Next: Stats Release 2, together with Fill in the gaps. Shows once a reader has 5+ finished books with dates; never uses date added. |
+| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | ✅  DONE | Live 4 Nov (#79): Stats tab in the sidebar and as the fifth phone tab; read-only. All-time books finished, top genre (only when one clearly leads), average rating with rated and not-yet-rated counts, authors read, top genres, and authors you returned to (else top-rated books). Under 5 finished books: starter card with Goodreads import. Opens from /books?section=stats. Release 2 (#82): "Authors you returned to" needs 2+ repeat authors, else your five-star books, 4 a day in rotation when there are more than 4. |
+| Monthly / yearly reading summary | Visual summary of books read by month and year | ✅  DONE | Live 4 Nov (#82): month and year charts with a [year] / All time switch, shown once a reader has 5+ finished books with dates (replaces the dates card); counts finish dates only, never date added. Fill in the gaps (inside Stats) lists finished books missing a finish date or a rating and fills only those blanks, using the existing save code. |
 | Reading streaks | Optional reading-day log, separate from next-read choice | MOCKUP ONLY | No inferred history, required pages/timer/journal or lost-streak warning. No build approved. |
 | Annual reading goal | Set a target number of books for the year and track progress | ⛔  EXCLUDED | Excluded; associated goal-pace notifications also excluded. |
 | Choose your next read | Search Queued books and keep one chosen intention | ✅  DONE | One Queued book, saved privately. Change or clear; Start reading separate. Clears on start, move or delete. Other tabs may need refresh. |

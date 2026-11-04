@@ -6,6 +6,7 @@ import { searchBooks } from "@/lib/google-books-api"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { track } from "@/lib/usage"
 
 const STARTERS = [
   { title: "Project Hail Mary", author: "Andy Weir" },
@@ -108,6 +109,7 @@ export function StarterBooksLine() {
       if (result.outcome === "duplicate") {
         toast({ title: "Already in your library", type: "warning" })
       } else {
+        track("book.added_from", { source: "starter_title", shelf: status }, book.id)
         toast({ title: `Added to ${addedLabels[status] ?? "your shelf"}`, type: "success" })
       }
       setBook(null)

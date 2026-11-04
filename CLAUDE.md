@@ -24,6 +24,7 @@ BookLog is a personal reading tracker, live in production at https://www.booklog
 7. **Keep the product minimalistic and clean** — he rejects busy designs.
 8. **Emails to users always need his review and approval of the draft first.**
 9. **Roadmap hygiene:** update the roadmap doc as part of every release so statuses match what is actually live.
+10. **Every user action is measurable.** Any new button, link or feature ships with its use recorded: data changes are recorded automatically by the `usage_events` database triggers; anything else gets a `track("area.action", {...})` call from `lib/usage.ts`. Never record note text, search words, Ask AI prompts, names, titles or email. Saved queries: `docs/usage-queries.sql`.
 
 ## Stack
 

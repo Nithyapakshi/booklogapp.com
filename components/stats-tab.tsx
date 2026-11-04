@@ -8,6 +8,7 @@ import { useBooks } from "@/lib/book-context"
 import { readingStats, monthCounts, STATS_MIN_DATED, STATS_MIN_FINISHED } from "@/lib/reading-stats"
 import { StatsFillGaps, type GapFilter } from "@/components/stats-fill-gaps"
 import { serif, sans, card, muted, nudge, heading, primaryButton, linkButton, plural, Progress, Toggle } from "@/components/stats-ui"
+import { track } from "@/lib/usage"
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -50,6 +51,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
   const [range, setRange] = React.useState<"year" | "all">("year")
 
   if (loading) return <p style={{ ...sans, ...muted, fontSize: "14px" }}>Loading your stats…</p>
+  const openGaps = (f: GapFilter, from: string) => { track("stats.fill_gaps_opened", { filter: f, from }); setGaps(f) }
   if (gaps) return <StatsFillGaps initialFilter={gaps} onBack={() => setGaps(null)} />
 
   const ratingSub = s.unrated === 0 ? `All ${s.finished} rated` : `${s.rated} rated · ${s.unrated} not yet rated`
@@ -70,8 +72,8 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
             Already tracked your reading somewhere else? Bring your history in and this page fills straight away.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
-            <Link href="/settings#goodreads-import" style={primaryButton}>Import from Goodreads</Link>
-            <button type="button" onClick={onOpenCompleted} style={linkButton}>Or add a finished book</button>
+            <Link href="/settings#goodreads-import" onClick={() => track("stats.import_clicked")} style={primaryButton}>Import from Goodreads</Link>
+            <button type="button" onClick={() => { track("stats.add_finished_clicked"); onOpenCompleted() }} style={linkButton}>Or add a finished book</button>
           </div>
         </section>
       </div>
@@ -110,7 +112,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
             </p>
             <Progress done={s.dated} of={STATS_MIN_DATED} label={`${s.dated} of ${STATS_MIN_DATED} finished books have dates`} />
           </div>
-          <button type="button" onClick={() => setGaps("dates")} style={primaryButton}>Fill in the gaps</button>
+          <button type="button" onClick={() => openGaps("dates", "dates_card")} style={primaryButton}>Fill in the gaps</button>
         </section>
       )}
 
@@ -118,14 +120,14 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
         <section style={{ ...card, padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
             <h2 style={heading}>Your reading by month and year</h2>
-            <Toggle label="Period" value={range} onChange={setRange} options={[{ value: "year", label: String(year) }, { value: "all", label: "All time" }]} />
+            <Toggle label="Period" value={range} onChange={r => { track("stats.chart_range", { range: r }); setRange(r) }} options={[{ value: "year", label: String(year) }, { value: "all", label: "All time" }]} />
           </div>
           {range === "year"
             ? <Bars bars={yearBars} label={`Books finished each month in ${year}`} />
             : <Bars bars={allBars} label="Books finished each year" />}
           <p style={{ ...sans, ...muted, fontSize: "13px", margin: 0 }}>
             Counts {plural(s.dated, "book", "books")} with a finish date.
-            {undated > 0 && <> {plural(undated, "finished book has", "finished books have")} no date yet. <button type="button" onClick={() => setGaps("dates")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Fill in the gaps</button></>}
+            {undated > 0 && <> {plural(undated, "finished book has", "finished books have")} no date yet. <button type="button" onClick={() => openGaps("dates", "chart")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Fill in the gaps</button></>}
           </p>
         </section>
       )}
@@ -180,7 +182,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
       {s.showRatingsLine && (
         <p style={{ ...sans, ...muted, fontSize: "13px", margin: 0 }}>
           {plural(s.unrated, "finished book isn’t", "finished books aren’t")} rated, so {s.unrated === 1 ? "it’s" : "they’re"} not in your average.{" "}
-          <button type="button" onClick={() => setGaps("ratings")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Rate them</button>
+          <button type="button" onClick={() => openGaps("ratings", "ratings_line")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Rate them</button>
         </p>
       )}
     </div>

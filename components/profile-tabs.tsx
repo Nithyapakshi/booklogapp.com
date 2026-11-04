@@ -2,6 +2,7 @@
 "use client"
 import React, { useState } from "react"
 import { prefetchAmazonDomain, getAmazonSearchUrl } from "@/lib/amazon-link"
+import { track } from "@/lib/usage"
 
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -62,7 +63,7 @@ function BookGrid({ books, showAmazonLink }: { books: any[]; showAmazonLink?: bo
                 href={getAmazonSearchUrl(book.title, book.author)}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "public_profile" }) }}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

@@ -35,6 +35,7 @@ import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
 import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
+import { track, trackDailyOpen } from "@/lib/usage"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -107,7 +108,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
             href={amazonUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "list_row" }, book.id) }}
             style={{
               display: "block",
               fontSize: "11px",
@@ -154,7 +155,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               <div
                 className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
                 style={{ color: "var(--bl-c17f3e)" }}
-                onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
+                onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "list_menu" }, book.id); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
               >Find on Amazon</div>
               <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer text-red-500" onClick={async () => { setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId); setDropdownOpen(false) } catch { setWriteError("Book was not removed. Please try again.") } }}>Remove</div>
             </div>
@@ -230,6 +231,7 @@ function DiscoverTab() {
     try { setDismissed(loadDismissals(localStorage.getItem(dismissKey))) } catch {}
   }, [dismissKey])
   const dismissBook = (title: string, author: string) => {
+    track("discover.dismissed")
     const next = [...dismissed.filter(d => d.key !== bookKey(title, author)), { key: bookKey(title, author), author }].slice(-300)
     setDismissed(next)
     try { if (dismissKey) localStorage.setItem(dismissKey, JSON.stringify(next)) } catch {}
@@ -359,6 +361,7 @@ function DiscoverTab() {
     if (!prompt.trim()) return
     setIsLoading(true)
     setError(null)
+    track("discover.ask_ai")
     try {
       const results = await getAIBookRecommendations(prompt, [], 8)
       setRecommendations(results)
@@ -376,6 +379,7 @@ function DiscoverTab() {
     setError(null)
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
+      track("discover.ask_ai_more")
       const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
@@ -515,7 +519,7 @@ function DiscoverTab() {
           </p>
         </div>
       )}
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode={selectedBookInLibrary ? "view" : "add"} reason={selectedReason} />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => setDialogOpen(false)} mode={selectedBookInLibrary ? "view" : "add"} reason={selectedReason} source="discover" />
     </div>
   )
 }
@@ -607,8 +611,9 @@ function BooksLibraryContent() {
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
     const section = new URLSearchParams(window.location.search).get("section")
-    if (section === "discover" || section === "recommended" || section === "stats") setSidebarTab(section)
+    if (section === "discover" || section === "recommended" || section === "stats") { setSidebarTab(section); track("nav.opened", { tab: section, via: "link" }) }
     prefetchAmazonDomain()
+    trackDailyOpen()
   }, [])
 
   const { getBooksByStatus, getBookCountByStatus, removeBook, books, loadError, reloadBooks, loading, moveBook } = useBooks()
@@ -729,11 +734,13 @@ function BooksLibraryContent() {
   ]
 
   const toggleView = (mode: "grid" | "list") => {
+    if (mode !== viewMode) track("view.changed", { mode })
     setViewMode(mode)
     localStorage.setItem("booklog-view-mode", mode)
   }
 
   const handleSidebarTab = (tab: string) => {
+    track("nav.opened", { tab })
     setSidebarTab(tab)
     if (tab === "my-books") setActiveTab("Reading")
   }
@@ -911,7 +918,7 @@ function BooksLibraryContent() {
       </p>
       <p style={{ fontSize: "13px", color: "var(--bl-6b5c42)", marginTop: "6px" }}>
         Coming from Goodreads?{" "}
-        <Link href="/settings#goodreads-import" style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}>
+        <Link href="/settings#goodreads-import" onClick={() => track("link.empty_shelf_goodreads")} style={{ color: "var(--bl-c17f3e)", textDecoration: "underline", textUnderlineOffset: "2px", fontWeight: 500 }}>
           Import your library
         </Link>
       </p>
@@ -966,7 +973,7 @@ function BooksLibraryContent() {
                   {tabs.map((tab) => (
                     <li
                       key={tab.name}
-                      onClick={() => setActiveTab(tab.name)}
+                      onClick={() => { if (tab.name !== activeTab) track("shelf.opened", { shelf: tab.name }); setActiveTab(tab.name) }}
                       className="cursor-pointer px-4 py-2 rounded-full text-sm transition-colors flex-shrink-0"
                       style={{
                         ...sans,
@@ -986,7 +993,7 @@ function BooksLibraryContent() {
                 <input
                   type="search"
                   value={listSearch}
-                  onChange={e => setListSearch(e.target.value)}
+                  onChange={e => { if (!listSearch && e.target.value) track("library.filter_typed"); setListSearch(e.target.value) }}
                   placeholder="Filter this list by title or author..."
                   aria-label="Filter this list by title or author"
                   style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-fff)", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }}
@@ -994,7 +1001,7 @@ function BooksLibraryContent() {
               </div>
               <GenreFilterRow
                 selected={myBooksGenreFilter}
-                onSelect={setMyBooksGenreFilter}
+                onSelect={(g: string) => { track("library.genre_filtered", { shelf: "my_books", all: g === "All" }); setMyBooksGenreFilter(g) }}
                 expanded={myBooksGenreExpanded}
                 onToggleExpand={() => setMyBooksGenreExpanded(e => !e)}
                 genres={userGenres}
@@ -1035,7 +1042,7 @@ function BooksLibraryContent() {
                 <input
                   type="search"
                   value={listSearch}
-                  onChange={e => setListSearch(e.target.value)}
+                  onChange={e => { if (!listSearch && e.target.value) track("library.filter_typed"); setListSearch(e.target.value) }}
                   placeholder="Filter this list by title or author..."
                   aria-label="Filter this list by title or author"
                   style={{ width: "100%", maxWidth: "360px", padding: "7px 12px", fontSize: "12px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-fff)", color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }}
@@ -1043,7 +1050,7 @@ function BooksLibraryContent() {
               </div>
               <GenreFilterRow
                 selected={recommendedGenreFilter}
-                onSelect={setRecommendedGenreFilter}
+                onSelect={(g: string) => { track("library.genre_filtered", { shelf: "recommendations", all: g === "All" }); setRecommendedGenreFilter(g) }}
                 expanded={recommendedGenreExpanded}
                 onToggleExpand={() => setRecommendedGenreExpanded(e => !e)}
                 genres={userGenres}
