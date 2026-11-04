@@ -1,21 +1,15 @@
 "use client"
 
 // Stats ("Your reading life"): read-only numbers from the books already loaded.
-// It never changes a book; its buttons only take the reader to existing screens.
+// It never changes a book. Fill in the gaps (its own file) is the only part of Stats that saves anything.
 import React from "react"
 import Link from "next/link"
 import { useBooks } from "@/lib/book-context"
-import { readingStats, STATS_MIN_DATED, STATS_MIN_FINISHED } from "@/lib/reading-stats"
+import { readingStats, monthCounts, STATS_MIN_DATED, STATS_MIN_FINISHED } from "@/lib/reading-stats"
+import { StatsFillGaps, type GapFilter } from "@/components/stats-fill-gaps"
+import { serif, sans, card, muted, nudge, heading, primaryButton, linkButton, plural, Progress, Toggle } from "@/components/stats-ui"
 
-const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
-const sans = { fontFamily: "'DM Sans', sans-serif" }
-const card: React.CSSProperties = { background: "var(--bl-fff)", border: "1px solid var(--bl-e0d5c4)", borderRadius: "14px" }
-const muted: React.CSSProperties = { color: "var(--bl-6b5c42)" }
-const nudge: React.CSSProperties = { background: "var(--bl-f3ede3)", border: "1px dashed var(--bl-d4c5a9)", borderRadius: "14px" }
-const primaryButton: React.CSSProperties = { ...sans, fontSize: "14px", fontWeight: 600, background: "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", border: "none", borderRadius: "999px", padding: "0 20px", minHeight: "44px", cursor: "pointer", display: "inline-flex", alignItems: "center", textDecoration: "none" }
-const linkButton: React.CSSProperties = { ...sans, fontSize: "14px", fontWeight: 500, color: "var(--bl-c17f3e)", background: "none", border: "none", padding: 0, minHeight: "44px", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "2px" }
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -27,13 +21,24 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
   )
 }
 
-function Progress({ done, of, label }: { done: number; of: number; label: string }) {
+function Bars({ bars, label }: { bars: { label: string; count: number; showLabel: boolean }[]; label: string }) {
+  const max = Math.max(1, ...bars.map(b => b.count))
+  const summary = bars.filter(b => b.count > 0).map(b => `${b.label}: ${b.count}`).join(", ") || "none yet"
   return (
-    <div role="img" aria-label={label} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-      {Array.from({ length: of }, (_, i) => (
-        <span key={i} style={{ width: "36px", height: "9px", borderRadius: "999px", background: i < done ? "var(--bl-c17f3e)" : "var(--bl-fff)", border: "1px solid var(--bl-e0d5c4)" }} />
-      ))}
-      <span style={{ ...sans, ...muted, fontSize: "12px", marginLeft: "4px" }}>{Math.min(done, of)} of {of}</span>
+    <div>
+      <div role="img" aria-label={`${label}. ${summary}`} style={{ display: "flex", alignItems: "flex-end", gap: bars.length > 20 ? "3px" : "8px", height: "150px", borderBottom: "1px solid var(--bl-e0d5c4)" }}>
+        {bars.map((b, i) => (
+          <div key={i} style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: "4px", height: "100%" }}>
+            {b.count > 0 && bars.length <= 20 && <span style={{ ...sans, fontSize: "11px", color: "var(--bl-5a4a38)" }}>{b.count}</span>}
+            <div style={{ width: "100%", maxWidth: "40px", height: b.count ? `${Math.max(4, Math.round((b.count / max) * 120))}px` : "2px", borderRadius: "5px 5px 2px 2px", background: b.count ? "var(--bl-c17f3e)" : "var(--bl-e0d5c4)" }} />
+          </div>
+        ))}
+      </div>
+      <div aria-hidden="true" style={{ display: "flex", gap: bars.length > 20 ? "3px" : "8px", marginTop: "6px" }}>
+        {bars.map((b, i) => (
+          <span key={i} style={{ ...sans, ...muted, flex: "1 1 0", minWidth: 0, textAlign: "center", fontSize: "11px", whiteSpace: "nowrap", overflow: "visible" }}>{b.showLabel ? b.label : ""}</span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -41,8 +46,11 @@ function Progress({ done, of, label }: { done: number; of: number; label: string
 export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
   const { books, loading } = useBooks()
   const s = React.useMemo(() => readingStats(books), [books])
+  const [gaps, setGaps] = React.useState<GapFilter | null>(null)
+  const [range, setRange] = React.useState<"year" | "all">("year")
 
   if (loading) return <p style={{ ...sans, ...muted, fontSize: "14px" }}>Loading your stats…</p>
+  if (gaps) return <StatsFillGaps initialFilter={gaps} onBack={() => setGaps(null)} />
 
   const ratingSub = s.unrated === 0 ? `All ${s.finished} rated` : `${s.rated} rated · ${s.unrated} not yet rated`
   const ratingTile = s.averageRating !== null && <Tile label="Average rating" value={`${s.averageRating.toFixed(1)}★`} sub={ratingSub} />
@@ -57,9 +65,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
         </div>
         <section style={{ ...nudge, padding: "20px", display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-start" }}>
           <Progress done={s.finished} of={STATS_MIN_FINISHED} label={`${s.finished} of ${STATS_MIN_FINISHED} finished books`} />
-          <h2 style={{ ...serif, fontSize: "18px", fontWeight: 700, margin: 0, color: "var(--bl-2d2416)" }}>
-            Finish {plural(s.booksToFull, "more book", "more books")} to see your genres and authors
-          </h2>
+          <h2 style={heading}>Finish {plural(s.booksToFull, "more book", "more books")} to see your genres and authors</h2>
           <p style={{ ...sans, fontSize: "14px", margin: 0, color: "var(--bl-5a4a38)", lineHeight: 1.5 }}>
             Already tracked your reading somewhere else? Bring your history in and this page fills straight away.
           </p>
@@ -75,6 +81,15 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
   const topGenreMax = s.genres[0]?.count || 1
   const tileCount = 2 + (s.topGenre ? 1 : 0) + (s.averageRating !== null ? 1 : 0)
   const tileColumns = tileCount === 4 ? "lg:grid-cols-4" : tileCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+  const year = s.defaultYear
+  const yearBars = year === null ? [] : monthCounts(books, year).map((count, i) => ({ label: MONTHS[i], count, showLabel: true }))
+  const allBars = s.byYear.map((y, i) => ({
+    label: String(y.year),
+    count: y.count,
+    showLabel: s.byYear.length <= 8 || i === 0 || i === s.byYear.length - 1 || y.year % 5 === 0,
+  }))
+  const undated = s.finished - s.dated
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "960px" }}>
       <p style={{ ...sans, ...muted, fontSize: "15px", margin: 0 }}>From the {s.finished} books you’ve finished.</p>
@@ -89,13 +104,29 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
       {s.showDatesCard && (
         <section style={{ ...nudge, padding: "20px", display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: "1 1 320px" }}>
-            <h2 style={{ ...serif, fontSize: "18px", fontWeight: 700, margin: 0, color: "var(--bl-2d2416)" }}>See your reading by month and year</h2>
+            <h2 style={heading}>See your reading by month and year</h2>
             <p style={{ ...sans, fontSize: "14px", margin: 0, color: "var(--bl-5a4a38)", lineHeight: 1.5 }}>
               Add when you finished {plural(s.datesNeeded, "more book", "more books")} to unlock it. A month and year is enough.
             </p>
             <Progress done={s.dated} of={STATS_MIN_DATED} label={`${s.dated} of ${STATS_MIN_DATED} finished books have dates`} />
           </div>
-          <button type="button" onClick={onOpenCompleted} style={primaryButton}>Add dates</button>
+          <button type="button" onClick={() => setGaps("dates")} style={primaryButton}>Fill in the gaps</button>
+        </section>
+      )}
+
+      {s.showCharts && year !== null && (
+        <section style={{ ...card, padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 style={heading}>Your reading by month and year</h2>
+            <Toggle label="Period" value={range} onChange={setRange} options={[{ value: "year", label: String(year) }, { value: "all", label: "All time" }]} />
+          </div>
+          {range === "year"
+            ? <Bars bars={yearBars} label={`Books finished each month in ${year}`} />
+            : <Bars bars={allBars} label="Books finished each year" />}
+          <p style={{ ...sans, ...muted, fontSize: "13px", margin: 0 }}>
+            Counts {plural(s.dated, "book", "books")} with a finish date.
+            {undated > 0 && <> {plural(undated, "finished book has", "finished books have")} no date yet. <button type="button" onClick={() => setGaps("dates")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Fill in the gaps</button></>}
+          </p>
         </section>
       )}
 
@@ -103,7 +134,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
         <div className={`grid gap-3 ${s.genres.length > 0 && s.secondCard ? "md:grid-cols-2" : ""}`}>
           {s.genres.length > 0 && (
             <section style={{ ...card, padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
-              <h2 style={{ ...serif, fontSize: "18px", fontWeight: 700, margin: 0, color: "var(--bl-2d2416)" }}>Top genres</h2>
+              <h2 style={heading}>Top genres</h2>
               {s.genres.map(g => (
                 <div key={g.name} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                   <div style={{ ...sans, fontSize: "14px", display: "flex", justifyContent: "space-between", gap: "12px", color: "var(--bl-2d2416)" }}>
@@ -119,9 +150,12 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
           )}
           {s.secondCard && (
             <section style={{ ...card, padding: "20px", display: "flex", flexDirection: "column", gap: "2px" }}>
-              <h2 style={{ ...serif, fontSize: "18px", fontWeight: 700, margin: "0 0 8px", color: "var(--bl-2d2416)" }}>
-                {s.secondCard.kind === "authors" ? "Authors you returned to" : "Your top-rated books"}
+              <h2 style={{ ...heading, marginBottom: s.secondCard.kind === "topRated" && s.secondCard.rotatingOf ? 0 : "8px" }}>
+                {s.secondCard.kind === "authors" ? "Authors you returned to" : s.secondCard.title}
               </h2>
+              {s.secondCard.kind === "topRated" && s.secondCard.rotatingOf && (
+                <p style={{ ...sans, ...muted, fontSize: "12px", margin: "2px 0 8px" }}>{s.secondCard.items.length} of {s.secondCard.rotatingOf} · a different few each day</p>
+              )}
               {s.secondCard.kind === "authors"
                 ? s.secondCard.items.map(a => (
                     <div key={a.name} style={{ ...sans, fontSize: "14px", display: "flex", justifyContent: "space-between", gap: "12px", padding: "9px 0", borderBottom: "1px solid var(--bl-f0e8da)", color: "var(--bl-2d2416)" }}>
@@ -146,7 +180,7 @@ export function StatsTab({ onOpenCompleted }: { onOpenCompleted: () => void }) {
       {s.showRatingsLine && (
         <p style={{ ...sans, ...muted, fontSize: "13px", margin: 0 }}>
           {plural(s.unrated, "finished book isn’t", "finished books aren’t")} rated, so {s.unrated === 1 ? "it’s" : "they’re"} not in your average.{" "}
-          <button type="button" onClick={onOpenCompleted} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Rate them</button>
+          <button type="button" onClick={() => setGaps("ratings")} style={{ ...linkButton, fontSize: "13px", minHeight: 0 }}>Rate them</button>
         </p>
       )}
     </div>

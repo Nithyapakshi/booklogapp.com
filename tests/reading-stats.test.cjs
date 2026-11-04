@@ -64,15 +64,83 @@ test("starter view below 5 finished books, full view from 5", () => {
   assert.equal(readingStats({ completed: many(5) }).full, true)
 })
 
-test("second card: repeat authors first, then top-rated books, else nothing", () => {
-  const authors = readingStats({ completed: [book({ author: "A" }), book({ author: "A" }), book({ selfRating: 5 }), book({ selfRating: 5 })] }).secondCard
+test("second card: 2+ repeat authors first, then top-rated books, else nothing", () => {
+  const authors = readingStats({ completed: [book({ author: "A" }), book({ author: "A" }), book({ author: "B" }), book({ author: "B" }), book({ selfRating: 5 }), book({ selfRating: 5 })] }).secondCard
   assert.equal(authors.kind, "authors")
-  assert.deepEqual(authors.items, [{ name: "A", count: 2 }])
+  assert.deepEqual(authors.items, [{ name: "A", count: 2 }, { name: "B", count: 2 }])
+  // One repeat author is not enough for a card: fall back to top-rated books.
+  const oneRepeat = readingStats({ completed: [book({ author: "A" }), book({ author: "A" }), book({ selfRating: 5 }), book({ selfRating: 5 })] })
+  assert.equal(oneRepeat.secondCard.kind, "topRated")
+  assert.equal(oneRepeat.repeatAuthors, 1)
   const top = readingStats({ completed: [book({ title: "Zed", selfRating: 4 }), book({ title: "Alpha", selfRating: 5 }), book({ title: "Beta", selfRating: 4 }), book({ selfRating: 3 })] }).secondCard
   assert.equal(top.kind, "topRated")
+  assert.equal(top.title, "Your five-star books")
+  assert.equal(top.rotatingOf, null)
   assert.deepEqual(top.items.map(b => b.title), ["Alpha", "Beta", "Zed"])
+  assert.equal(readingStats({ completed: [book({ selfRating: 4 }), book({ selfRating: 4 })] }).secondCard.title, "Your top-rated books")
   assert.equal(readingStats({ completed: [book({ selfRating: 5 }), book({ selfRating: 3 })] }).secondCard, null)
   assert.equal(readingStats({ completed: many(3) }).secondCard, null)
+})
+
+test("top-rated books rotate daily when more than 4 share the top rating", () => {
+  const fives = many(24, { selfRating: 5 })
+  const shelves = { completed: [...fives, book({ selfRating: 4 })] }
+  const day = d => new Date(2026, 10, d, 9)
+  const card = readingStats(shelves, day(4)).secondCard
+  assert.equal(card.rotatingOf, 24)
+  assert.equal(card.items.length, 4)
+  assert.ok(card.items.every(b => b.rating === 5))
+  // Same set all day, whatever the hour.
+  assert.deepEqual(readingStats(shelves, new Date(2026, 10, 4, 23, 59)).secondCard.items, card.items)
+  // A different set the next day.
+  assert.notDeepEqual(readingStats(shelves, day(5)).secondCard.items, card.items)
+  // Every five-star book comes round within 6 days (24 / 4).
+  const seen = new Set()
+  for (let d = 4; d < 10; d++) readingStats(shelves, day(d)).secondCard.items.forEach(b => seen.add(b.title))
+  assert.equal(seen.size, 24)
+})
+
+test("four or fewer five-star books: no rotation, filled from 4-star books", () => {
+  const card = readingStats({ completed: [book({ title: "A", selfRating: 5 }), book({ title: "B", selfRating: 5 }), book({ title: "C", selfRating: 4 }), book({ title: "D", selfRating: 4 }), book({ title: "E", selfRating: 4 })] }).secondCard
+  assert.equal(card.rotatingOf, null)
+  assert.deepEqual(card.items.map(b => b.title), ["A", "B", "C", "D"])
+})
+
+test("missing dates and ratings: one row per book, only blanks, with the shelf it is on", () => {
+  const both = book({ title: "Both", selfRating: 0 })
+  const s = readingStats({
+    completed: [both, book({ title: "Dated", finishedAt: "2025-03-01", selfRating: 4 }), book({ title: "Bad date", finishedAt: "2025-02-30", selfRating: 5 })],
+    recommended: [{ ...both }, book({ title: "Rec only", finishedAt: "2024-01-01" })],
+  })
+  assert.deepEqual(s.missingDates.map(b => [b.title, b.shelf]), [["Bad date", "Completed"], ["Both", "Completed and My Recommendations"]])
+  assert.deepEqual(s.missingRatings.map(b => [b.title, b.shelf]), [["Both", "Completed and My Recommendations"], ["Rec only", "My Recommendations"]])
+})
+
+test("month and year counts use finish dates only", () => {
+  const { monthCounts } = load("lib/reading-stats.ts", { "./reading-dates": dates })
+  const shelves = { completed: [
+    book({ finishedAt: "2026-01-01" }), book({ finishedAt: "2026-01-20" }), book({ finishedAt: "2026-07-01" }),
+    book({ finishedAt: "2023-05-01" }), book({ finishedAt: "2026-13-01" }), book(),
+  ] }
+  const counts = monthCounts(shelves, 2026)
+  assert.equal(counts[0], 2)
+  assert.equal(counts[6], 1)
+  assert.equal(counts.reduce((a, b) => a + b, 0), 3)
+  const s = readingStats(shelves, new Date(2026, 10, 4))
+  assert.deepEqual(s.byYear, [{ year: 2023, count: 1 }, { year: 2024, count: 0 }, { year: 2025, count: 0 }, { year: 2026, count: 3 }])
+  assert.equal(s.defaultYear, 2026)
+  // No dated books this year: default to the latest year that has some.
+  assert.equal(readingStats(shelves, new Date(2027, 0, 2)).defaultYear, 2026)
+  assert.equal(readingStats({ completed: many(3) }).defaultYear, null)
+})
+
+test("charts replace the dates card at 5 dated books", () => {
+  const four = readingStats({ completed: many(4, { finishedAt: "2026-01-01" }) })
+  assert.equal(four.showCharts, false)
+  assert.equal(four.showDatesCard, true)
+  const five = readingStats({ completed: many(5, { finishedAt: "2026-01-01" }) })
+  assert.equal(five.showCharts, true)
+  assert.equal(five.showDatesCard, false)
 })
 
 test("dated count ignores invalid dates and the dates card says how many more", () => {
@@ -91,7 +159,7 @@ test("ratings line shows below half rated and hides at half or more", () => {
   assert.equal(readingStats({}).showRatingsLine, false)
 })
 
-test("Stats never writes: no database access or library changes from the stats code", () => {
+test("Stats never writes outside Fill in the gaps", () => {
   for (const file of ["lib/reading-stats.ts", "components/stats-tab.tsx"]) {
     const src = fs.readFileSync(file, "utf8")
     assert.doesNotMatch(src, /supabase/i, file)
@@ -107,4 +175,17 @@ test("Stats is one menu item and opens from /books?section=stats", () => {
   const page = fs.readFileSync("app/books/page.tsx", "utf8")
   assert.match(page, /section === "discover" \|\| section === "recommended" \|\| section === "stats"/)
   assert.match(page, /sidebarTab === "stats" && \(/)
+})
+
+test("Fill in the gaps only fills a finish date or a rating, through the existing save functions", () => {
+  const src = fs.readFileSync("components/stats-fill-gaps.tsx", "utf8")
+  assert.doesNotMatch(src, /supabase/i)
+  assert.doesNotMatch(src, /\.(insert|update|upsert|delete)\(/)
+  assert.doesNotMatch(src, /createBook|moveBook|addBook|removeBook|updateNote|editBook|fillMissingDetails/)
+  assert.doesNotMatch(src, /startedAt|startedPrecision/)
+  assert.match(src, /saveDates\(b\.id, \{ finishedAt: /)
+  assert.match(src, /updateRating\(b\.id, /)
+  // Rows come from the missing lists only, so a book that already had a date or rating is never offered.
+  assert.match(src, /missingDates/)
+  assert.match(src, /missingRatings/)
 })
