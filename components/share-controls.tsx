@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import { track } from "@/lib/usage"
 
 export function ShareControls({ getUrl, label }: { getUrl: () => Promise<string>; label: string }) {
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("")
@@ -15,7 +16,8 @@ export function ShareControls({ getUrl, label }: { getUrl: () => Promise<string>
       if (whatsapp) {
         if (!tab) throw new Error("Allow pop-ups to open WhatsApp, or use Copy link.")
         tab.location.href = `https://wa.me/?text=${encodeURIComponent(url)}`
-      } else { await navigator.clipboard.writeText(url); setMessage("Copied!") }
+        track(label === "book" ? "share.book_whatsapp" : "share.profile_whatsapp")
+      } else { await navigator.clipboard.writeText(url); setMessage("Copied!"); track(label === "book" ? "share.book_copied" : "share.profile_copied") }
     } catch (e) { tab?.close(); setMessage(e instanceof Error ? e.message : "Could not share. Please try again.") }
     finally { setBusy(false) }
   }

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { useBooks } from "@/lib/book-context"
 import { useToast } from "@/hooks/use-toast"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
+import { track } from "@/lib/usage"
 
 interface BookDetailsDialogProps {
   book: {
@@ -28,6 +29,8 @@ interface BookDetailsDialogProps {
   open: boolean
   onClose: () => void
   mode?: "view" | "add"
+  // Where an add came from, for usage tracking (search, barcode, discover).
+  source?: string
   latestEditionNotice?: boolean
   initialEdit?: boolean
   reason?: string
@@ -43,7 +46,7 @@ const statusLabels = {
   onHold: "On Hold",
 }
 
-export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false, latestEditionNotice = false, reason }: BookDetailsDialogProps) {
+export function BookDetailsDialog({ book, open, onClose, mode = "view", initialEdit = false, latestEditionNotice = false, reason, source = "other" }: BookDetailsDialogProps) {
   const [status, setStatus] = useState<BookStatus>("reading")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -51,6 +54,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   const ownedBook = Object.values(books).flat().find(b => b.id === book?.id)
   // Opening one of your own books with no description or cover fills the blanks once (fill-only).
   useEffect(() => { if (open && mode === "view" && ownedBook) fillMissingDetails(ownedBook.id) }, [open, mode, ownedBook?.id, fillMissingDetails])
+  useEffect(() => { if (open && book?.id) track(mode === "add" ? "book.add_opened" : "book.opened", mode === "add" ? { source } : { shelf: ownedBook?.status ?? null }, book.id) }, [open, book?.id, mode])
   const description = book?.description || ownedBook?.description
   const cover = book?.cover || ownedBook?.cover
   const [editing, setEditing] = useState(initialEdit)
@@ -79,7 +83,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
     try {
       const result = await createBook(book, status)
       if (result.outcome === "duplicate") { setDuplicate(result.books[0]); toast({ title: "Already in your library", type: "warning" }) }
-      else { toast({ title: `Added to ${statusLabels[status]}`, type: "success" }); onClose() }
+      else { track("book.added_from", { source, shelf: status }, book.id); toast({ title: `Added to ${statusLabels[status]}`, type: "success" }); onClose() }
     } catch { setWriteError("The book was not saved. Please try again.") }
     finally { setSaving(false) }
   }
@@ -213,6 +217,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                       href={amazonUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => track("amazon.clicked", { from: "book_details" }, book?.id)}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",

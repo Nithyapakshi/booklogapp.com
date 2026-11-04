@@ -6,6 +6,7 @@ import { useBooks } from "@/lib/book-context"
 import { parseGoodreadsCsv, countByStatus, type ImportBook } from "@/lib/goodreads-import"
 import { planImport, runImport, currentImport, subscribeImport, clearFinishedImport, stopImport, LIBRARY_ROW_LIMIT, type ImportPlan, type ImportState } from "@/lib/goodreads-import-run"
 import { todayLocal } from "@/lib/reading-dates"
+import { track } from "@/lib/usage"
 
 const LABELS: Record<ImportBook["status"], string> = { completed: "Completed", reading: "Reading", queued: "Queued", onHold: "On Hold" }
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`
@@ -41,6 +42,7 @@ export function GoodreadsImport() {
   }, [running])
 
   async function onFile(file: File | undefined) {
+    if (file) track("import.goodreads_file_chosen")
     setError("")
     setReady(null)
     if (!file) return
@@ -63,7 +65,11 @@ export function GoodreadsImport() {
     starting.current = true
     const plan = ready.plan
     setReady(null)
-    try { await runImport(plan, user.id, reloadBooks) } finally { starting.current = false }
+    track("import.goodreads_started", { books: plan.toImport.length })
+    try {
+      const result = await runImport(plan, user.id, reloadBooks)
+      if (result) track(result.stopped ? "import.goodreads_stopped" : "import.goodreads_completed", { imported: result.imported, already_in_library: result.alreadyInLibrary, failed: result.failed.length })
+    } finally { starting.current = false }
   }
 
   function chooseFile() {

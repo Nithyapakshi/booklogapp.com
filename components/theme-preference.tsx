@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
+import { track } from "@/lib/usage"
 
 export function ThemePreference() {
   const { theme, setTheme } = useTheme()
@@ -15,7 +16,7 @@ export function ThemePreference() {
         <div role="group" aria-label="Theme" className="flex flex-wrap gap-2">
           {["light", "dark", "system"].map(value => (
             <button key={value} type="button" disabled={!mounted} aria-pressed={mounted && theme === value}
-              onClick={() => setTheme(value)}
+              onClick={() => { if (value !== theme) track("theme.changed", { theme: value }); setTheme(value) }}
               className={`min-h-11 rounded-md border px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${mounted && theme === value ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-card-foreground hover:bg-accent"}`}>
               {value.charAt(0).toUpperCase() + value.slice(1)}
             </button>

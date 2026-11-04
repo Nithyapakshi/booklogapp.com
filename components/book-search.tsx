@@ -209,7 +209,7 @@ const handleBookSelect = async (book: BookSearchResult) => {
         </div>
       )}
 
-      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); setSelectedBookInLibrary(false); setFromScan(false) }} latestEditionNotice={fromScan} mode={selectedBookInLibrary ? "view" : "add"} />
+      <BookDetailsDialog book={selectedBook} open={dialogOpen} onClose={() => { setDialogOpen(false); setQuery(""); setResults([]); setSelectedBookInLibrary(false); setFromScan(false) }} latestEditionNotice={fromScan} mode={selectedBookInLibrary ? "view" : "add"} source={fromScan ? "barcode" : "search"} />
     </div>
   )
 }

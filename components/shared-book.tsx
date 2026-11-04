@@ -9,6 +9,7 @@ import { sameBook } from "@/lib/book-identity"
 import { catalogForShare, type SharedSnapshot } from "@/lib/shared-book"
 import { BookDescription } from "@/components/book-description"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { track } from "@/lib/usage"
 type Snapshot = SharedSnapshot & { description?: string }
 export function SharedBook({token,initialBook,coded=false}:{token:string;initialBook?:Snapshot|null;coded?:boolean}) {
   const [detailOpen,setDetailOpen]=useState(false),[libraryId,setLibraryId]=useState<string|null>(null)
@@ -45,7 +46,7 @@ export function SharedBook({token,initialBook,coded=false}:{token:string;initial
     }
     const existing=Object.values(books).flat().find(b=>sameBook(b,{title:book.title,author:book.author}))
     if(existing){setLibraryId(existing.id);setState("Already in your library. Your shelf is unchanged.");setDone(true);window.history.replaceState(null,"",cleanPath);return}
-    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},"queued");setLibraryId(result.books.find(b=>sameBook(b,book))?.id||null);setDone(true);setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":"Saved to Queued.");window.history.replaceState(null,"",cleanPath)
+    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},"queued");setLibraryId(result.books.find(b=>sameBook(b,book))?.id||null);setDone(true);if(result.outcome!=="duplicate")track("book.added_from",{source:"shared_book",shelf:"queued"});setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":"Saved to Queued.");window.history.replaceState(null,"",cleanPath)
     } catch{setState("The book was not saved. Please try again.")}
     finally{saveLock.current=false;setBusy(false)}
   }

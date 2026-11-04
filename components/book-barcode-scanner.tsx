@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { validBookISBN } from "@/lib/isbn"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { resolveScannedISBN } from "@/app/actions/scan-isbn"
+import { track } from "@/lib/usage"
 
 export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSearchResult) => void; onSearch: () => void }) {
   const [open, setOpen] = useState(false)
@@ -28,7 +29,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
     if (video.current) video.current.srcObject = null
   }
   const close = () => { generation.current++; stop(); working.current = false; setBusy(false); setStarting(false); setOpen(false) }
-  const openScanner = () => { generation.current++; working.current = false; setError(null); setISBN(""); setManual(false); setBusy(false); setOpen(true) }
+  const openScanner = () => { track("barcode.opened"); generation.current++; working.current = false; setError(null); setISBN(""); setManual(false); setBusy(false); setOpen(true) }
 
   const resolve = async (input: string) => {
     if (working.current) return
@@ -40,7 +41,7 @@ export function BookBarcodeScanner({ onBook, onSearch }: { onBook: (book: BookSe
       const result = await resolveScannedISBN(valid)
       if (ticket !== generation.current) return
       if (result.ok) { close(); onBook(result.book) }
-      else setError(result.error)
+      else { track("barcode.not_found"); setError(result.error) }
     } catch { if (ticket === generation.current) setError("Book lookup is unavailable. Try again later or add manually.") }
     finally { if (ticket === generation.current) { working.current = false; setBusy(false) } }
   }

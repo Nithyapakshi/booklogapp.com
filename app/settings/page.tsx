@@ -8,6 +8,7 @@ import { BookOpen, Heart, Sparkles, Settings, MessageSquare, BarChart3 } from "l
 import { ThemePreference } from "@/components/theme-preference"
 import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
 import { GoodreadsImport } from "@/components/goodreads-import"
+import { track } from "@/lib/usage"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -49,6 +50,7 @@ export default function SettingsPage() {
       a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       setExportMsg(`Downloaded ${rows.length} book${rows.length === 1 ? "" : "s"}.`)
+      track("export.csv_downloaded", { books: rows.length })
     } catch {
       setExportMsg("We could not read your library just now, so nothing was downloaded. Please try again.")
     } finally {

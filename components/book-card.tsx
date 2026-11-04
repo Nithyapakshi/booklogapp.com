@@ -10,6 +10,7 @@ import type { Book } from "@/types"
 import { useBooks, type BookStatus } from "@/lib/book-context"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
+import { track } from "@/lib/usage"
 
 interface BookCardProps {
   book: Book
@@ -159,7 +160,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
               href={amazonUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "card" }, book.id) }}
               style={{
                 display: "block",
                 fontSize: "11px",
@@ -238,7 +239,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           <div
             className="px-4 py-2 text-sm hover:bg-accent cursor-pointer"
             style={{ color: "var(--bl-c17f3e)" }}
-            onClick={(e) => { e.stopPropagation(); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
+            onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "card_menu" }, book.id); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
           >
             Find on Amazon
           </div>
