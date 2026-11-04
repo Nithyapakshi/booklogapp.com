@@ -21,8 +21,8 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Sign out | Securely log out from the navigation bar | ✅  DONE |  |
 | Forgot password | Request a password reset link via email | ✅  DONE |  |
 | Reset password | Set a new password via the reset link | ✅  DONE |  |
-| Sign in with Google | Google sign-in alongside email/password | DONE | Existing library preserved. |
-| Signup confirmation | Branded email; confirmation returns signed in to library | DONE | Email verification remains enabled. |
+| Sign in with Google | Google sign-in alongside email/password | ✅  DONE | Existing library preserved. |
+| Signup confirmation | Branded email; confirmation returns signed in to library | ✅  DONE | Email verification remains enabled. |
 
 ### 2. Book Search & Adding Books
 
@@ -34,7 +34,7 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Duplicate guard toast | Warn if a book already exists in the library | ✅  DONE | Inline message and View existing book. |
 | Manually add a book | Add books not in Google Books by typing details manually | ✅  DONE | Title, optional author, status including Recommended; rating prompt and blank-only enrichment. |
 | Scan barcode to add | Use phone camera to scan a book barcode and add it instantly | ✅  DONE | Camera or typed ISBN with search/manual fallback. Real phone-camera owner test remains pending. |
-| First-book help | Empty-library search prompt and dismissible starter titles | DONE | Starter titles disappear as the shelf grows. Live 3 Nov (#77): empty shelf also shows "Coming from Goodreads? Import your library", linking to the import card in Settings. |
+| First-book help | Empty-library search prompt and dismissible starter titles | ✅  DONE | Starter titles disappear as the shelf grows. Live 3 Nov (#77): empty shelf also shows "Coming from Goodreads? Import your library", linking to the import card in Settings. |
 | Cover photo to add | Identify a book from a cover photo | CANDIDATE | Not built. Paid fallback after barcode value is proven; confirm match. |
 
 ### 3. Reading Status & Organisation
@@ -54,9 +54,9 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Star / favourite a book | Mark all-time favourites with a star for quick reference | 🔲  NOT STARTED | Not built; Recommendations star is not a favourite. |
 | Sort books | Sort by date added, title, author, or rating | 🔲  NOT STARTED | Parked by the owner. No sort control in the app. |
 | Within-library search | Search within your own collection by title or author | ✅  DONE | Title/author filter above each list. |
-| Library load recovery | Parallel books/notes reads, clear loading state and safe Retry. Live 29 Oct 2026; saved libraries unchanged. | DONE |  |
-| Metadata and duplicate safety | Fill missing details only; latest-edition results; near-duplicate warning | DONE | Never overwrite entered details or block Add anyway. |
-| Fill details when a book is opened | Opening your own book with no description or cover looks it up once and fills the blanks (also genre and year if empty) | DONE | Live 3 Nov (#76). Fill-only, never overwrites. Server-side lookup with the server Google Books key; at most once per book every 6 hours. Applies to any book missing details, not only imports. |
+| Library load recovery | Parallel books/notes reads, clear loading state and safe Retry. Live 29 Oct 2026; saved libraries unchanged. | ✅  DONE |  |
+| Metadata and duplicate safety | Fill missing details only; latest-edition results; near-duplicate warning | ✅  DONE | Never overwrite entered details or block Add anyway. |
+| Fill details when a book is opened | Opening your own book with no description or cover looks it up once and fills the blanks (also genre and year if empty) | ✅  DONE | Live 3 Nov (#76). Fill-only, never overwrites. Server-side lookup with the server Google Books key; at most once per book every 6 hours. Applies to any book missing details, not only imports. |
 | Did Not Finish | Separate a stopped book from On Hold | CANDIDATE | Not built; no build approval. |
 | Reading progress / journal | Optional page or percentage progress with dated notes | CANDIDATE | Not built; no build approval. |
 | Reread history | Keep earlier reading dates when rereading | CANDIDATE | Not built. |
@@ -84,11 +84,11 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Trending books | Curated list of popular books other BookLog users are reading | LICENSING HOLD | NYT Fiction / Non-Fiction design accepted. No implementation or API access until licensing is cleared. |
 | Browse by genre | Explore and discover new books by genre | 🟡  PARTIAL | Library-based genre rows live; standalone genre browsing not built. |
 | More from this author | Surface other books by the same author as a book in your library | 🟡  PARTIAL | Library-based author rows live; fuller book-details and rating-based selection not built. |
-| Discover loading and recovery | Keep prior rows while loading; Retry on failure | DONE | Failures retry after an hour; honest no-match state. |
+| Discover loading and recovery | Keep prior rows while loading; Retry on failure | ✅  DONE | Failures retry after an hour; honest no-match state. |
 | Cross-device Discover history | Sync Discover history between devices | NOT STARTED | Current session history is device-local. |
 | Paid same-spirit generation | Broader paid recommendations with cache and budget controls | PARKED | Draft only; production disabled. Quality not validated; new test/spend approval needed. |
 | Discover shelf-change control | Change shelf for an existing book from Discover details | CANDIDATE | Not approved; new books already support Add to Collection. |
-| Welcome chooser | Optional taste questions for new accounts without personal rows | DONE | Eligible accounts created from 25 October noon Dubai; Skip/answered never again. |
+| Welcome chooser | Optional taste questions for new accounts without personal rows | ✅  DONE | Eligible accounts created from 25 October noon Dubai; Skip/answered never again. |
 | Discovery filters | Mood, pace, length and sourced content-warning filters | CANDIDATE | Not built; metadata coverage must be verified. |
 | Newsletter discovery | Find books from reader-selected newsletters | CANDIDATE | Not built. Review queue first proposed; ratings coverage, permissions and notifications unresolved. |
 
@@ -102,9 +102,9 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Update name and username | Edit display name and username from settings | ✅  DONE |  |
 | Granular sharing settings | Control which tabs or statuses are visible on public profile | 🟡  PARTIAL | Public/private plus Recommendations-only or full-library sharing live; per-tab controls not built. |
 | Profile picture / avatar | Upload and display a profile avatar | 🔲  NOT STARTED |  |
-| Share individual books | Named snapshot links with quiet sharing controls | DONE | Display name, title, author and cover only; no notes or ratings. Persistent links without expiry or revoke. |
-| Feedback form | Send feedback with a reply-to address | DONE |  |
-| Privacy notice | Public notice linked from home, login and signup | DONE |  |
+| Share individual books | Named snapshot links with quiet sharing controls | ✅  DONE | Display name, title, author and cover only; no notes or ratings. Persistent links without expiry or revoke. |
+| Feedback form | Send feedback with a reply-to address | ✅  DONE |  |
+| Privacy notice | Public notice linked from home, login and signup | ✅  DONE |  |
 | Editable reading preferences | Let readers update taste preferences | NOT STARTED | Broader profile editor not built. |
 
 ### 7. Amazon Affiliate Links
@@ -122,11 +122,11 @@ booklogapp.com  ·  Last updated: 4 November 2026
 
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
-| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | LIVE | Live 4 Nov (#79): Stats tab in the sidebar and as the fifth phone tab; read-only. All-time books finished, top genre (only when one clearly leads), average rating with rated and not-yet-rated counts, authors read, top genres, and authors you returned to (else top-rated books). Under 5 finished books: starter card with Goodreads import. Dates card and ratings line link to My Books › Completed. Opens from /books?section=stats. |
+| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | ✅  DONE | Live 4 Nov (#79): Stats tab in the sidebar and as the fifth phone tab; read-only. All-time books finished, top genre (only when one clearly leads), average rating with rated and not-yet-rated counts, authors read, top genres, and authors you returned to (else top-rated books). Under 5 finished books: starter card with Goodreads import. Dates card and ratings line link to My Books › Completed. Opens from /books?section=stats. |
 | Monthly / yearly reading summary | Visual summary of books read by month and year | 🔜  PLANNED | Next: Stats Release 2, together with Fill in the gaps. Shows once a reader has 5+ finished books with dates; never uses date added. |
 | Reading streaks | Optional reading-day log, separate from next-read choice | MOCKUP ONLY | No inferred history, required pages/timer/journal or lost-streak warning. No build approved. |
 | Annual reading goal | Set a target number of books for the year and track progress | ⛔  EXCLUDED | Excluded; associated goal-pace notifications also excluded. |
-| Choose your next read | Search Queued books and keep one chosen intention | LIVE | One Queued book, saved privately. Change or clear; Start reading separate. Clears on start, move or delete. Other tabs may need refresh. |
+| Choose your next read | Search Queued books and keep one chosen intention | ✅  DONE | One Queued book, saved privately. Change or clear; Start reading separate. Clears on start, move or delete. Other tabs may need refresh. |
 | Ordered next-read shortlist | Manually prioritize several queued books | CANDIDATE | Not built; distinct from the accepted one-book intention design. |
 
 ### 9. Social & Sharing
@@ -183,12 +183,12 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Auto-post to X | Automatically post daily book content to BookLog X account | 🔜  PLANNED | Phase 2 of Social Content Tool. Interim from 30 Oct: hand-written posts scheduled in Buffer (see X account row). |
 | Auto-post to Instagram | Auto-post to BookLog Instagram via Graph API | 🔜  PLANNED | Phase 3 of Social Content Tool. Interim from 2 Nov: hand-made posts scheduled in Buffer (see Instagram account row). |
 | Auto-comment on book posts | 2–3 daily comments on relevant posts on X and Instagram | 🔜  PLANNED | Not launched; separate approval required. Interim from 30 Oct: approval-gated reply drafts on X and Instagram (see Social reply drafts row). Fully automatic replies not advised: X treats automated replies as spam. |
-| Public web discovery | Server-rendered homepage, metadata, canonical and public sitemap | DONE | Live 29 Oct: complete homepage with Keep, Share, connected Discover, seven-question FAQ and signup ending; original covers and sticky header. No indexing or ranking guarantee. Live 30 Oct: root now uses permanent 308 to /home; homepage unchanged. Live 30 Oct (#67, #68): clearer site description, eighth FAQ "What is BookLog?", and FAQPage plus richer SoftwareApplication structured data (free, feature list). No visible layout change. |
+| Public web discovery | Server-rendered homepage, metadata, canonical and public sitemap | ✅  DONE | Live 29 Oct: complete homepage with Keep, Share, connected Discover, seven-question FAQ and signup ending; original covers and sticky header. No indexing or ranking guarantee. Live 30 Oct: root now uses permanent 308 to /home; homepage unchanged. Live 30 Oct (#67, #68): clearer site description, eighth FAQ "What is BookLog?", and FAQPage plus richer SoftwareApplication structured data (free, feature list). No visible layout change. |
 | AI search visibility | Help Claude, ChatGPT, Google AI, Grok and Perplexity find and recommend BookLog | IN PROGRESS | Plan, baseline and progress log: [AI Search Visibility: Research & Action Plan](https://claude.ai/artifact/62D9QYZTyaSvdv1Y1cSePp). On-site steps done 30 Oct (description, FAQ, structured data, Brave submission). Off-site listings, X and Instagram in progress. Name stays "BookLog"; use "BookLog (booklogapp.com)" on first mention in listings and intros. Re-run the AI baseline monthly. |
 | AlternativeTo listing | Public BookLog listing on alternativeto.net | SUBMITTED | Submitted 30 Oct; awaiting approval. Check "My submissions" monthly. |
-| X account @booklogapp | Official BookLog presence on X | LIVE | Created 30 Oct: profile, bio link and banner. Intro post live 30 Oct. Nine posts queued in Buffer (free plan, max 10 queued per channel): every two days at 5 PM Dubai, 2–18 Nov. No links in post bodies; tags #BookTwitter #BookX on question posts. Following 8 active book accounts (incl. Reese's and Oprah's book clubs); next batch in a few days, 10–15 at a time. |
-| Instagram account @booklog_app | Official BookLog presence on Instagram | LIVE | Created 2 Nov (booklogapp was taken). Creator account, category App Page, public. Bio carries booklogapp.com as text; clickable link needs the mobile app (not set). Six branded image posts queued in Buffer (second channel), every two days at 5 PM Dubai on non-X days, 3–13 Nov; 3 hashtags each, no book-cover artwork. Following 9 active book accounts (incl. Reese's, Oprah's and Read with Jenna clubs). Next follow batch to lean towards individual Bookstagrammers. |
-| Social reply drafts (X + Instagram) | Daily drafts of replies to followed book accounts and to replies or comments on our posts | LIVE | Scheduled task, weekdays 4:43 PM Dubai; Instagram added 2 Nov. Needs the laptop on with Chrome signed in to X and with booklog_app as the active Instagram account. Up to 3 drafts per platform sent to phone; posts only what Pakshi approves. |
+| X account @booklogapp | Official BookLog presence on X | ✅  DONE | Created 30 Oct: profile, bio link and banner. Intro post live 30 Oct. Nine posts queued in Buffer (free plan, max 10 queued per channel): every two days at 5 PM Dubai, 2–18 Nov. No links in post bodies; tags #BookTwitter #BookX on question posts. Following 8 active book accounts (incl. Reese's and Oprah's book clubs); next batch in a few days, 10–15 at a time. |
+| Instagram account @booklog_app | Official BookLog presence on Instagram | ✅  DONE | Created 2 Nov (booklogapp was taken). Creator account, category App Page, public. Bio carries booklogapp.com as text; clickable link needs the mobile app (not set). Six branded image posts queued in Buffer (second channel), every two days at 5 PM Dubai on non-X days, 3–13 Nov; 3 hashtags each, no book-cover artwork. Following 9 active book accounts (incl. Reese's, Oprah's and Read with Jenna clubs). Next follow batch to lean towards individual Bookstagrammers. |
+| Social reply drafts (X + Instagram) | Daily drafts of replies to followed book accounts and to replies or comments on our posts | ✅  DONE | Scheduled task, weekdays 4:43 PM Dubai; Instagram added 2 Nov. Needs the laptop on with Chrome signed in to X and with booklog_app as the active Instagram account. Up to 3 drafts per platform sent to phone; posts only what Pakshi approves. |
 
 ### 15. Partnerships
 
