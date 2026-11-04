@@ -195,3 +195,22 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
 | External partnerships | Book clubs, libraries, cafes, second-hand book stores | 🔲  NOT STARTED | Exploratory; no timeline or outreach approval. |
+
+### 16. Stats decision log
+
+| Date | Decision | Why (rationale and data) |
+| --- | --- | --- |
+| 3 Nov | Build Stats next. | Goals: more users, adoption, stickiness. Goodreads import (live 3 Nov) brings years of history; Stats pays that back on day one and changes as readers finish books. Read-only, so lowest regression risk. Year-end is when readers look back. Deferred: PWA (offline caching can serve an old app version), reading reminders (need the parked email sender), friends/social (bigger scope, privacy and moderation). |
+| 3 Nov | Name it Stats; page heading "Your reading life". | Short enough for the phone tab bar; the heading carries the warmer wording. |
+| 3 Nov | Phone: Stats is a fifth bottom tab (Option A). Option B, a link card on My Books, is parked. | Stats is a return-visit page, and five tabs is a normal maximum. Keeps My Books uncluttered. Reversible: the page has its own address (/books?section=stats), so the tab can move later without breaking links. Move to Option B if a new feature needs the tab space more. |
+| 3 Nov | Lead with all-time stats; month/year charts only once a reader has 5+ finished books with dates. Never use date added as a stand-in for date finished. | Live data 3 Nov: 322 finished books across 30 readers; 9 had a finish date, 171 a rating, 318 a genre. 14 readers had 5+ finished books; 0 had 5+ dated ones. Date added would look precise but be wrong for readers who added years of books on day one. |
+| 3 Nov | Ship in two releases: Release 1 read-only, Release 2 adds Fill in the gaps (writes) with its own testing. | A problem in the part that writes data can't affect what is already live. |
+| 4 Nov | Below 5 finished books, show a starter card (Finish N more books, Import from Goodreads) instead of genres and authors. | Near-empty charts and lists read as broken. 5 matches Discover's threshold for rated rows. |
+| 4 Nov | Dates card: five dots, one per finished book with a finish date; disappears at 5. | Shows exactly how close the reader is to the month/year view. |
+| 4 Nov | Only two reminders on Stats: the dates card and a ratings line. Ratings line shows only while under half of finished books are rated. No start-date reminder. | Keep the page minimal. A line that shows whenever one book is unrated would nag forever for big imported libraries. Nothing on Stats uses start dates. |
+| 4 Nov | Rating tile sub-line reads "31 rated · 27 not yet rated" ("All N rated" when complete). | "31 of 58 books rated" read as if Stats had picked 31 books, and hid the 27 the reader could still rate. |
+| 4 Nov | Import from Goodreads goes to the import card in Settings (scrolls to it), not straight to a file picker. | Browsers only open a file picker from a click on the same page. Readers need the export instructions first. One import place to maintain. |
+| 4 Nov | Top genre tile only when one genre clearly leads: 2+ books and no tie for first. Otherwise hidden; Top genres still lists them all. | Preview showed "Business · 1 of 5 books" when Business and Fiction tied at 1 and Business won alphabetically. Imports leave uncertain genres blank, so ties are common at first. |
+| 4 Nov | Release 1 shipped without the charts the dates card mentions. | Release 2 ships the same day, and almost no reader can reach 5 dated books before then. |
+| 4 Nov | Release 2: "Authors you returned to" only when 2+ authors have 2+ finished books; otherwise top-rated books. | Owner's live library: 30 finished books by 29 authors, one repeat (Brad Stone). A one-row card looks empty, and varied readers will be common. |
+| 4 Nov | Release 2: top-rated books rotate daily (4 at a time, same set all day) when more than 4 share the top rating. | Owner has 24 five-star books, 21 also on My Recommendations and only 4 dated, so no fixed order is meaningful. Date added isn't passed to the screen, and passing it means changing the code that loads every library. Rotation also gives a small reason to come back. |
