@@ -2,13 +2,13 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 3 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 4 November 2026. This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 3 November 2026
+booklogapp.com  ·  Last updated: 4 November 2026
 
 ## Part 1 — Live Features
 
@@ -122,8 +122,8 @@ booklogapp.com  ·  Last updated: 3 November 2026
 
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
-| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | DESIGN STAGE | Design only; monthly/yearly summaries parked pending use. |
-| Monthly / yearly reading summary | Visual summary of books read by month and year | PARKED | Not built; reliable reading dates required. |
+| Reading statistics dashboard | Total books read, avg per month, favourite genres, most productive months | LIVE | Live 4 Nov (#79): Stats tab in the sidebar and as the fifth phone tab; read-only. All-time books finished, top genre (only when one clearly leads), average rating with rated and not-yet-rated counts, authors read, top genres, and authors you returned to (else top-rated books). Under 5 finished books: starter card with Goodreads import. Dates card and ratings line link to My Books › Completed. Opens from /books?section=stats. |
+| Monthly / yearly reading summary | Visual summary of books read by month and year | 🔜  PLANNED | Next: Stats Release 2, together with Fill in the gaps. Shows once a reader has 5+ finished books with dates; never uses date added. |
 | Reading streaks | Optional reading-day log, separate from next-read choice | MOCKUP ONLY | No inferred history, required pages/timer/journal or lost-streak warning. No build approved. |
 | Annual reading goal | Set a target number of books for the year and track progress | ⛔  EXCLUDED | Excluded; associated goal-pace notifications also excluded. |
 | Choose your next read | Search Queued books and keep one chosen intention | LIVE | One Queued book, saved privately. Change or clear; Start reading separate. Clears on start, move or delete. Other tabs may need refresh. |
@@ -182,7 +182,7 @@ booklogapp.com  ·  Last updated: 3 November 2026
 | BookLog Social Content Tool | Daily email digest: auto-generated visual card + caption + comment suggestions for X and Instagram | 🔜  PLANNED | Separate growth tool, not a reader feature; no dated build commitment. |
 | Auto-post to X | Automatically post daily book content to BookLog X account | 🔜  PLANNED | Phase 2 of Social Content Tool. Interim from 30 Oct: hand-written posts scheduled in Buffer (see X account row). |
 | Auto-post to Instagram | Auto-post to BookLog Instagram via Graph API | 🔜  PLANNED | Phase 3 of Social Content Tool. Interim from 2 Nov: hand-made posts scheduled in Buffer (see Instagram account row). |
-| Auto-comment on book posts | 2–3 daily comments on relevant posts on X and Instagram | 🔜  PLANNED | Not launched; separate approval required. Interim from 30 Oct: approval-gated reply drafts on X (see row below). Fully automatic replies not advised: X treats automated replies as spam. |
+| Auto-comment on book posts | 2–3 daily comments on relevant posts on X and Instagram | 🔜  PLANNED | Not launched; separate approval required. Interim from 30 Oct: approval-gated reply drafts on X and Instagram (see Social reply drafts row). Fully automatic replies not advised: X treats automated replies as spam. |
 | Public web discovery | Server-rendered homepage, metadata, canonical and public sitemap | DONE | Live 29 Oct: complete homepage with Keep, Share, connected Discover, seven-question FAQ and signup ending; original covers and sticky header. No indexing or ranking guarantee. Live 30 Oct: root now uses permanent 308 to /home; homepage unchanged. Live 30 Oct (#67, #68): clearer site description, eighth FAQ "What is BookLog?", and FAQPage plus richer SoftwareApplication structured data (free, feature list). No visible layout change. |
 | AI search visibility | Help Claude, ChatGPT, Google AI, Grok and Perplexity find and recommend BookLog | IN PROGRESS | Plan, baseline and progress log: [AI Search Visibility: Research & Action Plan](https://claude.ai/artifact/62D9QYZTyaSvdv1Y1cSePp). On-site steps done 30 Oct (description, FAQ, structured data, Brave submission). Off-site listings, X and Instagram in progress. Name stays "BookLog"; use "BookLog (booklogapp.com)" on first mention in listings and intros. Re-run the AI baseline monthly. |
 | AlternativeTo listing | Public BookLog listing on alternativeto.net | SUBMITTED | Submitted 30 Oct; awaiting approval. Check "My submissions" monthly. |
