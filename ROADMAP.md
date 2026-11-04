@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 4 November 2026 (evening). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 4 November 2026 (usage tracking live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -189,6 +189,7 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | X account @booklogapp | Official BookLog presence on X | ✅  DONE | Created 30 Oct: profile, bio link and banner. Intro post live 30 Oct. Nine posts queued in Buffer (free plan, max 10 queued per channel): every two days at 5 PM Dubai, 2–18 Nov. No links in post bodies; tags #BookTwitter #BookX on question posts. Following 8 active book accounts (incl. Reese's and Oprah's book clubs); next batch in a few days, 10–15 at a time. |
 | Instagram account @booklog_app | Official BookLog presence on Instagram | ✅  DONE | Created 2 Nov (booklogapp was taken). Creator account, category App Page, public. Bio carries booklogapp.com as text; clickable link needs the mobile app (not set). Six branded image posts queued in Buffer (second channel), every two days at 5 PM Dubai on non-X days, 3–13 Nov; 3 hashtags each, no book-cover artwork. Following 9 active book accounts (incl. Reese's, Oprah's and Read with Jenna clubs). Next follow batch to lean towards individual Bookstagrammers. |
 | Social reply drafts (X + Instagram) | Daily drafts of replies to followed book accounts and to replies or comments on our posts | ✅  DONE | Scheduled task, weekdays 4:43 PM Dubai; Instagram added 2 Nov. Needs the laptop on with Chrome signed in to X and with booklog_app as the active Instagram account. Up to 3 drafts per platform sent to phone; posts only what Pakshi approves. |
+| Feature usage tracking | Record which features readers use, so every feature can be measured | ✅  DONE | Live 4 Nov (#83). Every reader action is recorded: adding, moving, removing, rating, dating and editing books, notes, next read, import, export, theme, sharing books and profiles, Discover, Stats, barcode, Amazon links, and daily opens. Never records note text, search words, Ask AI requests, names, titles or email. Saves can't fail because of it. Owner-only access. Privacy notice updated the same day. Saved queries: docs/usage-queries.sql. |
 
 ### 15. Partnerships
 
@@ -216,3 +217,4 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | 4 Nov | Release 2: top-rated books rotate daily (4 at a time, same set all day) when more than 4 share the top rating. | Owner has 24 five-star books, 21 also on My Recommendations and only 4 dated, so no fixed order is meaningful. Date added isn't passed to the screen, and passing it means changing the code that loads every library. Rotation also gives a small reason to come back. |
 | 4 Nov | Every action a reader takes is measurable: adding, moving, rating, dating, editing and deleting books, notes, import, export, theme, sharing books and profiles, Discover, Stats and every other button. Every new feature ships with its actions recorded. | No usage is recorded today: the old activity table has had no writes since May 2025, so we can't tell how many readers used Goodreads import, sharing, export or Stats. Features should be judged by real use. Plan: claude/usage-tracking-plan.md. |
 | 4 Nov | Roadmap statuses: finished rows say ✅ DONE in green; no LIVE or plain DONE. | One consistent status for finished work makes the roadmap quicker to scan. |
+| 4 Nov | Usage tracking live. Privacy notice leads with how the records make BookLog better, in plain words. | Owner asked for milder wording that starts with the reader benefit. Same promises kept: no notes, searches or Ask AI requests; never shared with advertisers. Live data identical before and after the change (fingerprints of books, notes, next read, shares and profiles matched). |
