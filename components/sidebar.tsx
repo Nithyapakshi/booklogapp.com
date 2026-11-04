@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
-import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react"
+import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight, MessageSquare, BarChart3 } from "lucide-react"
 
 interface SidebarProps {
   activeTab: string
@@ -56,6 +56,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const libraryItems = [
     { id: "my-books",    label: "My Books",           icon: BookOpen },
     { id: "recommended", label: "My Recommendations",  icon: Heart    },
+    { id: "stats",       label: "Stats",               icon: BarChart3 },
   ]
 
   const exploreItems = [
