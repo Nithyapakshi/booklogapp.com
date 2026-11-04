@@ -33,6 +33,7 @@ import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
 import { ShareControls } from "@/components/share-controls"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
+import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
@@ -606,7 +607,7 @@ function BooksLibraryContent() {
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
     const section = new URLSearchParams(window.location.search).get("section")
-    if (section === "discover" || section === "recommended") setSidebarTab(section)
+    if (section === "discover" || section === "recommended" || section === "stats") setSidebarTab(section)
     prefetchAmazonDomain()
   }, [])
 
@@ -741,6 +742,7 @@ function BooksLibraryContent() {
   const pageTitle =
     sidebarTab === "recommended" ? "My Recommendations" :
     sidebarTab === "discover"    ? "Discover"           :
+    sidebarTab === "stats"       ? "Your reading life"  :
     "My Books"
 
   const viewToggle = (
@@ -949,7 +951,7 @@ function BooksLibraryContent() {
             <h1 className="text-2xl font-bold" style={{ ...serif, color: "var(--bl-2d2416)" }}>
               {pageTitle}
             </h1>
-            {sidebarTab !== "discover" && <ShareControls getUrl={profileShareUrl} label="profile"/>}
+            {sidebarTab !== "discover" && sidebarTab !== "stats" && <ShareControls getUrl={profileShareUrl} label="profile"/>}
           </div>
 
           {/* MY BOOKS */}
@@ -1055,6 +1057,11 @@ function BooksLibraryContent() {
           {/* DISCOVER */}
           {sidebarTab === "discover" && (
             <DiscoverTab />
+          )}
+
+          {/* STATS (read-only) */}
+          {sidebarTab === "stats" && (
+            <StatsTab onOpenCompleted={() => { setSidebarTab("my-books"); setActiveTab("Completed") }} />
           )}
 
         </div>

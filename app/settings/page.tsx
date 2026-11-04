@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
-import { BookOpen, Heart, Sparkles, Settings, MessageSquare } from "lucide-react"
+import { BookOpen, Heart, Sparkles, Settings, MessageSquare, BarChart3 } from "lucide-react"
 import { ThemePreference } from "@/components/theme-preference"
 import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
 import { GoodreadsImport } from "@/components/goodreads-import"
@@ -132,6 +132,7 @@ export default function SettingsPage() {
           {[
             { href: "/books", label: "My Books",           icon: BookOpen },
             { href: "/books?section=recommended", label: "My Recommendations", icon: Heart    },
+            { href: "/books?section=stats", label: "Stats", icon: BarChart3 },
           ].map(({ href, label, icon: Icon }) => (
             <Link key={label} href={href} style={{ display: "flex", alignItems: "center", gap: "11px", padding: "10px 20px", color: "var(--bl-6b5c4e)", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderLeft: "2.5px solid transparent" }}>
               <Icon size={15} style={{ flexShrink: 0 }} />
