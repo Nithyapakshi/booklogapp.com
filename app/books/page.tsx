@@ -4,6 +4,8 @@ import { LibraryLoading } from "@/components/library-loading"
 import { useNextRead } from "@/hooks/use-next-read"
 import { nextReadBook, otherQueued } from "@/lib/next-read"
 import { NextReadHeader, NextReadChoice, UpNext, NextReadConfirmation } from "@/components/next-read-controls"
+import { QueueShuffle } from "@/components/queue-shuffle"
+import { shouldShowShuffle } from "@/lib/queue-shuffle"
 import { readingDatesLabel } from "@/lib/reading-dates"
 import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
@@ -661,6 +663,13 @@ function BooksLibraryContent() {
     catch { setNextError("Next read was not saved. Try again. Your books have not moved.") }
     finally { setNextBusy(false) }
   }
+  const makeNextFromShuffle = async (book: Book) => {
+    if (nextBusy || !books.queued.some(b => b.id === book.id)) return
+    setNextBusy(true); setNextError("")
+    try { await nextRead.save(book.id); track("queue.shuffle_next_read",{queued:books.queued.length},book.id) }
+    catch { setNextError("Next read was not saved. Try again. Your books have not moved.") }
+    finally { setNextBusy(false) }
+  }
   const startNext = async () => {
     if (!pinnedNext || nextBusy) return
     setNextBusy(true); setNextError("")
@@ -1007,6 +1016,7 @@ function BooksLibraryContent() {
                 genres={userGenres}
               />
               {queuedTab && <>
+                {!choosingNext && !loading && !loadError && !nextRead.loading && !nextRead.error && shouldShowShuffle(books.queued.length,!!pinnedNext) && <QueueShuffle books={books.queued} busy={nextBusy} onMakeNext={book => void makeNextFromShuffle(book)}/>}
                 {!choosingNext && pinnedNext && <UpNext book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/>}
                 <NextReadHeader choosing={choosingNext} hasChoice={!!pinnedNext} disabled={loading||loadError||nextRead.loading||nextRead.error||nextBusy||!books.queued.length} onChoose={beginNextChoice} onCancel={() => {if (!nextBusy) {setChoosingNext(false);setNextError("")}}}/>
                 {nextRead.error && <p role="alert" className="text-sm mt-2">Could not load your next read. <button type="button" className="underline" onClick={() => void nextRead.read()}>Try again</button></p>}

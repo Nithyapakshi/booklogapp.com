@@ -36,3 +36,17 @@ group by 1 order by 1;
 select first_day, event, count(*) as new_readers from (
   select user_id, event, min(created_at)::date as first_day from usage_events group by 1, 2
 ) f group by 1, 2 order by 1 desc, 3 desc limit 100;
+
+-- 8. Queue shuffle: card seen, shuffles, next reads set from the card, and whether those books were started
+select
+  count(distinct user_id) filter (where event = 'queue.shuffle_shown') as readers_saw_card,
+  count(distinct user_id) filter (where event = 'queue.shuffled') as readers_shuffled,
+  count(*) filter (where event = 'queue.shuffled') as shuffles,
+  count(distinct user_id) filter (where event = 'queue.shuffle_next_read') as readers_set_next_read,
+  count(*) filter (where event = 'queue.shuffle_next_read') as next_reads_set
+from usage_events where event like 'queue.shuffle%' and created_at > now() - interval '30 days';
+
+select count(*) as picked, count(*) filter (where b.status = 'reading' or b.status = 'completed') as started
+from usage_events e
+left join books b on b.user_id = e.user_id and b.id = e.book_id
+where e.event = 'queue.shuffle_next_read' and e.created_at > now() - interval '30 days';
