@@ -43,6 +43,7 @@ test('card only saves through the existing next-read save and records its use',(
   assert.match(ui,/track\("queue.shuffle_shown"/);assert.match(ui,/track\("queue.shuffled"/)
   assert.doesNotMatch(ui,/createClientSupabaseClient|from\(|moveBook|removeBook/)
   assert.match(ui,/min-h-11/)
+  assert.match(ui,/<BookDetailsDialog book=\{book\} open=\{detailsOpen\}/);assert.match(ui,/track\("queue.shuffle_details"/);assert.match(ui,/aria-label=\{`Open details for/)
   const page=fs.readFileSync('app/books/page.tsx','utf8')
   assert.match(page,/await nextRead.save\(book.id\); track\("queue.shuffle_next_read"/)
   assert.match(page,/!choosingNext && !loading && !loadError && !nextRead.loading && !nextRead.error && shouldShowShuffle\(books.queued.length,!!pinnedNext\)/)

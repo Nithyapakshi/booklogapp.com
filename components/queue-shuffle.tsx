@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import type { Book } from "@/types"
 import { pickNext, type ShuffleState } from "@/lib/queue-shuffle"
 import { track } from "@/lib/usage"
+import { BookDetailsDialog } from "@/components/book-details-dialog"
 
 // "From your queue": one queued book at a time, with Shuffle and Make it my next read.
 // Read-only apart from the existing next-read save, which the parent owns.
@@ -12,6 +13,7 @@ export function QueueShuffle({books,busy,onMakeNext}:{books:Book[];busy:boolean;
   const [state,setState] = useState<ShuffleState>({current:null,seen:[]})
   const shuffles = useRef(0)
   const shown = useRef(false)
+  const [detailsOpen,setDetailsOpen] = useState(false)
   // First pick happens in the browser only, and again if the shown book leaves the queue.
   useEffect(() => {
     setState(prev => prev.current && ids.includes(prev.current) ? {...prev,seen:prev.seen.filter(id=>ids.includes(id))} : pickNext(ids,prev))
@@ -28,11 +30,12 @@ export function QueueShuffle({books,busy,onMakeNext}:{books:Book[];busy:boolean;
     track("queue.shuffled",{n:shuffles.current,queued:books.length})
     setState(prev => pickNext(ids,prev))
   }
-  return <section aria-label="From your queue" className="flex gap-3.5 items-start rounded-xl border border-border bg-card p-3.5 mt-4">
-    {book.cover ? <img src={book.cover} alt="" style={{width:64,height:96,objectFit:"contain",flexShrink:0}}/> : <div aria-hidden="true" className="bg-muted rounded" style={{width:64,height:96,flexShrink:0}}/>}
+  const openDetails = () => { track("queue.shuffle_details",{},book.id); setDetailsOpen(true) }
+  return <><section aria-label="From your queue" className="flex gap-3.5 items-start rounded-xl border border-border bg-card p-3.5 mt-4">
+    <button type="button" aria-label={`Open details for ${book.title}`} onClick={openDetails} className="shrink-0">{book.cover ? <img src={book.cover} alt="" style={{width:64,height:96,objectFit:"contain"}}/> : <div aria-hidden="true" className="bg-muted rounded" style={{width:64,height:96}}/>}</button>
     <div className="min-w-0 flex-1">
       <h2 className="text-xs uppercase tracking-wide text-muted-foreground">From your queue</h2>
-      <p className="mt-1 break-words" style={{fontFamily:"Georgia, serif",fontSize:17}}>{book.title}</p>
+      <button type="button" onClick={openDetails} className="block mt-1 break-words text-left hover:underline" style={{fontFamily:"Georgia, serif",fontSize:17}}>{book.title}</button>
       <p className="text-sm text-muted-foreground mt-0.5 break-words">{book.author}{book.genre ? ` · ${book.genre}` : ""}</p>
       <div className="flex flex-wrap gap-2 mt-3">
         <button type="button" disabled={busy} onClick={() => onMakeNext(book)} className="rounded-lg px-3.5 min-h-11 text-sm font-semibold disabled:opacity-40" style={{background:"var(--bl-c17f3e)",color:"var(--bl-primary-ink)"}}>{busy?"Saving...":"Make it my next read"}</button>
@@ -41,5 +44,5 @@ export function QueueShuffle({books,busy,onMakeNext}:{books:Book[];busy:boolean;
         </button>
       </div>
     </div>
-  </section>
+  </section><BookDetailsDialog book={book} open={detailsOpen} onClose={() => setDetailsOpen(false)} mode="view"/></>
 }
