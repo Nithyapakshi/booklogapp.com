@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 4 November 2026 (usage tracking live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 5 November 2026 (queue shuffle live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -127,6 +127,7 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Reading streaks | Optional reading-day log, separate from next-read choice | MOCKUP ONLY | No inferred history, required pages/timer/journal or lost-streak warning. No build approved. |
 | Annual reading goal | Set a target number of books for the year and track progress | ⛔  EXCLUDED | Excluded; associated goal-pace notifications also excluded. |
 | Choose your next read | Search Queued books and keep one chosen intention | ✅  DONE | One Queued book, saved privately. Change or clear; Start reading separate. Clears on start, move or delete. Other tabs may need refresh. |
+| Queue shuffle | Show one queued book at a time, with one tap to make it the next read | ✅  DONE | Live 5 Nov (#85): "From your queue" card at the top of Queued, only with 3+ queued books and no next read chosen. Unlimited shuffles, no repeats until the whole queue has been shown. Tap the cover or title for book details. Make it my next read uses the existing next-read save; Change stays the manual list. Measured: queue.shuffle_shown, queue.shuffled, queue.shuffle_details, queue.shuffle_next_read (saved query 8). |
 | Ordered next-read shortlist | Manually prioritize several queued books | CANDIDATE | Not built; distinct from the accepted one-book intention design. |
 
 ### 9. Social & Sharing
@@ -218,3 +219,4 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | 4 Nov | Every action a reader takes is measurable: adding, moving, rating, dating, editing and deleting books, notes, import, export, theme, sharing books and profiles, Discover, Stats and every other button. Every new feature ships with its actions recorded. | No usage is recorded today: the old activity table has had no writes since May 2025, so we can't tell how many readers used Goodreads import, sharing, export or Stats. Features should be judged by real use. Plan: claude/usage-tracking-plan.md. |
 | 4 Nov | Roadmap statuses: finished rows say ✅ DONE in green; no LIVE or plain DONE. | One consistent status for finished work makes the roadmap quicker to scan. |
 | 4 Nov | Usage tracking live. Privacy notice leads with how the records make BookLog better, in plain words. | Owner asked for milder wording that starts with the reader benefit. Same promises kept: no notes, searches or Ask AI requests; never shared with advertisers. Live data identical before and after the change (fingerprints of books, notes, next read, shares and profiles matched). |
+| 5 Nov | Build queue shuffle next (proposed by Instinct). Change on Up next stays the manual list. The card shuffles the whole queue and ignores genre filters and search. | Live data 5 Nov: 9 of the 11 signups in the last 30 days added books, and 59 of the 61 accounts with no books are older than 30 days, so getting new readers started is no longer the main leak; keeping readers coming back is. 179 queued books across 15 readers, and nothing brought older ones back into view. StoryGraph readers single out random to-read reminders as a favourite. In-app and read-only apart from the existing next-read save, so low regression risk. Change stays the manual list: a reader tapping Change usually has a book in mind, and the live next-read feature stays untouched. |
