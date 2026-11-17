@@ -613,6 +613,8 @@ function BooksLibraryContent() {
     const savedView = localStorage.getItem("booklog-view-mode")
     if (savedView === "list" || savedView === "grid") setViewMode(savedView)
     const section = new URLSearchParams(window.location.search).get("section")
+    const linkParams = new URLSearchParams(window.location.search)
+    if (linkParams.get("from") === "email") track("email.clicked", { campaign: (linkParams.get("campaign") || "").slice(0, 40), version: (linkParams.get("v") || "").slice(0, 2) })
     if (section === "discover" || section === "recommended" || section === "stats") { setSidebarTab(section); track("nav.opened", { tab: section, via: "link" }) }
     prefetchAmazonDomain()
     trackDailyOpen()
