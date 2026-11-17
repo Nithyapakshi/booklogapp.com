@@ -89,8 +89,7 @@ test('email clicks are recorded with campaign and version only',()=>{
  assert.match(p,/track\("email\.clicked", \{ campaign: .*version: .*\}\)/)
 })
 
-test('reader send is blocked until a postal address is set',()=>{
- const s=fs.readFileSync('scripts/reader-update/send.mjs','utf8')
- assert.match(s,/if \(!POSTAL_ADDRESS\.trim\(\)\) throw/)
- assert.ok(s.indexOf('POSTAL_ADDRESS.trim()')<s.indexOf('o.confirm !== rows.length'))
+test('postal address is real or absent, never a placeholder',async()=>{
+ const {POSTAL_ADDRESS}=await load()
+ assert.ok(POSTAL_ADDRESS===''||!/^[0\s-]+$|x{3,}|tbd|placeholder/i.test(POSTAL_ADDRESS))
 })

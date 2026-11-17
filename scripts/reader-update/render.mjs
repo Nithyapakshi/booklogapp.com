@@ -6,8 +6,9 @@
 
 export const FROM = "BookLog <hello@booklogapp.com>"
 export const CAMPAIGN = "reader_update_1"
-// Resend's Acceptable Use Policy requires a valid address and company name in the email.
-// Set to a real address Pakshiraj controls (e.g. a PO box) before any reader send. send.mjs refuses --send while empty.
+// Resend's Acceptable Use Policy asks for a valid address and company name in the email.
+// 17 Nov 2026: Pakshiraj decided to send this one-time email without an address, knowing that policy.
+// Add a real address he controls (e.g. a PO box) before any regular emails. Never a placeholder.
 export const POSTAL_ADDRESS = ""
 const ORIGIN = "https://www.booklogapp.com"
 
