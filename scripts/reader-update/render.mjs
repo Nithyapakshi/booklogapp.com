@@ -1,10 +1,14 @@
 // One-time BookLog reader update email (Nov 2026). Pure rendering: no network, no database.
 // Three versions, one per reader, chosen by recipients.sql:
 //   A: has a book on Reading   B: has books, none on Reading   C: no books yet
-// Copy approved by Pakshiraj on 17 Nov 2026. Change wording only with his approval.
+// Wording reviewed with Pakshiraj on 17 Nov 2026 (no founder intro, "The BookLog team", one-time footer)
+// and approved for a test send to him only. The reader send itself still needs his explicit approval.
 
 export const FROM = "BookLog <hello@booklogapp.com>"
 export const CAMPAIGN = "reader_update_1"
+// Resend's Acceptable Use Policy requires a valid address and company name in the email.
+// Set to a real address Pakshiraj controls (e.g. a PO box) before any reader send. send.mjs refuses --send while empty.
+export const POSTAL_ADDRESS = ""
 const ORIGIN = "https://www.booklogapp.com"
 
 const BLOCKED_NAMES = new Set(["user", "test", "admin", "booklog", "reader", "name", "null", "undefined"])
@@ -102,6 +106,7 @@ ${features.map(([h, t]) => `<li style="margin:0 0 6px;"><b>${h}</b> ${t}</li>`).
 </ul>
 <p style="${p}">Thanks,<br>The BookLog team</p>
 <p style="margin:32px 0 0;font-size:12px;color:#8a7560;">This is a one-time update for BookLog members. <a href="${unsub}" style="color:#8a7560;">Unsubscribe</a></p>
+${POSTAL_ADDRESS ? `<p style="margin:8px 0 0;font-size:12px;color:#8a7560;">BookLog, ${esc(POSTAL_ADDRESS)}</p>` : ""}
 </div></body></html>`
 
   const text = [
@@ -112,6 +117,7 @@ ${features.map(([h, t]) => `<li style="margin:0 0 6px;"><b>${h}</b> ${t}</li>`).
     ...features.map(([h, t]) => `- ${h} ${t}`), "",
     "Thanks,", "The BookLog team", "",
     `This is a one-time update for BookLog members. Unsubscribe: ${unsub}`,
+    ...(POSTAL_ADDRESS ? [`BookLog, ${POSTAL_ADDRESS}`] : []),
   ].join("\n")
 
   return { subject, html, text, headers: unsubscribeHeaders(r.token) }

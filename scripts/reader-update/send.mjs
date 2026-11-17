@@ -14,7 +14,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { render, cleanFirstName, FROM, CAMPAIGN } from "./render.mjs"
+import { render, cleanFirstName, FROM, CAMPAIGN, POSTAL_ADDRESS } from "./render.mjs"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const SENT_LOG = path.join(here, `sent-${CAMPAIGN}.csv`)
@@ -125,6 +125,7 @@ async function main() {
   }
 
   if (!o.send) throw new Error("Choose --test, --dry-run or --send")
+  if (!POSTAL_ADDRESS.trim()) throw new Error("Set POSTAL_ADDRESS in render.mjs first (Resend requires a valid address in the email)")
   if (o.confirm !== rows.length) throw new Error(`--confirm must equal the number of readers (${rows.length})`)
 
   const done = new Set(fs.existsSync(SENT_LOG) ? fs.readFileSync(SENT_LOG, "utf8").split("\n").map(l => l.split(",")[0]).filter(Boolean) : [])

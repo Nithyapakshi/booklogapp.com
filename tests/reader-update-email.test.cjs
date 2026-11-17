@@ -88,3 +88,9 @@ test('email clicks are recorded with campaign and version only',()=>{
  const p=fs.readFileSync('app/books/page.tsx','utf8')
  assert.match(p,/track\("email\.clicked", \{ campaign: .*version: .*\}\)/)
 })
+
+test('reader send is blocked until a postal address is set',()=>{
+ const s=fs.readFileSync('scripts/reader-update/send.mjs','utf8')
+ assert.match(s,/if \(!POSTAL_ADDRESS\.trim\(\)\) throw/)
+ assert.ok(s.indexOf('POSTAL_ADDRESS.trim()')<s.indexOf('o.confirm !== rows.length'))
+})
