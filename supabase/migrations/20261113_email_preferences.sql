@@ -1,5 +1,5 @@
 -- Email unsubscribe. PREVIEW FIRST, then production after owner approval.
--- Additive only: one new table and two new functions. No existing table, row, policy or function changes.
+-- Additive only: one new table and one new function. No existing table, row, policy or function changes.
 -- Every account gets a random unsubscribe token. The email link carries only that token, never the
 -- account id or email address. Unsubscribing needs no sign-in and touches nothing in the library.
 begin;
