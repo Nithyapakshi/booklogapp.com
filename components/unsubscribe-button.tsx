@@ -21,7 +21,7 @@ export function UnsubscribeButton({ token }: { token: string }) {
     <Link href="/books" style={{ color: "var(--bl-c17f3e)", fontSize: 15 }}>Open BookLog</Link>
   </>
 
-  if (state === "invalid") return <p style={text}>This unsubscribe link is not valid. Please email pakshiraj.ananthan@gmail.com and we will remove you.</p>
+  if (state === "invalid") return <p style={text}>This unsubscribe link is not valid. Please email hello@booklogapp.com and we will remove you.</p>
 
   return <>
     <p style={text}>You will stop getting emails from BookLog. Your library and account are not affected.</p>

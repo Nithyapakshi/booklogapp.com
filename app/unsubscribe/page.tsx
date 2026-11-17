@@ -18,7 +18,7 @@ export default async function UnsubscribePage({ searchParams }: Props) {
       <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 30, lineHeight: 1.25, marginBottom: 16 }}>Unsubscribe from BookLog emails</h1>
       {token
         ? <UnsubscribeButton token={token} />
-        : <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--bl-6b5c42)" }}>This unsubscribe link is not complete. Please use the link in your email, or email pakshiraj.ananthan@gmail.com and we will remove you.</p>}
+        : <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--bl-6b5c42)" }}>This unsubscribe link is not complete. Please use the link in your email, or email hello@booklogapp.com and we will remove you.</p>}
     </main>
   </div>
 }
