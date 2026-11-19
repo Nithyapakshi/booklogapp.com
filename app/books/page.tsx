@@ -5,8 +5,10 @@ import { useNextRead } from "@/hooks/use-next-read"
 import { nextReadBook, otherQueued } from "@/lib/next-read"
 import { NextReadHeader, NextReadChoice, UpNext, NextReadConfirmation } from "@/components/next-read-controls"
 import { QueueShuffle } from "@/components/queue-shuffle"
-import { shouldShowShuffle } from "@/lib/queue-shuffle"
-import { readingDatesLabel } from "@/lib/reading-dates"
+import { shouldShowShuffle, SHUFFLE_MIN_QUEUED } from "@/lib/queue-shuffle"
+import { ProgressLine, ReadingProgressProvider } from "@/components/reading-progress"
+import { whatsNextVariant } from "@/lib/reading-progress"
+import { readingDatesLabel, cardFinishedAt } from "@/lib/reading-dates"
 import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
@@ -84,7 +86,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         <div className="bl-list-details flex-1 min-w-0">
           <p className="bl-list-title font-semibold text-sm truncate" style={sans}>{book.title}</p>
           <p className="bl-list-author text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
-          {readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision) && <p className="bl-list-date text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision)}</p>}
+          {readingDatesLabel(book.startedAt, cardFinishedAt(book), book.startedPrecision, book.finishedPrecision) && <p className="bl-list-date text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, cardFinishedAt(book), book.startedPrecision, book.finishedPrecision)}</p>}
           {book.genre && (
             <span className="bl-list-genre" style={{
               display: "inline-block",
@@ -104,6 +106,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               {book.genre}
             </span>
           )}
+          <div className="max-w-[260px]"><ProgressLine book={book} compact /></div>
         {(book.status === "queued" || book.status === "recommended") && (
           <a
             className="bl-list-amazon"
@@ -684,6 +687,43 @@ function BooksLibraryContent() {
     finally { setNextBusy(false) }
   }
 
+  // "What's next?": shown once on the Reading tab after a book is finished from its progress line.
+  // Reuses Up next, the queue shuffle, the Queued tab and Discover. Nothing here changes how books move.
+  const [whatsNext, setWhatsNext] = useState<{ title: string } | null>(null)
+  const chooseOnArrive = React.useRef(false)
+  const finishFromProgress = async (book: Book) => {
+    const result = await moveBook(book, "completed")
+    if (result !== "moved") throw new Error("Book was not moved")
+    setNextError("")
+    setWhatsNext({ title: book.title })
+  }
+  const nextVariant = whatsNextVariant(!!pinnedNext, books.queued.length, SHUFFLE_MIN_QUEUED)
+  const shownVariant = React.useRef<string | null>(null)
+  useEffect(() => {
+    if (!whatsNext || nextRead.loading) { if (!whatsNext) shownVariant.current = null; return }
+    if (shownVariant.current === nextVariant) return
+    shownVariant.current = nextVariant
+    track("next.shown", { variant: nextVariant, queued: books.queued.length })
+  }, [whatsNext, nextVariant, nextRead.loading, books.queued.length])
+  useEffect(() => {
+    if (queuedTab && chooseOnArrive.current) { chooseOnArrive.current = false; beginNextChoice() }
+  }, [queuedTab])
+  const closeWhatsNext = (how: string) => { track("next.dismissed", { how, variant: nextVariant }); setWhatsNext(null) }
+  const whatsNextBox = whatsNext && sidebarTab === "my-books" && activeTab === "Reading" && !loading && !loadError && !nextRead.loading ? (
+    <section aria-label="What's next?" className="rounded-xl border border-border bg-card px-4 py-3 mt-4 max-w-2xl">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 16 }}>What&apos;s next?</h2>
+        <button type="button" className="text-xs text-muted-foreground underline underline-offset-2 min-h-8" onClick={() => closeWhatsNext("not_now")}>Not now</button>
+      </div>
+      <p className="text-xs text-muted-foreground break-words">You finished {whatsNext.title}.</p>
+      {nextVariant === "up_next" && pinnedNext && <div className="[&>section]:border-b-0 [&>section]:mt-3 [&>section]:pb-1">{/* Existing Up next card, without its own bottom rule inside this box */}<UpNext book={pinnedNext} busy={nextBusy} onStart={() => { track("next.started", { variant: "up_next" }, pinnedNext.id); setWhatsNext(null); void startNext() }} onChange={() => { track("next.change", {}); chooseOnArrive.current = true; setWhatsNext(null); setActiveTab("Queued") }}/></div>}
+      {nextVariant === "shuffle" && !nextRead.error && <div className="border-t border-border mt-3 [&>section]:border-0 [&>section]:bg-transparent [&>section]:px-0 [&>section]:pb-1 [&>section]:mt-1"><QueueShuffle books={books.queued} busy={nextBusy} onMakeNext={book => void makeNextFromShuffle(book)}/></div>}
+      {nextVariant === "choose" && <div className="border-t border-border mt-3 pt-3 text-sm text-muted-foreground">You have {books.queued.length} {books.queued.length === 1 ? "book" : "books"} queued.<br/><button type="button" className="mt-1 min-h-11 underline underline-offset-2" style={{ color: "var(--bl-c17f3e)" }} onClick={() => { track("next.open_queue", {}); setWhatsNext(null); setActiveTab("Queued") }}>Choose from your queue →</button></div>}
+      {nextVariant === "discover" && <div className="border-t border-border mt-3 pt-3 text-sm text-muted-foreground">Your queue is empty.<br/><button type="button" className="mt-1 min-h-11 underline underline-offset-2" style={{ color: "var(--bl-c17f3e)" }} onClick={() => { track("next.open_discover", {}); setWhatsNext(null); handleSidebarTab("discover") }}>Find your next book in Discover →</button></div>}
+      {nextError && <p role="alert" className="text-sm mt-2 text-red-600 dark:text-red-300">{nextError}</p>}
+    </section>
+  ) : null
+
   // Welcome survey: new accounts only, over My Books only; completed/skipped never ask again, the X asks again after 7 days.
   // If the table is missing (migration not applied), the read errors and the survey simply never pops.
   const [surveyEvents, setSurveyEvents] = useState<SurveyEvent[] | null>(null)
@@ -951,6 +991,7 @@ function BooksLibraryContent() {
   )
 
   return (
+    <ReadingProgressProvider userId={user?.id} readingBooks={books.reading} onFinish={finishFromProgress}>
     <div className="flex min-h-screen" style={{ background: "var(--bl-faf7f2)" }}>
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
       {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} />}
@@ -1017,6 +1058,7 @@ function BooksLibraryContent() {
                 onToggleExpand={() => setMyBooksGenreExpanded(e => !e)}
                 genres={userGenres}
               />
+              {whatsNextBox}
               {queuedTab && <>
                 {!choosingNext && !loading && !loadError && !nextRead.loading && !nextRead.error && shouldShowShuffle(books.queued.length,!!pinnedNext) && <QueueShuffle books={books.queued} busy={nextBusy} onMakeNext={book => void makeNextFromShuffle(book)}/>}
                 {!choosingNext && pinnedNext && <UpNext book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/>}
@@ -1086,6 +1128,7 @@ function BooksLibraryContent() {
         </div>
       </main>
     </div>
+    </ReadingProgressProvider>
   )
 }
 
