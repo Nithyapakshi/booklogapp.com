@@ -2,13 +2,13 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 5 November 2026 (queue shuffle live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 19 November 2026 (reading progress check-in live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 4 November 2026
+booklogapp.com  ·  Last updated: 19 November 2026
 
 ## Part 1 — Live Features
 
@@ -58,7 +58,9 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | Metadata and duplicate safety | Fill missing details only; latest-edition results; near-duplicate warning | ✅  DONE | Never overwrite entered details or block Add anyway. |
 | Fill details when a book is opened | Opening your own book with no description or cover looks it up once and fills the blanks (also genre and year if empty) | ✅  DONE | Live 3 Nov (#76). Fill-only, never overwrites. Server-side lookup with the server Google Books key; at most once per book every 6 hours. Applies to any book missing details, not only imports. |
 | Did Not Finish | Separate a stopped book from On Hold | CANDIDATE | Not built; no build approval. |
-| Reading progress / journal | Optional page or percentage progress with dated notes | CANDIDATE | Not built; no build approval. |
+| Reading progress check-in | Page or % progress on Reading books, with what is left; Finished? from 90%; What's next? after finishing | ✅  DONE | Live 19 Nov (#89). Reading cards (grid and list) show a bar, "37% · 239 left" and Update; no progress shows "Where are you up to?". Check-in: Page or %, last value prefilled, total pages prefilled from Google Books / Open Library and editable (a typed total is never overwritten). From 90% Update becomes Finished?: Yes uses the existing finish dialog, Not yet opens the check-in. After finishing, a one-time What's next? box on Reading reuses Up next, the queue shuffle, the Queued tab or Discover. Reading cards show only the start date (an earlier finish date stays stored). Check-ins clear when a book leaves Reading/On Hold. Measured: progress.updated (DB), progress.opened, progress.total_from_lookup, finish.offered/opened/choice, next.shown/started/change/open_queue/open_discover/dismissed. |
+| Weekly reading reminder | Opt-in weekly email for a book being read, linking to the check-in | 🔜  PLANNED | Release 2 of the check-in. Explicit unticked opt-in on the current-book card, onboarding and Settings; consent recorded for this message type only (Resend policy). No opt-in email to existing readers. |
+| Reading journal | Dated notes alongside progress | CANDIDATE | Not built; no build approval. |
 | Reread history | Keep earlier reading dates when rereading | CANDIDATE | Not built. |
 | Owned / format / edition | Distinguish ownership and print, ebook or audio editions | CANDIDATE | Not built. |
 | Half-star ratings | Allow half-star ratings | CANDIDATE | Not built. |
@@ -220,3 +222,9 @@ booklogapp.com  ·  Last updated: 4 November 2026
 | 4 Nov | Roadmap statuses: finished rows say ✅ DONE in green; no LIVE or plain DONE. | One consistent status for finished work makes the roadmap quicker to scan. |
 | 4 Nov | Usage tracking live. Privacy notice leads with how the records make BookLog better, in plain words. | Owner asked for milder wording that starts with the reader benefit. Same promises kept: no notes, searches or Ask AI requests; never shared with advertisers. Live data identical before and after the change (fingerprints of books, notes, next read, shares and profiles matched). |
 | 5 Nov | Build queue shuffle next (proposed by Instinct). Change on Up next stays the manual list. The card shuffles the whole queue and ignores genre filters and search. | Live data 5 Nov: 9 of the 11 signups in the last 30 days added books, and 59 of the 61 accounts with no books are older than 30 days, so getting new readers started is no longer the main leak; keeping readers coming back is. 179 queued books across 15 readers, and nothing brought older ones back into view. StoryGraph readers single out random to-read reminders as a favourite. In-app and read-only apart from the existing next-read save, so low regression risk. Change stays the manual list: a reader tapping Change usually has a book in mind, and the live next-read feature stays untouched. |
+| 19 Nov | Build a reading progress check-in (Release 1), then an opt-in weekly reminder (Release 2). No streaks. | Agreed by Instinct and Claude from BookLog data, competitors and public research. Since tracking began (4 Nov) 30 readers have a book on Reading but only 2 came back; 16 of 19 recent adders added books on a single day. Goodreads, StoryGraph and Bookly all offer page or % progress, so it is expected; no published benchmark shows its retention effect, so it is a product decision, judged by distinct-day check-ins and weekly return. |
+| 19 Nov | No opt-in request email to existing readers; reminders need explicit, unticked opt-in inside the app. | Resend's policy requires explicit opt-in per message type; signup never collected it. Readers who no longer visit cannot be reached; stated plainly. Verdict on the reminder will take about 2 to 3 months. |
+| 19 Nov | Keep both Page and % (Page default); fill total pages from public data, editable. | Kindle shows % or location, not pages. Preview check: 3 of 3 books got a total automatically. 65 of 75 books on live Reading shelves have a Google Books id. |
+| 19 Nov | From 90%, Update becomes Finished? (two-button choice) instead of adding a link. | Keeps every card footer at two lines on phones (Instinct's congestion review). Costs one extra tap for a reader not yet done. |
+| 19 Nov | What's next? appears only after finishing through Finished?; card-menu moves to Completed unchanged. | Reuse existing parts, no change to current flows. Widening it is a separate decision. |
+| 19 Nov | Reading cards hide an earlier finish date (display only). | A progress bar next to "Finished" contradicted itself. Clearing stored dates would delete reader data. Agreed by Instinct and Claude at the owner's request. Live data identical before and after the release (books fingerprint matched). |
