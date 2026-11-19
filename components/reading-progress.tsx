@@ -195,11 +195,11 @@ function CheckInDialog({ book, last, onSave, onClose }: {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <input ref={input} autoFocus inputMode={mode === "page" ? "numeric" : "decimal"} aria-label={mode === "page" ? "Page you are on" : "Percent read"}
             value={value} onChange={e => { setValue(e.target.value.replace(/[^\d.]/g, "").slice(0, 6)); setError(null) }}
-            className="w-24 rounded-md border px-3 py-2 text-base text-foreground bg-card" style={{ borderColor: amber }} />
+            className="w-24 rounded-md border px-3 py-2 text-base text-foreground bg-card outline-none focus:shadow-[0_0_0_3px_rgba(193,127,62,0.18)]" style={{ borderColor: amber }} />
           {mode === "page"
             ? <><span>of</span><input inputMode="numeric" aria-label="Total pages" placeholder="?" value={total}
                 onChange={e => { setTotal(e.target.value.replace(/\D/g, "").slice(0, 5)); setTotalSource("reader"); setError(null) }}
-                className="w-16 rounded-md border border-border px-2 py-1.5 text-sm text-foreground bg-card" /><span>pages</span></>
+                className="w-16 rounded-md border border-border px-2 py-1.5 text-sm text-foreground bg-card outline-none focus:border-[var(--bl-c17f3e)]" /><span>pages</span></>
             : <span>%</span>}
         </div>
         <p className="text-xs text-muted-foreground min-h-4" aria-live="polite">
