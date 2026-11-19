@@ -90,3 +90,13 @@ test('migration is additive: new table, no change to existing tables or rows',()
 test('weekly reminder (Release 2) is not part of this release',()=>{
   assert.doesNotMatch(comp,/remind/i)
 })
+test('Reading cards hide an earlier finish date; the date itself is kept and shows on other shelves',()=>{
+  const m={exports:{}}
+  new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/reading-dates.ts','utf8'),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(m,m.exports)
+  const {cardFinishedAt,readingDatesLabel}=m.exports
+  const b={status:'reading',startedAt:'2026-11-01',finishedAt:'2026-11-10'}
+  assert.equal(cardFinishedAt(b),undefined)
+  assert.equal(readingDatesLabel(b.startedAt,cardFinishedAt(b),'month','month'),'Started Nov 2026')
+  for (const status of ['completed','recommended','queued','onHold']) assert.equal(cardFinishedAt({...b,status}),'2026-11-10')
+  for (const f of ['components/book-card.tsx','app/books/page.tsx']) assert.doesNotMatch(fs.readFileSync(f,'utf8'),/readingDatesLabel\(book\.startedAt, book\.finishedAt/)
+})

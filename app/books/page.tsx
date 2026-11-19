@@ -8,7 +8,7 @@ import { QueueShuffle } from "@/components/queue-shuffle"
 import { shouldShowShuffle, SHUFFLE_MIN_QUEUED } from "@/lib/queue-shuffle"
 import { ProgressLine, ReadingProgressProvider } from "@/components/reading-progress"
 import { whatsNextVariant } from "@/lib/reading-progress"
-import { readingDatesLabel } from "@/lib/reading-dates"
+import { readingDatesLabel, cardFinishedAt } from "@/lib/reading-dates"
 import { showFirstBookPrompt } from "@/lib/library-empty"
 import { sameBook } from "@/lib/book-identity"
 import React, { useState, useEffect, useCallback } from "react"
@@ -86,7 +86,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
         <div className="bl-list-details flex-1 min-w-0">
           <p className="bl-list-title font-semibold text-sm truncate" style={sans}>{book.title}</p>
           <p className="bl-list-author text-xs text-muted-foreground truncate" style={sans}>{book.author}</p>
-          {readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision) && <p className="bl-list-date text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, book.finishedAt, book.startedPrecision, book.finishedPrecision)}</p>}
+          {readingDatesLabel(book.startedAt, cardFinishedAt(book), book.startedPrecision, book.finishedPrecision) && <p className="bl-list-date text-xs text-gray-400 truncate" style={sans}>{readingDatesLabel(book.startedAt, cardFinishedAt(book), book.startedPrecision, book.finishedPrecision)}</p>}
           {book.genre && (
             <span className="bl-list-genre" style={{
               display: "inline-block",

@@ -35,6 +35,12 @@ export function readingDatesLabel(startedAt?: string | null, finishedAt?: string
   return parts.join(" · ")
 }
 
+// Card label only: on the Reading shelf a stored finish date belongs to an earlier read, so it is not shown.
+// The date itself is kept and shows again on Completed or Recommendations.
+export function cardFinishedAt(book: { status?: string; finishedAt?: string | null }): string | undefined {
+  return book.status === "reading" ? undefined : book.finishedAt ?? undefined
+}
+
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 export function daysInMonth(year: number, month: number): number { return new Date(Date.UTC(year, month, 0)).getUTCDate() }
 
