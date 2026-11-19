@@ -11,6 +11,7 @@ import { useBooks, type BookStatus } from "@/lib/book-context"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { track } from "@/lib/usage"
+import { ProgressLine } from "@/components/reading-progress"
 
 interface BookCardProps {
   book: Book
@@ -155,6 +156,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
                   {book.genre}
                 </span>
               )}
+          <ProgressLine book={book} />
           {(book.status === "queued" || book.status === "recommended") && (
             <a
               href={amazonUrl}
