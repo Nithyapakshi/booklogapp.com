@@ -100,3 +100,8 @@ test('Reading cards hide an earlier finish date; the date itself is kept and sho
   for (const status of ['completed','recommended','queued','onHold']) assert.equal(cardFinishedAt({...b,status}),'2026-11-10')
   for (const f of ['components/book-card.tsx','app/books/page.tsx']) assert.doesNotMatch(fs.readFileSync(f,'utf8'),/readingDatesLabel\(book\.startedAt, book\.finishedAt/)
 })
+test('approved wording: "Update progress" on cards with no check-in, "How much have you read?" as the check-in title',()=>{
+  assert.match(comp,/>Update progress<\/button>/)
+  assert.match(comp,/>How much have you read\?<\/DialogTitle>/)
+  assert.doesNotMatch(comp,/Where are you up to/)
+})
