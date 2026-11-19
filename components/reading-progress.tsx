@@ -2,7 +2,8 @@
 // Reading progress check-in (Reading shelf only).
 // - ReadingProgressProvider loads the reader's newest check-in per book and owns the two dialogs,
 //   so cards only ask to open them (clicks inside a dialog never reach the card underneath).
-// - ProgressLine is the card footer: bar + "37% · 239 left" + Update, or "Finished?" from 90%.
+// - ProgressLine is the card footer: bar + "37% · 239 left" + Update, or "Finished?" from 90%;
+//   with no check-in yet, a single "Update progress" link.
 // If the progress table is missing or cannot be read, the whole feature stays hidden: nothing else changes.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -103,7 +104,7 @@ export function ProgressLine({ book, compact }: { book: Book; compact?: boolean 
   const stop = (e: React.MouseEvent) => e.stopPropagation()
   if (!entry) {
     return <div onClick={stop} className={compact ? "mt-1" : "mt-2"}>
-      <button type="button" className="text-[11px] min-h-6" style={link} onClick={() => ctx.openCheckIn(book, "card")}>Where are you up to?</button>
+      <button type="button" className="text-[11px] min-h-6" style={link} onClick={() => ctx.openCheckIn(book, "card")}>Update progress</button>
     </div>
   }
   const pct = percentOf(entry)
@@ -184,7 +185,7 @@ function CheckInDialog({ book, last, onSave, onClose }: {
   return <Dialog open onOpenChange={o => { if (!o && !saving) onClose() }}>
     <DialogContent className={sheet} onPointerDownOutside={e => { if (saving) e.preventDefault() }}>
       <DialogHeader className="text-left">
-        <DialogTitle style={{ fontFamily: "Georgia, serif", fontWeight: 400 }}>Where are you up to?</DialogTitle>
+        <DialogTitle style={{ fontFamily: "Georgia, serif", fontWeight: 400 }}>How much have you read?</DialogTitle>
         <DialogDescription className="truncate">{book.title}</DialogDescription>
       </DialogHeader>
       <form onSubmit={e => { e.preventDefault(); void submit() }} className="grid gap-3">
