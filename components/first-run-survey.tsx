@@ -8,26 +8,32 @@
 import React, { useState } from "react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { SURVEY_GENRES, SURVEY_MOODS, MAX_SURVEY_GENRES, type SurveyAnswers } from "@/lib/survey"
+import { CONSENT_LEAD, CONSENT_REST, CONSENT_VERSION } from "@/lib/marketing-consent"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 
-export function FirstRunSurvey({ userId, initial, onFinished }: {
+export function FirstRunSurvey({ userId, initial, onFinished, emailChoice = false }: {
   userId: string
   initial?: SurveyAnswers | null
   onFinished: (outcome: "completed" | "skipped" | "closed_x") => void
+  // New Google sign-ups only (they never saw the signup checkbox). Off by default: everyone else
+  // gets exactly the survey as before. See lib/marketing-consent.ts.
+  emailChoice?: boolean
 }) {
   const [genres, setGenres] = useState<string[]>(initial?.genres || [])
   const [mood, setMood] = useState<string>(initial?.mood || "")
   const [author, setAuthor] = useState<string>(initial?.favoriteAuthor || "")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [emailOptIn, setEmailOptIn] = useState(false) // unticked: a pre-ticked box is not valid consent
 
   const toggleGenre = (chip: string) => {
     setGenres(prev => prev.includes(chip) ? prev.filter(g => g !== chip) : prev.length >= MAX_SURVEY_GENRES ? prev : [...prev, chip])
   }
 
   const editMode = !!initial
+  const showEmailChoice = emailChoice === true && !editMode
   const record = async (outcome: "completed" | "skipped" | "closed_x") => {
     if (saving) return
     if (outcome === "completed" && genres.length === 0) { setError("Pick at least one genre so we know what you enjoy."); return }
@@ -48,6 +54,15 @@ export function FirstRunSurvey({ userId, initial, onFinished }: {
       // A completed answer that failed to save must not look saved: stay open and say so.
       // Dismissals (skip / X) close either way; worst case the survey asks again next visit.
       if (writeError && outcome === "completed") { setError("This was not saved. Try again."); return }
+      // Email choice: saved only with "Show my books", after the answers, and separately. If it fails the
+      // survey still closes as before; the reader is simply asked again later by the email card.
+      if (outcome === "completed" && showEmailChoice) {
+        try {
+          supabase.rpc("set_marketing_preference", { p_choice: emailOptIn, p_source: "welcome_step", p_version: CONSENT_VERSION }).then(() => {}, () => {})
+        } catch {
+          // Never in the way of the survey.
+        }
+      }
       onFinished(outcome)
     } catch {
       if (outcome === "completed") setError("This was not saved. Try again.")
@@ -109,6 +124,14 @@ export function FirstRunSurvey({ userId, initial, onFinished }: {
             fontSize: 14, marginBottom: 18, outline: "none", ...sans,
           }}
         />
+
+        {showEmailChoice && (
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "var(--bl-f3ede3)", borderRadius: 8, fontSize: 13, lineHeight: 1.45, color: "var(--bl-1a1208)", cursor: "pointer", marginTop: -4, marginBottom: 14 }}>
+            <input type="checkbox" checked={emailOptIn} disabled={saving} onChange={e => setEmailOptIn(e.target.checked)}
+              style={{ width: 18, height: 18, margin: "1px 0 0", flexShrink: 0, accentColor: "var(--bl-c17f3e)" }} />
+            <span><strong style={{ fontWeight: 600 }}>{CONSENT_LEAD}</strong> {CONSENT_REST}</span>
+          </label>
+        )}
 
         {error && <p role="alert" style={{ fontSize: 13, color: "var(--bl-a04040)", marginTop: -8, marginBottom: 12 }}>{error}</p>}
 

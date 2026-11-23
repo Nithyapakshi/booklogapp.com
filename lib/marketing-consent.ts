@@ -12,7 +12,7 @@ export const CONSENT_REST = "Unsubscribe anytime."
 export const CONSENT_TEXT = `${CONSENT_LEAD} ${CONSENT_REST}`
 
 export type ConsentSource = "signup" | "login_prompt" | "welcome_step" | "settings"
-export type PromptVariant = "login_prompt" | "welcome_step"
+export type PromptVariant = "login_prompt"
 
 // What get_marketing_preference() returns.
 export interface MarketingPreference { subscribed: boolean; ask: boolean }
@@ -30,8 +30,9 @@ export function signupConsentMetadata(checked: boolean): { marketing_opt_in: "tr
   return { marketing_opt_in: checked === true ? "true" : "false", consent_version: CONSENT_VERSION }
 }
 
-// Accounts created from this instant onwards with Google get the welcome step instead of the
-// login prompt (they never saw the signup form). Bump to the real go-live instant before merging.
+// Google accounts created from this instant onwards never saw the signup checkbox, so the welcome
+// survey shows the same checkbox to them (source "welcome_step"). Bump to the real go-live instant
+// before merging.
 export const WELCOME_STEP_AFTER = "2026-11-23T00:00:00Z"
 
 export function isNewGoogleAccount(user: { created_at?: string | null; app_metadata?: { provider?: string } | null } | null | undefined): boolean {
@@ -40,8 +41,13 @@ export function isNewGoogleAccount(user: { created_at?: string | null; app_metad
   return Number.isFinite(t) && t >= Date.parse(WELCOME_STEP_AFTER)
 }
 
-// Which one-time card to show, if any. Never stacks on another popup: when the welcome survey
-// is open, about to open, or its check has not finished, wait (it shows on a later visit).
+// Show the welcome survey's email checkbox only to new Google sign-ups who have not chosen yet.
+export function surveyShowsEmailChoice(pref: MarketingPreference | null, user: Parameters<typeof isNewGoogleAccount>[0]): boolean {
+  return pref?.ask === true && isNewGoogleAccount(user)
+}
+
+// Whether to show the one-time email card. Never stacks on another popup: when the welcome survey
+// is open, about to open, was shown this visit, or its check has not finished, wait for a later visit.
 export function promptToShow(args: {
   pref: MarketingPreference | null
   user: { created_at?: string | null; app_metadata?: { provider?: string } | null } | null | undefined
@@ -50,5 +56,5 @@ export function promptToShow(args: {
 }): PromptVariant | null {
   const { pref, user, onMyBooks, otherPopupPending } = args
   if (!pref || !pref.ask || !user || !onMyBooks || otherPopupPending) return null
-  return isNewGoogleAccount(user) ? "welcome_step" : "login_prompt"
+  return "login_prompt"
 }

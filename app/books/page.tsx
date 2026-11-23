@@ -38,7 +38,7 @@ import { ShareControls } from "@/components/share-controls"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
 import { EmailPreferencePrompt } from "@/components/email-preference-prompt"
-import { parsePreference, promptToShow, type MarketingPreference, type PromptVariant } from "@/lib/marketing-consent"
+import { parsePreference, promptToShow, surveyShowsEmailChoice, type MarketingPreference, type PromptVariant } from "@/lib/marketing-consent"
 import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 import { track, trackDailyOpen } from "@/lib/usage"
@@ -1018,7 +1018,7 @@ function BooksLibraryContent() {
     <ReadingProgressProvider userId={user?.id} readingBooks={books.reading} onFinish={finishFromProgress}>
     <div className="flex min-h-screen" style={{ background: "var(--bl-faf7f2)" }}>
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
-      {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} />}
+      {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} emailChoice={surveyShowsEmailChoice(marketingPref, user)} />}
       {emailPrompt && !surveyOpen && <EmailPreferencePrompt variant={emailPrompt} onFinished={() => setEmailPrompt(null)} />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
