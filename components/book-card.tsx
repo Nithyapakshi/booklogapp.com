@@ -208,7 +208,8 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           className="fixed bg-card rounded-md shadow-lg border border-border py-1 z-[9999] w-40 book-dropdown-menu"
           style={{
             top: `${buttonRef.current.getBoundingClientRect().bottom + 200 > window.innerHeight ? buttonRef.current.getBoundingClientRect().top - 200 : buttonRef.current.getBoundingClientRect().bottom + 4}px`,
-            left: `${buttonRef.current.getBoundingClientRect().right - 160}px`,
+            // Keep the 160px menu fully on screen: never past the left or right edge (8px margin).
+            left: `${Math.max(8, Math.min(buttonRef.current.getBoundingClientRect().right - 160, window.innerWidth - 168))}px`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
