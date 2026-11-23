@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useBooks, type BookStatus } from "@/lib/book-context"
-import { searchBooks } from "@/lib/google-books-api"
+import { searchBooksRaw } from "@/lib/google-books-api"
 import type { BookSearchResult } from "@/lib/google-books-api"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -29,6 +29,8 @@ const addedLabels: Partial<Record<BookStatus, string>> = {
 const sans = { fontFamily: "'DM Sans', sans-serif" }
 
 const norm = (s: string) => s.trim().toLowerCase()
+// Same edition clean-up the ranked search applies ("Project Hail Mary (Movie Tie-In Edition)").
+const cleanTitle = (s: string) => norm(s.replace(/\s*\([^)]*(?:edition|anniversary)[^)]*\)\s*/gi, " "))
 
 // Accept only an exact title match, confirming the author when the results
 // carry one. Never fall back to a loose first result - adding the wrong book
@@ -40,13 +42,14 @@ function exactStarterMatch(results: BookSearchResult[], title: string, author: s
     const ra = norm(r.author || "")
     return ra.length > 0 && (ra.includes(a) || a.includes(ra))
   }
-  const exact = results.filter((r) => norm(r.title) === t)
-  const withAuthor = exact.find(authorOk)
+  const exact = results.filter((r) => cleanTitle(r.title) === t)
+  // Several editions can match exactly; prefer the one with a summary, then a cover.
+  const withAuthor = exact.filter(authorOk).sort((x, y) => Number(!!y.description) - Number(!!x.description) || Number(!!y.cover) - Number(!!x.cover))[0]
   if (withAuthor) return withAuthor
   if (exact.length === 1) return exact[0]
   // Google sometimes lists the book only under its full title ("Atomic Habits: An Easy & Proven
   // Way..."). Accept the part before the colon, but only when the author also matches.
-  return results.find((r) => norm(r.title).split(":")[0].trim() === t && authorOk(r))
+  return results.find((r) => cleanTitle(r.title).split(":")[0].trim() === t && authorOk(r))
 }
 
 export function StarterBooksLine() {
@@ -87,7 +90,9 @@ export function StarterBooksLine() {
     setResolving(true)
     setLineError(null)
     try {
-      const results = await searchBooks(`${title} ${author}`)
+      // Unranked results: the ranked search keeps only its top 5 and can drop the exact edition
+      // for a "title author" query. exactStarterMatch does its own strict matching.
+      const results = await searchBooksRaw(`${title} ${author}`)
       const match = exactStarterMatch(results, title, author)
       if (match) {
         setDialogError(null)
