@@ -7,7 +7,8 @@
 // The Settings switch is the way back for anyone who closed it or said no.
 // Bottom sheet on phones, centred card on wider screens. Never blocks the library.
 
-import React, { useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
+import { track } from "@/lib/usage"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { CONSENT_LEAD, CONSENT_REST, CONSENT_VERSION, type PromptVariant } from "@/lib/marketing-consent"
 
@@ -20,6 +21,20 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
 }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const savingRef = useRef(false)
+  savingRef.current = saving
+  const dismissRef = useRef<() => void>(() => {})
+
+  // Counted once when shown, so the yes / no / closed rates can be read against it.
+  // Esc closes it like the X. Focus starts on the main button.
+  const yesRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    track("email.prompt_shown", { source: variant })
+    yesRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current() }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [variant])
 
   const choose = async (choice: boolean) => {
     if (saving) return
@@ -41,7 +56,7 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
   }
 
   const dismiss = () => {
-    if (saving) return
+    if (savingRef.current) return
     try {
       createClientSupabaseClient().rpc("dismiss_marketing_prompt", { p_source: variant }).then(() => {}, () => {})
     } catch {
@@ -49,6 +64,7 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
     }
     onFinished()
   }
+  dismissRef.current = dismiss
 
   const titleId = "email-pref-title"
 
@@ -71,7 +87,7 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
 
         {error && <p role="alert" style={{ fontSize: 13, color: "var(--bl-a04040)", margin: "0 0 10px" }}>{error}</p>}
 
-        <button type="button" disabled={saving} onClick={() => choose(true)}
+        <button ref={yesRef} type="button" disabled={saving} onClick={() => choose(true)}
           style={{ width: "100%", minHeight: 48, borderRadius: 8, border: "none", background: saving ? "var(--bl-d4a574)" : "var(--bl-c17f3e)", color: "var(--bl-primary-ink)", fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", ...sans }}>
           {saving ? "Saving..." : "Yes, email me"}
         </button>

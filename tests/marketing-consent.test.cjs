@@ -119,3 +119,10 @@ test('welcome survey: checkbox off by default, unticked, saved only with Show my
  // The edit-answers survey on Discover never gets the checkbox.
  assert.match(page,/<FirstRunSurvey userId=\{discoverUser\.id\} initial=\{surveyAnswers\} onFinished=\{\(\) => \{ setSurveyEditOpen\(false\); setSurveyReload\(n => n \+ 1\) \}\} \/>/)
 })
+
+test('email card: counted when shown, Esc closes it like the X',()=>{
+ const prompt=read('components/email-preference-prompt.tsx')
+ assert.match(prompt,/track\("email\.prompt_shown", \{ source: variant \}\)/)
+ assert.match(prompt,/if \(e\.key === "Escape"\) dismissRef\.current\(\)/)
+ assert.match(prompt,/window\.removeEventListener\("keydown", onKey\)/)
+})
