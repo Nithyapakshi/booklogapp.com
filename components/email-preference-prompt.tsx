@@ -37,7 +37,9 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
   }, [variant])
 
   const choose = async (choice: boolean) => {
-    if (saving) return
+    // The ref blocks a fast double tap before React re-renders; a failed yes clears it so Try again works.
+    if (savingRef.current || closedRef.current) return
+    savingRef.current = true
     setSaving(true)
     setError(null)
     try {
