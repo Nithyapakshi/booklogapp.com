@@ -1,6 +1,6 @@
 "use client"
 
-import { BookDescription } from "@/components/book-description"
+import { BookDescription, useClampedText } from "@/components/book-description"
 import { BookShareControls } from "@/components/book-share-controls"
 import { nearDuplicate } from "@/lib/book-identity"
 import Link from "next/link"
@@ -56,6 +56,7 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
   useEffect(() => { if (open && mode === "view" && ownedBook) fillMissingDetails(ownedBook.id) }, [open, mode, ownedBook?.id, fillMissingDetails])
   useEffect(() => { if (open && book?.id) track(mode === "add" ? "book.add_opened" : "book.opened", mode === "add" ? { source } : { shelf: ownedBook?.status ?? null }, book.id) }, [open, book?.id, mode])
   const description = book?.description || ownedBook?.description
+  const viewClamp = useClampedText(description ?? "", showFullDescription)
   const cover = book?.cover || ownedBook?.cover
   const [editing, setEditing] = useState(initialEdit)
   const [duplicate, setDuplicate] = useState<Book | null>(null)
@@ -187,9 +188,11 @@ export function BookDetailsDialog({ book, open, onClose, mode = "view", initialE
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-foreground">Description</label>
                     <div className="text-sm text-muted-foreground leading-relaxed">
-                      <p className={showFullDescription ? "" : "line-clamp-3"}>{description}</p>
-                      {description.length > 200 && (
+                      <p ref={viewClamp.ref} className={showFullDescription ? "" : "line-clamp-3"}>{description}</p>
+                      {viewClamp.showToggle && (
                         <button
+                          type="button"
+                          aria-expanded={showFullDescription}
                           onClick={() => setShowFullDescription(!showFullDescription)}
                           className="text-primary text-xs mt-1 hover:underline"
                         >
