@@ -18,6 +18,15 @@ interface BookCardProps {
   removeBook: (id: string, status: BookStatus, rowId?: string) => void
 }
 
+// Card menu height, generous: 6 items with "Move to Recommendations" wrapping, plus padding.
+const CARD_MENU_HEIGHT = 250
+// Flip the card menu above its button only when it does not fit below but does fit above.
+export function menuOpensUp(rect: { top: number; bottom: number }, viewportHeight: number): boolean {
+  const fitsBelow = rect.bottom + 4 + CARD_MENU_HEIGHT + 8 <= viewportHeight
+  const fitsAbove = rect.top - 4 - CARD_MENU_HEIGHT - 8 >= 0
+  return !fitsBelow && fitsAbove
+}
+
 export default function BookCard({ book, removeBook }: BookCardProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -207,8 +216,14 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
           ref={dropdownRef}
           className="fixed bg-card rounded-md shadow-lg border border-border py-1 z-[9999] w-40 book-dropdown-menu"
           style={{
-            top: `${buttonRef.current.getBoundingClientRect().bottom + 200 > window.innerHeight ? buttonRef.current.getBoundingClientRect().top - 200 : buttonRef.current.getBoundingClientRect().bottom + 4}px`,
-            left: `${buttonRef.current.getBoundingClientRect().right - 160}px`,
+            // Opens below the button; flips above only when the full menu (up to ~250px, one item can wrap)
+            // does not fit below but does fit above. Above, its bottom edge sits 4px over the button, so
+            // it is right next to the button whatever its exact height.
+            ...(menuOpensUp(buttonRef.current.getBoundingClientRect(), window.innerHeight)
+              ? { bottom: `${window.innerHeight - buttonRef.current.getBoundingClientRect().top + 4}px` }
+              : { top: `${buttonRef.current.getBoundingClientRect().bottom + 4}px` }),
+            // Keep the 160px menu fully on screen: never past the left or right edge (8px margin).
+            left: `${Math.max(8, Math.min(buttonRef.current.getBoundingClientRect().right - 160, window.innerWidth - 168))}px`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
