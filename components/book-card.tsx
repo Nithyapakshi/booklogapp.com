@@ -20,10 +20,11 @@ interface BookCardProps {
 
 // Card menu height, generous: 6 items with "Move to Recommendations" wrapping, plus padding.
 const CARD_MENU_HEIGHT = 250
-// Flip the card menu above its button only when it does not fit below but does fit above.
-export function menuOpensUp(rect: { top: number; bottom: number }, viewportHeight: number): boolean {
-  const fitsBelow = rect.bottom + 4 + CARD_MENU_HEIGHT + 8 <= viewportHeight
-  const fitsAbove = rect.top - 4 - CARD_MENU_HEIGHT - 8 >= 0
+// Flip a menu above its button only when it does not fit below but does fit above.
+// Also used by the list-view menu (app/books/page.tsx) with its own, taller height.
+export function menuOpensUp(rect: { top: number; bottom: number }, viewportHeight: number, menuHeight: number = CARD_MENU_HEIGHT): boolean {
+  const fitsBelow = rect.bottom + 4 + menuHeight + 8 <= viewportHeight
+  const fitsAbove = rect.top - 4 - menuHeight - 8 >= 0
   return !fitsBelow && fitsAbove
 }
 
