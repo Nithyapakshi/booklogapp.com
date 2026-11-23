@@ -2,13 +2,13 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 19 November 2026 (reading progress check-in live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 23 November 2026 (email preferences live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 19 November 2026
+booklogapp.com  ·  Last updated: 23 November 2026
 
 ## Part 1 — Live Features
 
@@ -23,6 +23,7 @@ booklogapp.com  ·  Last updated: 19 November 2026
 | Reset password | Set a new password via the reset link | ✅  DONE |  |
 | Sign in with Google | Google sign-in alongside email/password | ✅  DONE | Existing library preserved. |
 | Signup confirmation | Branded email; confirmation returns signed in to library | ✅  DONE | Email verification remains enabled. |
+| Email preferences | Readers choose whether to get emails about book recommendations and new features | ✅  DONE | Live 23 Nov (#91). Unticked checkbox at email signup; inside the welcome survey for new Google sign-ups; a one-time card for everyone else; Settings switch. Every choice logged with the exact wording, source and time. On the list only with an explicit yes and no unsubscribe since. No email is sent by this release. |
 
 ### 2. Book Search & Adding Books
 
@@ -229,3 +230,5 @@ booklogapp.com  ·  Last updated: 19 November 2026
 | 19 Nov | What's next? appears only after finishing through Finished?; card-menu moves to Completed unchanged. | Reuse existing parts, no change to current flows. Widening it is a separate decision. |
 | 19 Nov | Reading cards hide an earlier finish date (display only). | A progress bar next to "Finished" contradicted itself. Clearing stored dates would delete reader data. Agreed by Instinct and Claude at the owner's request. Live data identical before and after the release (books fingerprint matched). |
 | 19 Nov | Wording: "Update progress" on a card with no check-in yet; check-in title "How much have you read?". Copy only (#90). | Owner-approved wording, plainer than "Where are you up to?". Short "Update" stays beside an existing progress bar. Verified on preview by Instinct. |
+| 23 Nov | Collect explicit email consent in the app: unticked checkbox at signup, one-time card for existing readers, Settings switch. | Signup never asked, so no reader email could be sent. A pre-ticked box or pre-selected Yes is not valid consent (UK GDPR / ICO; UAE PDPL). "Yes, email me" is the main button on the card (owner's call). Closing the card is not consent and it is not shown again; Settings is the way back. |
+| 23 Nov | New Google sign-ups get the email checkbox inside the existing welcome survey, not a separate step. | One popup instead of two. Off by default, so the survey is unchanged for everyone else; answers save first exactly as before. |

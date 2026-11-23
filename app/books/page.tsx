@@ -37,6 +37,8 @@ import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
 import { ShareControls } from "@/components/share-controls"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
+import { EmailPreferencePrompt } from "@/components/email-preference-prompt"
+import { parsePreference, promptToShow, surveyShowsEmailChoice, type MarketingPreference, type PromptVariant } from "@/lib/marketing-consent"
 import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 import { track, trackDailyOpen } from "@/lib/usage"
@@ -732,12 +734,35 @@ function BooksLibraryContent() {
   useEffect(() => {
     if (!user) return
     createClientSupabaseClient().from("survey_events").select("event_type,genres,mood,favorite_author,created_at").order("created_at", { ascending: false }).limit(10)
-      .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]) })
+      .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]); setSurveyChecked(true) }, () => setSurveyChecked(true))
   }, [user])
   useEffect(() => {
     if (surveyAskedRef.current || surveyEvents === null) return
     if (sidebarTab === "my-books" && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)) { surveyAskedRef.current = true; setSurveyOpen(true) }
   }, [surveyEvents, sidebarTab])
+
+  // One-time email preference card (lib/marketing-consent.ts). Over My Books only, once per page load,
+  // and never in the same visit as the welcome survey or a shared-book dialog: it waits for a later visit.
+  // If the read fails (for example the migration is not applied yet), nothing shows.
+  const [surveyChecked, setSurveyChecked] = useState(false)
+  const [marketingPref, setMarketingPref] = useState<MarketingPreference | null>(null)
+  const [emailPrompt, setEmailPrompt] = useState<PromptVariant | null>(null)
+  const emailPromptAskedRef = React.useRef(false)
+  useEffect(() => {
+    if (!user) return
+    createClientSupabaseClient().rpc("get_marketing_preference")
+      .then(({ data, error: prefError }) => { if (!prefError) setMarketingPref(parsePreference(data)) }, () => {})
+  }, [user])
+  useEffect(() => {
+    if (emailPromptAskedRef.current) return
+    const surveyWillShow = surveyEvents !== null && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)
+    const variant = promptToShow({
+      pref: marketingPref, user, onMyBooks: sidebarTab === "my-books",
+      otherPopupPending: !surveyChecked || surveyOpen || surveyWillShow || surveyAskedRef.current || !!linkedBook,
+    })
+    // Counted here, where it can only run once per page load, so yes / no / closed rates read true.
+    if (variant) { emailPromptAskedRef.current = true; setEmailPrompt(variant); track("email.prompt_shown", { source: variant }) }
+  }, [marketingPref, surveyChecked, surveyEvents, surveyOpen, sidebarTab, user, linkedBook])
 
   useEffect(() => {
     async function fetchShareProfile() {
@@ -994,7 +1019,8 @@ function BooksLibraryContent() {
     <ReadingProgressProvider userId={user?.id} readingBooks={books.reading} onFinish={finishFromProgress}>
     <div className="flex min-h-screen" style={{ background: "var(--bl-faf7f2)" }}>
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
-      {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} />}
+      {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} emailChoice={surveyShowsEmailChoice(marketingPref, user)} />}
+      {emailPrompt && !surveyOpen && <EmailPreferencePrompt variant={emailPrompt} onFinished={() => setEmailPrompt(null)} />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "var(--bl-f7f4ef)" }}>

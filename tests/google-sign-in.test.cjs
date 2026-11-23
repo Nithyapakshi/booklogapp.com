@@ -28,7 +28,7 @@ test("signup page offers Continue with Google above the form, email signup untou
   const btn = s.indexOf("<GoogleSignInButton")
   const form = s.indexOf("<form onSubmit={handleSubmit}>")
   assert.ok(btn !== -1 && form !== -1 && btn < form, "button sits above the form")
-  assert.ok(s.includes("signUp(email, password, { first_name: firstName, last_name: lastName })"), "email signup unchanged")
+  assert.ok(s.includes("signUp(email, password, { first_name: firstName, last_name: lastName, ...signupConsentMetadata(marketingOptIn) })"), "email signup unchanged")
 })
 
 test("auth callback already exchanges the OAuth code - no callback change needed", () => {

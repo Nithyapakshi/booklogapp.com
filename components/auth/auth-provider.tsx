@@ -20,7 +20,7 @@ type AuthContextType = {
   signUp: (
     email: string,
     password: string,
-    metadata?: { first_name?: string; last_name?: string },
+    metadata?: { first_name?: string; last_name?: string; marketing_opt_in?: "true" | "false"; consent_version?: string },
   ) => Promise<{
     error: Error | null
     data: { user: User | null; session: Session | null }
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string }) => {
+  const signUp = async (email: string, password: string, metadata?: { first_name?: string; last_name?: string; marketing_opt_in?: "true" | "false"; consent_version?: string }) => {
     if (!supabase) {
       return {
         data: { user: null, session: null },

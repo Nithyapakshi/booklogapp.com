@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
+import { CONSENT_LEAD, CONSENT_REST, signupConsentMetadata } from "@/lib/marketing-consent"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -46,6 +47,8 @@ export default function SignupPage() {
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  // Unticked by default: a pre-ticked box is not valid consent.
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -63,7 +66,7 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await signUp(email, password, { first_name: firstName, last_name: lastName })
+      const { data, error } = await signUp(email, password, { first_name: firstName, last_name: lastName, ...signupConsentMetadata(marketingOptIn) })
 
       if (error) {
         setError(error.message)
@@ -146,6 +149,11 @@ export default function SignupPage() {
             <label htmlFor="password" style={labelStyle}>Password</label>
             <input id="password" name="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
           </div>
+
+          <label htmlFor="marketing-opt-in" style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", background: "var(--bl-f3ede3)", borderRadius: "7px", fontSize: "13px", lineHeight: 1.45, color: "var(--bl-1a1208)", cursor: "pointer", marginBottom: "1rem" }}>
+            <input id="marketing-opt-in" name="marketing-opt-in" type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} style={{ width: "18px", height: "18px", margin: "1px 0 0", flexShrink: 0, accentColor: "var(--bl-c17f3e)" }} />
+            <span><strong style={{ fontWeight: 600 }}>{CONSENT_LEAD}</strong> {CONSENT_REST}</span>
+          </label>
 
           <button
             type="submit"

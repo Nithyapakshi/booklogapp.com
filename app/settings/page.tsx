@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { BookOpen, Heart, Sparkles, Settings, MessageSquare, BarChart3 } from "lucide-react"
 import { ThemePreference } from "@/components/theme-preference"
+import { EmailPreferenceSetting } from "@/components/email-preference-setting"
 import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
 import { GoodreadsImport } from "@/components/goodreads-import"
 import { track } from "@/lib/usage"
@@ -272,6 +273,8 @@ export default function SettingsPage() {
         >
           {saving ? "Saving…" : saved ? "Saved ✓" : "Save changes"}
         </button>
+
+        <div style={{ marginTop: "28px" }}><EmailPreferenceSetting /></div>
 
         {/* Your data section */}
         <div style={{ marginTop: "28px", marginBottom: "8px" }}>

@@ -35,6 +35,7 @@ const sections = [
   [
     "Your choices and requests",
     "You can edit your profile and books, remove books and notes, change profile-sharing settings, and download your library as a CSV from Settings. Single-book links have the separate, persistent behaviour described above.",
+    "BookLog emails you about book recommendations and new features only if you choose to receive them: by ticking the box when you sign up, saying yes when asked, or turning on the switch in Settings. We keep a record of each choice: what you chose, the exact words shown, where and when. You can turn these emails off in Settings or with the unsubscribe link in any of them. Account emails, such as sign-in links and password resets, are always sent.",
     "For access, correction or deletion requests, contact pakshiraj.ananthan@gmail.com using the email address linked to your account where possible. We may need to verify that the request is yours. There is no self-service account-deletion button in BookLog. Deleting a book is not the same as deleting your account or a shared snapshot.",
     "Contact pakshiraj.ananthan@gmail.com to ask about retention of account data, feedback, backups and technical records, or to request deletion. Removing something from your library does not establish when it is removed from backups or technical records."
   ],
@@ -49,7 +50,7 @@ export default function PrivacyPage() {
     <header style={{ borderBottom: "0.5px solid var(--bl-e0d5c4)", padding: "18px 24px" }}><nav aria-label="BookLog"><Link href="/home" style={{ fontFamily: "Georgia, serif", fontSize: 20, color: "var(--bl-c17f3e)" }}>BookLog</Link></nav></header>
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "44px 24px 64px" }}>
       <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 34, lineHeight: 1.2 }}>Privacy notice</h1>
-      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 4 November 2026</p>
+      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 23 November 2026</p>
       {sections.map(([heading, ...paragraphs]) => <section key={heading} style={{ marginTop: 32 }} aria-label={heading}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 23, fontWeight: 400, lineHeight: 1.35, marginBottom: 14 }}>{heading}</h2>
         {paragraphs.map((text, index) => <p key={index} style={{ fontSize: 15, lineHeight: 1.85, marginBottom: 16, overflowWrap: "anywhere", color: "var(--bl-6b5c42)" }}>{text}</p>)}
