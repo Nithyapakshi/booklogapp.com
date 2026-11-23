@@ -760,7 +760,8 @@ function BooksLibraryContent() {
       pref: marketingPref, user, onMyBooks: sidebarTab === "my-books",
       otherPopupPending: !surveyChecked || surveyOpen || surveyWillShow || surveyAskedRef.current || !!linkedBook,
     })
-    if (variant) { emailPromptAskedRef.current = true; setEmailPrompt(variant) }
+    // Counted here, where it can only run once per page load, so yes / no / closed rates read true.
+    if (variant) { emailPromptAskedRef.current = true; setEmailPrompt(variant); track("email.prompt_shown", { source: variant }) }
   }, [marketingPref, surveyChecked, surveyEvents, surveyOpen, sidebarTab, user, linkedBook])
 
   useEffect(() => {

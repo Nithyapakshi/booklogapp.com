@@ -8,7 +8,6 @@
 // Bottom sheet on phones, centred card on wider screens. Never blocks the library.
 
 import React, { useEffect, useRef, useState } from "react"
-import { track } from "@/lib/usage"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { CONSENT_LEAD, CONSENT_REST, CONSENT_VERSION, type PromptVariant } from "@/lib/marketing-consent"
 
@@ -25,11 +24,10 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
   savingRef.current = saving
   const dismissRef = useRef<() => void>(() => {})
 
-  // Counted once when shown, so the yes / no / closed rates can be read against it.
   // Esc closes it like the X. Focus starts on the main button.
+  // (email.prompt_shown is recorded by app/books/page.tsx, once per showing.)
   const yesRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
-    track("email.prompt_shown", { source: variant })
     yesRef.current?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissRef.current() }
     window.addEventListener("keydown", onKey)
