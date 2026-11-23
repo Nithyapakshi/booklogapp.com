@@ -15,7 +15,7 @@ import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useBooks, mapTabToStatus } from "@/lib/book-context"
-import BookCard from "@/components/book-card"
+import BookCard, { menuOpensUp } from "@/components/book-card"
 import BookSearch from "@/components/book-search"
 import { StarterBooksLine } from "@/components/starter-books"
 import type { Book } from "@/types"
@@ -50,6 +50,11 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
   const [editOpen, setEditOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  // List menu: opens upward only when the whole menu (up to 8 items, one can wrap) does not fit below
+  // but does fit above. Decided when it opens. Otherwise it opens downward exactly as before.
+  const LIST_MENU_HEIGHT = 330
+  const listMenuButtonRef = React.useRef<HTMLButtonElement>(null)
+  const [menuUp, setMenuUp] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
@@ -146,13 +151,14 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
 
         <div className="bl-list-menu relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
+            ref={listMenuButtonRef}
             className="p-1 rounded hover:bg-accent text-muted-foreground"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
+            onClick={() => { if (!dropdownOpen && listMenuButtonRef.current) setMenuUp(menuOpensUp(listMenuButtonRef.current.getBoundingClientRect(), window.innerHeight, LIST_MENU_HEIGHT)); setDropdownOpen(!dropdownOpen) }}
           >
             •••
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-1 w-44 bg-card rounded-md shadow-lg border border-border py-1 z-50" style={sans}>
+            <div className={`absolute right-0 ${menuUp ? "bottom-full mb-1" : "mt-1"} w-44 bg-card rounded-md shadow-lg border border-border py-1 z-50`} style={sans}>
               <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={()=>{setDropdownOpen(false); setEditOpen(true); setDialogOpen(true)}}>Edit details</div>
               {book.status !== "reading"     && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("reading")}>Move to Reading</div>}
               {book.status !== "queued"      && <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer" onClick={() => moveBook("queued")}>Move to Queued</div>}

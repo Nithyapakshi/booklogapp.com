@@ -34,3 +34,17 @@ test('card menu opens below when it fits, above only when it fits there, and sit
  assert.match(c,/\{ top: `\$\{buttonRef\.current\.getBoundingClientRect\(\)\.bottom \+ 4\}px` \}/)
  assert.doesNotMatch(c,/top - 200/)
 })
+
+test('list-view menu: opens downward as before, upward only when the whole (taller) menu fits above',()=>{
+ const p=fs.readFileSync('app/books/page.tsx','utf8')
+ assert.match(p,/import BookCard, \{ menuOpensUp \} from "@\/components\/book-card"/)
+ assert.match(p,/const LIST_MENU_HEIGHT = 330/)
+ assert.match(p,/if \(!dropdownOpen && listMenuButtonRef\.current\) setMenuUp\(menuOpensUp\(listMenuButtonRef\.current\.getBoundingClientRect\(\), window\.innerHeight, LIST_MENU_HEIGHT\)\); setDropdownOpen\(!dropdownOpen\)/)
+ assert.match(p,/className=\{`absolute right-0 \$\{menuUp \? "bottom-full mb-1" : "mt-1"\} w-44 bg-card rounded-md shadow-lg border border-border py-1 z-50`\}/)
+ // Instinct's case: 500px window, button near the bottom (menu measured 390-672): now opens upward.
+ assert.equal(menuOpensUp({top:362,bottom:386},500,330),true)
+ assert.equal(menuOpensUp({top:300,bottom:324},900,330),false) // room below on a tall screen: downward, as today
+ assert.equal(menuOpensUp({top:120,bottom:144},300,330),false) // fits neither: downward, as today
+ // Grid callers are unchanged: the default height is still the card menu's.
+ assert.equal(menuOpensUp({top:640,bottom:668},900),true)
+})
