@@ -35,6 +35,7 @@ const sections = [
   [
     "Your choices and requests",
     "You can edit your profile and books, remove books and notes, change profile-sharing settings, and download your library as a CSV from Settings. Single-book links have the separate, persistent behaviour described above.",
+    "BookLog emails you about book recommendations and new features only if you choose to receive them: by ticking the box when you sign up, saying yes when asked, or turning on the switch in Settings. We keep a record of each choice: what you chose, the exact words shown, where and when. You can turn these emails off in Settings or with the unsubscribe link in any of them. Account emails, such as sign-in links and password resets, are always sent.",
     "For access, correction or deletion requests, contact pakshiraj.ananthan@gmail.com using the email address linked to your account where possible. We may need to verify that the request is yours. There is no self-service account-deletion button in BookLog. Deleting a book is not the same as deleting your account or a shared snapshot.",
     "Contact pakshiraj.ananthan@gmail.com to ask about retention of account data, feedback, backups and technical records, or to request deletion. Removing something from your library does not establish when it is removed from backups or technical records."
   ],

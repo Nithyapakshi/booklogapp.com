@@ -1,7 +1,8 @@
 -- One-time reader update: recipient list. Read-only. Run in the PRODUCTION SQL editor only after
 -- the email_preferences migration is live there and Pakshiraj has approved the send.
 -- Export the result as CSV and pass it to send.mjs with --recipients.
--- Excludes unconfirmed accounts and anyone who has unsubscribed. One row per account.
+-- Only readers who said yes to marketing emails (marketing_opt_in = true) and have not unsubscribed
+-- since. A null unsubscribed_at alone is not consent. Excludes unconfirmed accounts. One row per account.
 with reading as (
   select distinct on (user_id) user_id, title, author
   from public.books
@@ -27,5 +28,6 @@ left join lateral (select name from public.profiles where user_id = u.id limit 1
 left join reading r on r.user_id = u.id
 left join counts c on c.user_id = u.id
 where u.email_confirmed_at is not null
+  and ep.marketing_opt_in is true
   and ep.unsubscribed_at is null
 order by version, u.created_at;
