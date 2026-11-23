@@ -7,6 +7,7 @@ import type { BookSearchResult } from "@/lib/google-books-api"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { track } from "@/lib/usage"
+import { BookDescription } from "@/components/book-description"
 
 const STARTERS = [
   { title: "Project Hail Mary", author: "Andy Weir" },
@@ -199,9 +200,9 @@ export function StarterBooksLine() {
       </p>
       {lineError && <p role="alert" className="text-sm text-red-600 dark:text-red-300" style={{ margin: "-8px 0 12px 2px" }}>{lineError}</p>}
       <Dialog open={!!book} onOpenChange={(open) => { if (!open) setBook(null) }}>
-        <DialogContent className="sm:max-w-[560px]">
+        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
           <DialogTitle className="sr-only">{book?.title ?? "Starter book"}</DialogTitle>
-          <DialogDescription className="sr-only">Cover, title and author of the starter book, with buttons to add it to a tab on your shelf.</DialogDescription>
+          <DialogDescription className="sr-only">Cover, title, author and summary of the starter book, with buttons to add it to a tab on your shelf.</DialogDescription>
           <div className="flex flex-col sm:flex-row gap-5">
             <div className="flex-none w-[120px] max-sm:mx-auto">
               {book?.cover ? (
@@ -214,6 +215,7 @@ export function StarterBooksLine() {
             <div className="flex-1 min-w-0">
               <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "18px", color: "var(--bl-1a1208)" }}>{book?.title}</h3>
               <p style={{ ...sans, fontSize: "13px", color: "var(--bl-8a7560)", marginTop: "4px" }}>{book?.author}</p>
+              {book?.description && <div style={{ marginTop: "14px" }}><BookDescription key={book.id} description={book.description} /></div>}
               <p style={{ ...sans, fontSize: "12.5px", color: "var(--bl-6b5c42)", marginTop: "12px", lineHeight: 1.5 }}>Add it to a tab on your shelf:</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
                 <button type="button" disabled={saving} onClick={() => addTo("reading")} style={addBtn(true)} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bl-c17f3e)]">Add to Reading</button>
