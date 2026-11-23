@@ -31,8 +31,7 @@ export function signupConsentMetadata(checked: boolean): { marketing_opt_in: "tr
 }
 
 // Google accounts created from this instant onwards never saw the signup checkbox, so the welcome
-// survey shows the same checkbox to them (source "welcome_step"). Bump to the real go-live instant
-// before merging.
+// survey shows the same checkbox to them (source "welcome_step"). Set to release day, 23 Nov 2026.
 export const WELCOME_STEP_AFTER = "2026-11-23T00:00:00Z"
 
 export function isNewGoogleAccount(user: { created_at?: string | null; app_metadata?: { provider?: string } | null } | null | undefined): boolean {

@@ -50,7 +50,7 @@ export default function PrivacyPage() {
     <header style={{ borderBottom: "0.5px solid var(--bl-e0d5c4)", padding: "18px 24px" }}><nav aria-label="BookLog"><Link href="/home" style={{ fontFamily: "Georgia, serif", fontSize: 20, color: "var(--bl-c17f3e)" }}>BookLog</Link></nav></header>
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "44px 24px 64px" }}>
       <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 34, lineHeight: 1.2 }}>Privacy notice</h1>
-      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 4 November 2026</p>
+      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 23 November 2026</p>
       {sections.map(([heading, ...paragraphs]) => <section key={heading} style={{ marginTop: 32 }} aria-label={heading}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 23, fontWeight: 400, lineHeight: 1.35, marginBottom: 14 }}>{heading}</h2>
         {paragraphs.map((text, index) => <p key={index} style={{ fontSize: 15, lineHeight: 1.85, marginBottom: 16, overflowWrap: "anywhere", color: "var(--bl-6b5c42)" }}>{text}</p>)}
