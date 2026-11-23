@@ -36,12 +36,17 @@ const norm = (s: string) => s.trim().toLowerCase()
 function exactStarterMatch(results: BookSearchResult[], title: string, author: string): BookSearchResult | undefined {
   const t = norm(title)
   const a = norm(author)
-  const exact = results.filter((r) => norm(r.title) === t)
-  const withAuthor = exact.find((r) => {
+  const authorOk = (r: BookSearchResult) => {
     const ra = norm(r.author || "")
     return ra.length > 0 && (ra.includes(a) || a.includes(ra))
-  })
-  return withAuthor ?? (exact.length === 1 ? exact[0] : undefined)
+  }
+  const exact = results.filter((r) => norm(r.title) === t)
+  const withAuthor = exact.find(authorOk)
+  if (withAuthor) return withAuthor
+  if (exact.length === 1) return exact[0]
+  // Google sometimes lists the book only under its full title ("Atomic Habits: An Easy & Proven
+  // Way..."). Accept the part before the colon, but only when the author also matches.
+  return results.find((r) => norm(r.title).split(":")[0].trim() === t && authorOk(r))
 }
 
 export function StarterBooksLine() {
