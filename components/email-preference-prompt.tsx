@@ -23,6 +23,8 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
   const savingRef = useRef(false)
   savingRef.current = saving
   const dismissRef = useRef<() => void>(() => {})
+  // Closes once only: a repeated Esc (key repeat) arriving before the card unmounts must not record twice.
+  const closedRef = useRef(false)
 
   // Esc closes it like the X. Focus starts on the main button.
   // (email.prompt_shown is recorded by app/books/page.tsx, once per showing.)
@@ -54,7 +56,8 @@ export function EmailPreferencePrompt({ variant, onFinished }: {
   }
 
   const dismiss = () => {
-    if (savingRef.current) return
+    if (savingRef.current || closedRef.current) return
+    closedRef.current = true
     try {
       createClientSupabaseClient().rpc("dismiss_marketing_prompt", { p_source: variant }).then(() => {}, () => {})
     } catch {

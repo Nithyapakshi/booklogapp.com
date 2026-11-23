@@ -127,3 +127,8 @@ test('email card: counted once per showing (behind the once-per-load guard), Esc
  assert.match(prompt,/if \(e\.key === "Escape"\) dismissRef\.current\(\)/)
  assert.match(prompt,/window\.removeEventListener\("keydown", onKey\)/)
 })
+
+test('email card closes once only, even if Esc repeats',()=>{
+ const prompt=read('components/email-preference-prompt.tsx')
+ assert.match(prompt,/if \(savingRef\.current \|\| closedRef\.current\) return\n    closedRef\.current = true/)
+})
