@@ -21,10 +21,11 @@ export const TRACKING_FROM = "2026-11-24T00:00:00Z"
 
 export interface StoredSource { s?: string; m?: string; c?: string; r?: string; t: number }
 
-// Tags are ours, so keep them short and plain: lower case letters, digits, _ and -.
+// Keep tags short and plain: lower case letters, digits, dot, _ and -. Dots are kept because
+// others tag links with domains (ChatGPT adds utm_source=chatgpt.com).
 export function cleanTag(v: unknown): string | undefined {
   if (typeof v !== "string") return undefined
-  const t = v.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40)
+  const t = v.trim().toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 40)
   return t || undefined
 }
 

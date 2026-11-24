@@ -8,6 +8,7 @@ test('tags are cleaned to short plain words',()=>{
  assert.equal(cleanTag(' LinkedIn '),'linkedin')
  assert.equal(cleanTag('nov27_post'),'nov27_post')
  assert.equal(cleanTag('<script>x'),'scriptx')
+ assert.equal(cleanTag('chatgpt.com'),'chatgpt.com')
  assert.equal(cleanTag('a'.repeat(80)).length,40)
  for(const v of ['',null,undefined,5,'!!!'])assert.equal(cleanTag(v),undefined)
 })
