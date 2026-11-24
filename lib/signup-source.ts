@@ -17,7 +17,7 @@ export const SOURCE_TTL_MS = 30 * 24 * 3600e3
 export const NEW_ACCOUNT_MS = 7 * 24 * 3600e3
 const RECORDED_PREFIX = "bl-source-recorded-"
 // Accounts created before source capture existed are "before tracking", never "unknown".
-export const TRACKING_FROM = "2026-11-24T00:00:00Z"
+export const TRACKING_FROM = "2026-11-24T15:00:00Z"
 
 export interface StoredSource { s?: string; m?: string; c?: string; r?: string; t: number }
 

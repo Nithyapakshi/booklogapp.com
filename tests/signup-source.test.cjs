@@ -47,7 +47,7 @@ test('only accounts under 7 days old are recorded',()=>{
  assert.equal(isNewAccount(new Date(now-3600e3).toISOString(),now),true)
  assert.equal(isNewAccount(new Date(now-NEW_ACCOUNT_MS-1).toISOString(),now),false)
  assert.equal(isNewAccount('2026-10-01T00:00:00Z',now),false)
- assert.equal(isNewAccount('2026-11-23T20:00:00Z',now),false,'created before tracking began')
+ assert.equal(isNewAccount('2026-11-24T14:30:00Z',now),false,'created before tracking began (merge, 24 Nov 19:00 Dubai)')
  for(const v of [null,undefined,'','bad'])assert.equal(isNewAccount(v,now),false)
 })
 

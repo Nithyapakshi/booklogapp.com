@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 24 November 2026 (AlternativeTo priority review paid; source capture on preview). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 24 November 2026 (AlternativeTo priority review paid; source capture live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -202,7 +202,7 @@ booklogapp.com  ·  Last updated: 23 November 2026
 | Reddit participation | Genuine replies in reading communities, with occasional posts where the rules allow | IN PROGRESS | Setup 25 Nov; from 26 Nov, 30 minutes each weekday except 2 to 4 Dec, 1 Jan and launch days 5 to 7 Jan: r/52book, r/suggestmeabook, r/goodreads, r/books. Read each subreddit's rules first. |
 | Personal network post | LinkedIn post and WhatsApp groups about BookLog | 🔜  PLANNED | 27 Nov, only after the source-capture test passes; with UTM links. |
 | Bookstagram reader outreach | Feedback requests to individual Bookstagrammers, approved by the owner before sending | IN PROGRESS | First 3 DMs 19 Nov, no replies logged yet. Batches of about 10 on Tuesdays from 8 Dec; kept after 11 Jan only if it is one of the 2 best channels. |
-| Growth tracking | UTM links per channel and a Growth tab on the metrics dashboard | IN PROGRESS | Signups by source, 7-day activation, weekly active readers, week-1 return, signup drop-offs. Source capture built 24 Nov (on preview, not live): first tagged visit remembered in the browser for 30 days (referring domain only), sent with email signup, and one account.source event on a new account's first My Books visit (email or Google); no tag means unknown, a referrer alone never sets the source. UTM links point at /home, because the root redirect drops query strings. Preview test 25 Nov before any post. Growth tab 25 Nov. Reviewed every Monday; cohorts under 7 days shown as pending. Saved query: docs/usage-queries.sql #9. |
+| Growth tracking | UTM links per channel and a Growth tab on the metrics dashboard | IN PROGRESS | Signups by source, 7-day activation, weekly active readers, week-1 return, signup drop-offs. Source capture live 24 Nov (#99), counting accounts created from 24 Nov 19:00 Dubai: first tagged visit remembered in the browser for 30 days (referring domain only), sent with email signup, and one account.source event on a new account's first My Books visit (email or Google); no tag means unknown, a referrer alone never sets the source. UTM links point at /home, because the root redirect drops query strings. Preview test passed 24 Nov (email tagged, untagged, sign-in again, root link); Google path not run on preview, check the first real Google signup. Growth tab 25 Nov. Reviewed every Monday; cohorts under 7 days shown as pending. Saved query: docs/usage-queries.sql #9. |
 
 ### 15. Partnerships
 
