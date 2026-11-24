@@ -42,6 +42,7 @@ import { parsePreference, promptToShow, surveyShowsEmailChoice, type MarketingPr
 import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 import { track, trackDailyOpen } from "@/lib/usage"
+import { recordSignupSource } from "@/lib/signup-source"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -658,6 +659,8 @@ function BooksLibraryContent() {
   const router = useRouter()
   const { user } = useAuth()
   const nextRead = useNextRead(user?.id)
+  // New accounts only: record once which link or site brought them (lib/signup-source.ts).
+  useEffect(() => { if (user) recordSignupSource(user) }, [user?.id])
   const [choosingNext, setChoosingNext] = useState(false)
   const [pendingNext, setPendingNext] = useState<string | null>(null)
   const [nextBusy, setNextBusy] = useState(false)

@@ -50,3 +50,16 @@ select count(*) as picked, count(*) filter (where b.status = 'reading' or b.stat
 from usage_events e
 left join books b on b.user_id = e.user_id and b.id = e.book_id
 where e.event = 'queue.shuffle_next_read' and e.created_at > now() - interval '30 days';
+
+-- 9. Signups by source (accounts created since source capture went live). One row per account:
+--    its first account.source event. Accounts with no event are "before tracking" or never opened My Books.
+select coalesce(s.detail->>'source', 'no event') as source, s.detail->>'campaign' as campaign,
+       count(*) as accounts
+from auth.users u
+left join lateral (
+  select detail from usage_events e
+  where e.user_id = u.id and e.event = 'account.source'
+  order by e.created_at limit 1
+) s on true
+where u.created_at > now() - interval '30 days'
+group by 1, 2 order by 3 desc;
