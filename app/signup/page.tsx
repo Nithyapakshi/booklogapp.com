@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { CONSENT_LEAD, CONSENT_REST, signupConsentMetadata } from "@/lib/marketing-consent"
+import { readStoredSource, signupSourceMetadata } from "@/lib/signup-source"
 
 function BookLogLogo({ size = 22 }: { size?: number }) {
   return (
@@ -66,7 +67,7 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await signUp(email, password, { first_name: firstName, last_name: lastName, ...signupConsentMetadata(marketingOptIn) })
+      const { data, error } = await signUp(email, password, { first_name: firstName, last_name: lastName, ...signupConsentMetadata(marketingOptIn), ...signupSourceMetadata(readStoredSource()) })
 
       if (error) {
         setError(error.message)

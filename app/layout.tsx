@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { BookProvider } from "@/lib/book-context"
+import { SourceCapture } from "@/components/source-capture"
 
 export const metadata: Metadata = {
   title: "BookLog - Track Your Reading Journey",
@@ -19,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background">
+        <SourceCapture />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="booklog-theme" disableTransitionOnChange>
         <AuthProvider>
           <BookProvider>{children}</BookProvider>
