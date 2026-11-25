@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),ts=require('typescript')
 const read=p=>fs.readFileSync(p,'utf8')
 const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(read('lib/signup-source.ts'),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(()=>({track:()=>{}}),mod,mod.exports)
-const {cleanTag,referrerHost,sourceFromVisit,parseStored,nextStored,signupSourceMetadata,isNewAccount,sourceEventDetail,SOURCE_TTL_MS,NEW_ACCOUNT_MS}=mod.exports
+const {landingPath,cleanTag,referrerHost,sourceFromVisit,parseStored,nextStored,signupSourceMetadata,isNewAccount,sourceEventDetail,SOURCE_TTL_MS,NEW_ACCOUNT_MS}=mod.exports
 const now=Date.parse('2026-11-25T10:00:00Z')
 
 test('tags are cleaned to short plain words',()=>{
@@ -75,4 +75,23 @@ test('wired in: every page captures, email signup sends it, My Books records it 
 
 test('privacy notice mentions how you found BookLog',()=>{
  assert.match(read('app/privacy/page.tsx'),/record how you found BookLog/)
+})
+
+test('landing page is kept as a plain path, only with a tag or referrer',()=>{
+ assert.equal(landingPath('/goodreads-alternative'),'/goodreads-alternative')
+ assert.equal(landingPath('/home?utm_source=x#top'),'/home')
+ for(const v of [null,'','home','https://x.com/a','/a b','/'+'x'.repeat(80)])assert.equal(landingPath(v),undefined)
+ assert.deepEqual(sourceFromVisit('?utm_source=reddit','','www.booklogapp.com',now,'/goodreads-alternative'),{t:now,s:'reddit',l:'/goodreads-alternative'})
+ assert.equal(sourceFromVisit('','','www.booklogapp.com',now,'/goodreads-alternative'),null)
+ assert.deepEqual(signupSourceMetadata({t:now,s:'reddit',l:'/goodreads-alternative'}),{signup_source:'reddit',signup_landing:'/goodreads-alternative'})
+ assert.equal(sourceEventDetail({app_metadata:{provider:'email'},user_metadata:{signup_source:'reddit',signup_landing:'/goodreads-alternative'}},null).landing,'/goodreads-alternative')
+ assert.equal(sourceEventDetail({app_metadata:{provider:'google'}},{t:now,r:'alternativeto.net',l:'/goodreads-alternative'}).landing,'/goodreads-alternative')
+})
+
+test('Goodreads-alternative page is public, listed for crawlers, and leads to signup',()=>{
+ const p=read('app/goodreads-alternative/page.tsx')
+ assert.match(p,/canonical: `\$\{PUBLIC_ORIGIN\}\/goodreads-alternative`/)
+ assert.match(p,/href="\/signup" className=\{home\.cta\}>Import from Goodreads/)
+ assert.doesNotMatch(p,/20\d\d reading year/)
+ assert.match(read('app/robots.ts'),/allow: \["\/", "\/home", "\/goodreads-alternative", "\/privacy"\]/)
 })

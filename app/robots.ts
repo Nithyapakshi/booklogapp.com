@@ -7,8 +7,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [{
       userAgent: "*",
-      allow: ["/", "/home", "/privacy"],
-      disallow: ["/actions", "/api", "/auth", "/auth-check", "/auth-debug", "/auth-diagnostic", "/auth-direct", "/auth-inline", "/auth-simple", "/auth-status", "/auth-test", "/basic-dashboard", "/books", "/books-direct", "/dashboard", "/dashboard-direct", "/dashboard-fixed", "/dashboard-simple", "/dashboard-test", "/debug", "/debug-dashboard", "/direct-login", "/env-check", "/env-debug", "/feedback", "/file-check", "/forgot-password", "/home-debug", "/login-direct", "/login-fixed", "/login-simple", "/login-standalone", "/login-test", "/minimal", "/profile", "/reset-password", "/s/", "/schema-check", "/settings", "/signup", "/simple-dashboard", "/simple-test", "/style-test", "/supabase-connect-test", "/test", "/test-middleware", "/test-new", "/test-no-middleware", "/test-page", "/u/", "/unsubscribe"],
+      allow: ["/", "/home", "/goodreads-alternative", "/privacy"],
+      disallow: ["/actions", "/api", "/auth", "/auth-check", "/auth-debug", "/auth-diagnostic", "/auth-direct", "/auth-inline", "/auth-simple", "/auth-status", "/auth-test", "/basic-dashboard", "/books", "/books-direct", "/dashboard", "/dashboard-direct", "/dashboard-fixed", "/dashboard-simple", "/dashboard-test", "/debug", "/debug-dashboard", "/direct-login", "/env-check", "/env-debug", "/feedback", "/file-check", "/forgot-password", "/home-debug", "/login", "/login-direct", "/login-fixed", "/login-simple", "/login-standalone", "/login-test", "/minimal", "/profile", "/reset-password", "/s/", "/schema-check", "/settings", "/signup", "/simple-dashboard", "/simple-test", "/style-test", "/supabase-connect-test", "/test", "/test-middleware", "/test-new", "/test-no-middleware", "/test-page", "/u/", "/unsubscribe"],
     }],
     sitemap: `${PUBLIC_ORIGIN}/sitemap.xml`,
   }

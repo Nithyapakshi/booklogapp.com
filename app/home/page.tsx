@@ -105,7 +105,7 @@ export default function HomePage() {
       <HomeSections />
       <footer className={styles.footer}>
         <span>© {new Date().getFullYear()} BookLog</span>
-        <span><Link href="/privacy">Privacy</Link></span>
+        <span><Link href="/goodreads-alternative">Moving from Goodreads?</Link> · <Link href="/privacy">Privacy</Link></span>
       </footer>
     </div>
   )
