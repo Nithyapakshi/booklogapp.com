@@ -117,7 +117,7 @@ export default function GoodreadsAlternativePage() {
       </main>
       <footer className={home.footer}>
         <span>© {new Date().getFullYear()} BookLog</span>
-        <span><Link href="/home">Home</Link> · <Link href="/privacy">Privacy</Link></span>
+        <span className={styles.footLinks}><Link href="/home" className={styles.footLink}>Home</Link> · <Link href="/privacy" className={styles.footLink}>Privacy</Link></span>
       </footer>
     </div>
   )
