@@ -22,7 +22,7 @@ test('home metadata and JSON-LD describe only the real web app, no invented endo
 
 test('only the public homepage and privacy notice enter the sitemap', () => {
   const s = read('lib/public-discovery.ts')
-  assert.ok(s.includes('PUBLIC_DISCOVERY_PATHS = ["/home", "/privacy"]'))
+  assert.ok(s.includes('PUBLIC_DISCOVERY_PATHS = ["/home", "/goodreads-alternative", "/privacy"]'))
   assert.ok(read('app/sitemap.ts').includes('PUBLIC_DISCOVERY_PATHS.map'))
   assert.ok(read('app/privacy/page.tsx').includes('canonical: `${PUBLIC_ORIGIN}/privacy`'))
 })
@@ -32,7 +32,7 @@ test('crawler policy excludes every existing non-public directory, assets remain
   assert.ok(s.includes('userAgent: "*"'))
   assert.ok(s.includes('sitemap: `${PUBLIC_ORIGIN}/sitemap.xml`'))
   for (const item of fs.readdirSync('app', {withFileTypes: true})) {
-    if (!item.isDirectory() || ['home','privacy','learn-more'].includes(item.name)) continue
+    if (!item.isDirectory() || ['home','privacy','learn-more','goodreads-alternative'].includes(item.name)) continue
     if(item.name === '[bookSlug]'){assert.match(read('app/[bookSlug]/[shareCode]/page.tsx'),/index:false/);continue}
     const path = ['s','u'].includes(item.name) ? `/${item.name}/` : `/${item.name}`
     assert.ok(s.includes(JSON.stringify(path)), `${path} excluded`)

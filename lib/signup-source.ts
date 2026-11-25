@@ -19,7 +19,7 @@ const RECORDED_PREFIX = "bl-source-recorded-"
 // Accounts created before source capture existed are "before tracking", never "unknown".
 export const TRACKING_FROM = "2026-11-24T15:00:00Z"
 
-export interface StoredSource { s?: string; m?: string; c?: string; r?: string; t: number }
+export interface StoredSource { s?: string; m?: string; c?: string; r?: string; l?: string; t: number }
 
 // Keep tags short and plain: lower case letters, digits, dot, _ and -. Dots are kept because
 // others tag links with domains (ChatGPT adds utm_source=chatgpt.com).
@@ -42,8 +42,15 @@ export function referrerHost(referrer: string | null | undefined, ownHost: strin
   }
 }
 
+// The page a visit landed on: a plain path only, never its query or fragment.
+export function landingPath(path: string | null | undefined): string | undefined {
+  if (typeof path !== "string" || !path.startsWith("/")) return undefined
+  const p = path.split(/[?#]/)[0].toLowerCase()
+  return /^\/[a-z0-9/_-]{0,60}$/.test(p) ? p : undefined
+}
+
 // What this visit tells us, or null when it carries nothing (a direct visit).
-export function sourceFromVisit(search: string, referrer: string | null | undefined, ownHost: string, now: number): StoredSource | null {
+export function sourceFromVisit(search: string, referrer: string | null | undefined, ownHost: string, now: number, path?: string): StoredSource | null {
   let p: URLSearchParams
   try { p = new URLSearchParams(search) } catch { return null }
   const out: StoredSource = { t: now }
@@ -52,6 +59,8 @@ export function sourceFromVisit(search: string, referrer: string | null | undefi
   if (m) out.m = m
   if (c) out.c = c
   if (r) out.r = r
+  const l = landingPath(path)
+  if (l) out.l = l
   return s || r ? out : null
 }
 
@@ -62,7 +71,8 @@ export function parseStored(raw: string | null, now: number): StoredSource | nul
     const v = JSON.parse(raw)
     if (!v || typeof v !== "object" || typeof v.t !== "number" || now - v.t > SOURCE_TTL_MS || v.t > now + 60e3) return null
     const out: StoredSource = { t: v.t }
-    const s = cleanTag(v.s), m = cleanTag(v.m), c = cleanTag(v.c), r = typeof v.r === "string" ? v.r.slice(0, 60) : undefined
+    const s = cleanTag(v.s), m = cleanTag(v.m), c = cleanTag(v.c), r = typeof v.r === "string" ? v.r.slice(0, 60) : undefined, l = landingPath(v.l)
+    if (l) out.l = l
     if (s) out.s = s
     if (m) out.m = m
     if (c) out.c = c
@@ -87,6 +97,7 @@ export function signupSourceMetadata(stored: StoredSource | null): Record<string
   if (stored.m) out.signup_medium = stored.m
   if (stored.c) out.signup_campaign = stored.c
   if (stored.r) out.signup_referrer = stored.r
+  if (stored.l) out.signup_landing = stored.l
   return out
 }
 
@@ -113,6 +124,8 @@ export function sourceEventDetail(user: UserLike, stored: StoredSource | null): 
     if (m) d.medium = m
     if (c) d.campaign = c
     if (typeof meta.signup_referrer === "string") d.referrer = meta.signup_referrer.slice(0, 60)
+    const l = landingPath(meta.signup_landing as string)
+    if (l) d.landing = l
     return d
   }
   if (stored) {
@@ -120,6 +133,7 @@ export function sourceEventDetail(user: UserLike, stored: StoredSource | null): 
     if (stored.m) d.medium = stored.m
     if (stored.c) d.campaign = stored.c
     if (stored.r) d.referrer = stored.r
+    if (stored.l) d.landing = stored.l
     return d
   }
   return { source: "unknown", via: "none", provider }
@@ -132,7 +146,7 @@ export function captureSource(): void {
     if (typeof window === "undefined") return
     const now = Date.now()
     const existing = parseStored(window.localStorage.getItem(SOURCE_KEY), now)
-    const visit = sourceFromVisit(window.location.search, document.referrer, window.location.host, now)
+    const visit = sourceFromVisit(window.location.search, document.referrer, window.location.host, now, window.location.pathname)
     const next = nextStored(existing, visit)
     if (next) window.localStorage.setItem(SOURCE_KEY, JSON.stringify(next))
   } catch {

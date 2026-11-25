@@ -1,9 +1,9 @@
 const test = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs')
 const page = fs.readFileSync('app/home/page.tsx','utf8'), css = fs.readFileSync('app/home/home.module.css','utf8')
-test('approved editorial copy and only account and privacy links remain', () => {
+test('approved editorial copy and only account, Goodreads-page and privacy links remain', () => {
  for(const copy of ['Remember more of what you read.','A bookshelf worth sharing.','Find a book that fits your mood.','Start your reading log for free']) assert.ok(page.includes(copy))
  for(const forbidden of ['Your reading log, in one place.','Handpicked by you.','Ideas for your next read.','WhatsApp','Queued','<button']) assert.equal(page.includes(forbidden),false,forbidden)
- assert.deepEqual([...page.matchAll(/href="([^"]+)"/g)].map(x=>x[1]),['/login','/signup','/signup','/privacy'])
+ assert.deepEqual([...page.matchAll(/href="([^"]+)"/g)].map(x=>x[1]),['/login','/signup','/signup','/goodreads-alternative','/privacy'])
  assert.equal((page.match(/<h1 /g)||[]).length,1)
 })
 test('homepage has scoped dark styling, sticky signup header, and narrow layouts', () => {
