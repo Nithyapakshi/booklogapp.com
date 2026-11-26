@@ -1050,8 +1050,8 @@ function BooksLibraryContent() {
           )}
 
           {/* Page title + share button */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold" style={{ ...serif, color: "var(--bl-2d2416)" }}>
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <h1 className="min-w-0 text-xl font-bold sm:text-2xl" style={{ ...serif, color: "var(--bl-2d2416)" }}>
               {pageTitle}
             </h1>
             {sidebarTab !== "discover" && sidebarTab !== "stats" && <ShareButton onClick={() => setCollectionShareOpen(true)} />}
