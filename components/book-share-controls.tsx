@@ -46,7 +46,7 @@ export function BookShareControls({book}:{book:ShareBook}) {
   return <>
     <div className="book-share-header"><div className="-mt-2 flex min-h-11 items-center justify-end pr-11"><ShareButton onClick={openShare}/></div></div>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[440px]" style={{background:"var(--bl-faf7f2)",color:"var(--bl-1a1208)"}}>
+      <DialogContent className="max-h-[90dvh] w-[calc(100vw-24px)] grid-cols-[minmax(0,1fr)] overflow-y-auto rounded-lg p-5 sm:max-w-[440px] sm:p-6" style={{background:"var(--bl-faf7f2)",color:"var(--bl-1a1208)"}}>
         <DialogHeader><DialogTitle className="font-serif text-2xl font-normal">Share this book</DialogTitle><DialogDescription className="sr-only">Send a link to this book on WhatsApp or copy it.</DialogDescription></DialogHeader>
         <div className="flex items-center gap-3">
           {cover?<img src={cover} alt="" className="h-16 w-11 shrink-0 rounded-sm object-cover"/>:<div aria-hidden="true" className="h-16 w-11 shrink-0 rounded-sm" style={{background:"var(--bl-f5ede0)",border:"1px solid var(--bl-e0d5c4)"}}/>}
@@ -63,7 +63,7 @@ export function BookShareControls({book}:{book:ShareBook}) {
         </div>
         <p className="text-[12.5px] leading-relaxed" style={{color:"var(--bl-6b5c42)"}}>Anyone with the link sees your name and this book. Your private notes and rating are never shared.</p>
         {error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
-        <div className="flex gap-2.5">
+        <div className="flex min-w-0 gap-2.5">
           <button type="button" disabled={!ready} onClick={()=>void copy()} style={{...actionStyle,border:0,background:"var(--bl-c17f3e)",color:"var(--bl-primary-ink)",opacity:ready?1:.6,cursor:ready?"pointer":"default"}}>{copied?"✓ Link copied":ready?"Copy link":"Preparing..."}</button>
           {ready
             ? <a href={`https://wa.me/?text=${encodeURIComponent(ready.url)}`} target="_blank" rel="noopener noreferrer" onClick={()=>track("share.book_whatsapp")} style={{...actionStyle,border:"1px solid var(--bl-e0d5c4)",background:"var(--bl-fff)",color:"var(--bl-1a1208)"}}>WhatsApp</a>
