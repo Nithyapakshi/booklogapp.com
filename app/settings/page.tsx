@@ -1,5 +1,4 @@
 "use client"
-import { ShareControls } from "@/components/share-controls"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import Link from "next/link"
@@ -103,13 +102,7 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  async function profileShareUrl() {
-    const {data:{user}}=await createClientSupabaseClient().auth.getUser()
-    if(!user) throw new Error("Log in before sharing.")
-    const {data,error}=await createClientSupabaseClient().from("profiles").select("username,profile_visibility").eq("user_id",user.id).single()
-    if(error||!data?.username||data.profile_visibility!=="public") throw new Error("Save a public profile and username first. Nothing was published automatically.")
-    return `${window.location.origin}/u/${encodeURIComponent(data.username)}`
-  }
+
 
   const initial = displayName?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || "?"
   const firstName = displayName.split(" ")[0] || email.split("@")[0]
@@ -260,7 +253,6 @@ export default function SettingsPage() {
             {username && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "6px", padding: "8px 12px" }}>
                 <span style={{ fontSize: "12px", color: "var(--bl-6b5c42)", flex: 1 }}>booklogapp.com/u/{username}</span>
-                <ShareControls getUrl={profileShareUrl} label="profile"/>
               </div>
             )}
           </div>

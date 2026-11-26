@@ -1,6 +1,6 @@
 "use client"
 import { useRef, useState } from "react"
-import Link from "next/link"
+import { DisplayNameField } from "@/components/display-name-field"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { codedSharePath } from "@/lib/public-share-path"
 import { safeCover, shareSenderLine } from "@/lib/shared-book"
@@ -15,6 +15,7 @@ export function BookShareControls({book}:{book:ShareBook}) {
   const saved=useRef<Ready|null>(null),pending=useRef<{key:string;promise:Promise<Ready>}|null>(null)
   const [open,setOpen]=useState(false),[ready,setReady]=useState<Ready|null>(null),[error,setError]=useState(""),[copied,setCopied]=useState(false)
   const key=JSON.stringify([book.id,book.title,book.author,book.cover])
+  const needsName=/display name/i.test(error)
   const cover=safeCover(book.cover?.replace(/^http:\/\//,"https://"))
   async function create(): Promise<Ready> {
     const db=createClientSupabaseClient(), {data:{user}}=await db.auth.getUser()
@@ -63,7 +64,7 @@ export function BookShareControls({book}:{book:ShareBook}) {
           </div>
         </div>
         <p className="text-[12.5px] leading-relaxed" style={{color:"var(--bl-6b5c42)"}}>Anyone with the link sees your name and this book. Your private notes and rating are never shared.</p>
-        {error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}{/display name/i.test(error)&&<> <Link href="/settings" className="underline">Go to Settings</Link></>}</p>}
+        {needsName?<DisplayNameField onSaved={()=>{setError("");prepare()}}/>:error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
         <div className="flex min-w-0 gap-2.5">
           <button type="button" disabled={!ready} onClick={()=>void copy()} style={{...actionStyle,border:0,background:"var(--bl-c17f3e)",color:"var(--bl-primary-ink)",opacity:ready?1:.6,cursor:ready?"pointer":"default"}}>{copied?"✓ Link copied":ready||error?"Copy link":"Preparing..."}</button>
           {ready

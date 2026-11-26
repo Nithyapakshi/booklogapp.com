@@ -35,10 +35,11 @@ test('receiver adds only new books to the shelf they choose, and waits for libra
  assert.match(s,/new URL\(window.location.href\).searchParams.get\("save"\)===\"1\"/)
  assert.match(s,/signup\?next=/);assert.match(s,/login\?next=/);assert.match(read("app/signup/page.tsx"),/login\?next=/)
 })
-test('shared pair is reused at existing actual share surfaces, book cards untouched',()=>{
- for(const p of ['app/books/page.tsx','app/settings/page.tsx'])assert.match(read(p),/<ShareControls/)
+test('one Share entry per surface: My Books/Recommendations popup, book details, none on cards or Settings',()=>{
+ const books=read('app/books/page.tsx');assert.match(books,/sidebarTab !== "discover" && sidebarTab !== "stats" && <ShareButton onClick=\{\(\) => setCollectionShareOpen\(true\)\} \/>/);assert.match(books,/<CollectionSharePopup/)
+ const settings=read('app/settings/page.tsx');assert.doesNotMatch(settings,/ShareControls/);assert.match(settings,/profile_visibility: sharingOn \? "public" : "private"/)
  assert.match(read('components/book-details-dialog.tsx'),/<BookShareControls/)
- assert.doesNotMatch(read('components/book-card.tsx'),/ShareControls/)
+ assert.doesNotMatch(read('components/book-card.tsx'),/ShareControls|ShareButton/)
  const s=read('components/share-controls.tsx');assert.match(s,/await navigator.clipboard.writeText\(url\); setMessage\("Copied!"\)/)
  assert.match(s,/setTimeout\(\(\)=>setMessage\(""\),2000\)/)
  assert.match(s,/encodeURIComponent\(url\)/);assert.match(s,/tab.opener = null/)

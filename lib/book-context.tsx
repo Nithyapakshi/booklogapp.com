@@ -31,7 +31,7 @@ export function mapTabToStatus(tab: string): BookStatus {
 export type BookSaveResult = { outcome: "added" | "edited" | "duplicate"; books: Book[] }
 
 type BookContextType = {
-  createBook: (book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean }) => Promise<BookSaveResult>
+  createBook: (book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean; skipPrompts?: boolean }) => Promise<BookSaveResult>
   editBook: (id: string, details: {title: string; author: string; cover?: string}) => Promise<BookSaveResult>
   saveDates: (bookId: string, dates: { startedAt?: string | null; startedPrecision?: DatePrecision; finishedAt?: string | null; finishedPrecision?: DatePrecision }) => Promise<void>
   moveBook: (book: any, status: BookStatus) => Promise<"added" | "duplicate" | "moved">
@@ -312,7 +312,7 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
     })
   }, [loading, authLoading, userId, books, enrichMissing])
 
-  const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean }): Promise<BookSaveResult> => {
+  const saveDetails = useCallback(async (book: any, status: BookStatus, edit: boolean, opts?: { skipStartPrompt?: boolean; skipPrompts?: boolean }): Promise<BookSaveResult> => {
     if (!userId || loading || authLoading) throw new Error("Wait for your library to finish loading")
     const errorText = validateBookDetails(book.title, book.author || "", book.cover || "")
     if (errorText) throw new Error(errorText)
@@ -341,14 +341,16 @@ function AccountBookProvider({ children }: { children: React.ReactNode }) {
         }
         return next
       })
-      if (!edit && status === "recommended") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Recommendations"})
+      // Adding several shared books at once must not stack one rating/date prompt per book.
+      if (opts?.skipPrompts) { /* no prompts */ }
+      else if (!edit && status === "recommended") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Recommendations"})
       else if (!edit && status === "completed") setFinishPrompt({id: rows[0].id, title: rows[0].title, rating: rows[0].selfRating || 0, where: "Completed", direct: true})
       else if (!edit && status === "reading" && !opts?.skipStartPrompt) setStartPrompt({id: rows[0].id, title: rows[0].title})
     }
     if (data.outcome !== "duplicate" && (edit || (!book.cover && !book.description))) void enrichMissing(rows[0])
     return {outcome: data.outcome, books: rows}
   }, [userId, loading, authLoading, books, enrichMissing])
-  const createBook = useCallback((book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean }) => saveDetails(book, status, false, opts), [saveDetails])
+  const createBook = useCallback((book: any, status: BookStatus, opts?: { skipStartPrompt?: boolean; skipPrompts?: boolean }) => saveDetails(book, status, false, opts), [saveDetails])
   const editBook = useCallback((id: string, details: {title: string; author: string; cover?: string}) => saveDetails({...details, id}, "queued", true), [saveDetails])
 
   const removeBook = useCallback(async (id: string, status: BookStatus, rowId?: string) => {
