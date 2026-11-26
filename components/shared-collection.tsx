@@ -123,7 +123,7 @@ export function SharedCollectionView({ token, code, initial }: { token: string; 
 
   if(step==="review"){const list=[...selected].filter(k=>unique.has(k)).map(k=>unique.get(k)!),toAdd=list.filter(i=>!inLibrary(i)),saved=list.filter(i=>inLibrary(i))
     return shell(<>{h1(`Add ${countBooks(toAdd.length)}`)}
-      <p style={{fontSize:14,color:"var(--bl-6b5c42)",margin:0}}>{saved.length?`${saved.length} of your ${list.length} books ${saved.length===1?"is":"are"} already in your library.`:`From ${data.sources.map(sourceLabel).join(" and ")}`}</p>
+      <p style={{fontSize:14,color:"var(--bl-6b5c42)",margin:0}}>{saved.length?`${saved.length} of your ${list.length} books ${saved.length===1?"is":"are"} already in your library.`:`From ${data.sources.filter(src=>toAdd.some(i=>i.source===src)||data.items.some(i=>i.source===src&&toAdd.some(t=>bookKey(t)===bookKey(i)))).map(sourceLabel).join(" and ")}`}</p>
       {toAdd.map(i=><Row key={bookKey(i)} item={i}/>)}
       {saved.map(i=><div key={bookKey(i)} style={{opacity:.55}}><Row item={i}><span style={{display:"inline-block",fontSize:11,border:"1px solid var(--bl-e0d5c4)",borderRadius:6,padding:"2px 7px",marginTop:6}}>✓ Already in your library</span></Row></div>)}
       <label style={{display:"block",fontSize:14,fontWeight:600,color:"var(--bl-6b5c42)",marginTop:20}}>Add to

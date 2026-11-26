@@ -43,3 +43,9 @@ test('shared page and popup never expose notes, ratings or ids; adds re-check th
  assert.match(read('lib/book-context.tsx'),/if \(opts\?\.skipPrompts\) \{ \/\* no prompts \*\/ \}/)
  assert.match(read('app/s/books/[code]/page.tsx'),/collectionTitle\(c\.display_name, c\.sources, c\.full_library\)/)
 })
+
+test("review subtitle lists only the tabs of the books being added", () => {
+  const src = require("node:fs").readFileSync(require("node:path").join(__dirname, "../components/shared-collection.tsx"), "utf8")
+  assert.ok(src.includes("data.sources.filter(src=>toAdd.some("), "subtitle must filter sources by the selected books")
+  assert.ok(!src.includes('`From ${data.sources.map(sourceLabel).join(" and ")}`'), "subtitle must not list every shared tab")
+})
