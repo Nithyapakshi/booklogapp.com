@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { SharedBook } from "@/components/shared-book"
 import { readSharedBook } from "@/lib/shared-book-server"
+import { shareSenderLine } from "@/lib/shared-book"
 type Props = { params: Promise<{ token: string }> }
 // Shares are fixed snapshots: build each page on its first visit and serve the saved copy after that,
 // so link-preview bots (WhatsApp, X) never wait for a sleeping server.
@@ -12,8 +13,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!book) return { title: "A book shared with you - BookLog", robots: { index: false, follow: false } }
   const title = `${book.title} - ${book.author} | BookLog`
   return { title, description: `${book.title} by ${book.author}. Save it to your BookLog queue.`, robots: { index: false, follow: false },
-    openGraph: { title, description: `${book.title} by ${book.author}`, type: "website", images: book.cover ? [{ url: book.cover, alt: book.title }] : [] },
-    twitter: { card: "summary_large_image", title, images: book.cover ? [book.cover] : [] } }
+    openGraph: { title: `${book.title} · ${book.author}`, description: shareSenderLine(book.display_name), type: "website", images: book.cover ? [{ url: book.cover, alt: book.title }] : [] },
+    twitter: { card: "summary_large_image", title: `${book.title} · ${book.author}`, description: shareSenderLine(book.display_name), images: book.cover ? [book.cover] : [] } }
 }
 export default async function Page({ params }: Props) {
   const { token } = await params

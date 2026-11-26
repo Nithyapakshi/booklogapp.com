@@ -24,13 +24,16 @@ test('one-book snapshot is explicit minimal disclosure and never uses email or n
  assert.match(sql,/where s.token = p_token/);assert.match(sql,/set search_path = ''/)
  assert.match(sql,/owner_id = auth.uid\(\)/)
 })
-test('receiver Save queues only new books and waits for library before continuation',()=>{
+test('receiver adds only new books to the shelf they choose, and waits for library before continuation',()=>{
  const s=read('components/shared-book.tsx');assert.match(s,/if\(existing\).*Your shelf is unchanged/s)
- assert.match(s,/createBook\(.*"queued"\)/)
+ assert.match(s,/createBook\(\{id:crypto\.randomUUID\(\),[^}]*\},shelf\)/);assert.match(s,/useState<Shelf>\("queued"\)/)
+ for(const shelf of ['reading','queued','completed','onHold','recommended'])assert.match(s,new RegExp(`value:"${shelf}"`))
+ // Sign-in or sign-up only reopens the Choose where step; it never saves by itself.
+ const auto=s.slice(s.indexOf('if(!auto.current'));assert.match(auto,/auto.current=true;start\(\)/);assert.doesNotMatch(auto.slice(0,200),/save\(\)/)
  assert.doesNotMatch(s,/moveBook|addBook\(/)
  assert.match(s,/!loading&&!loadError/);assert.match(s,/auto.current=true/)
  assert.match(s,/new URL\(window.location.href\).searchParams.get\("save"\)===\"1\"/)
- assert.match(s,/signup\?next=/);assert.match(read("app/signup/page.tsx"),/login\?next=/)
+ assert.match(s,/signup\?next=/);assert.match(s,/login\?next=/);assert.match(read("app/signup/page.tsx"),/login\?next=/)
 })
 test('shared pair is reused at existing actual share surfaces, book cards untouched',()=>{
  for(const p of ['app/books/page.tsx','app/settings/page.tsx'])assert.match(read(p),/<ShareControls/)
@@ -39,4 +42,12 @@ test('shared pair is reused at existing actual share surfaces, book cards untouc
  const s=read('components/share-controls.tsx');assert.match(s,/await navigator.clipboard.writeText\(url\); setMessage\("Copied!"\)/)
  assert.match(s,/setTimeout\(\(\)=>setMessage\(""\),2000\)/)
  assert.match(s,/encodeURIComponent\(url\)/);assert.match(s,/tab.opener = null/)
+})
+test('share popup makes the link on open, WhatsApp is a direct link, previews carry the sender line',()=>{
+ const s=read('components/book-share-controls.tsx')
+ assert.match(s,/function openShare\(\)\{[^}]*prepare\(\)\}/)
+ assert.match(s,/href=\{`https:\/\/wa.me\/\?text=\$\{encodeURIComponent\(ready.url\)\}`\}/);assert.match(s,/rel="noopener noreferrer"/)
+ assert.match(s,/pending.current\?\.key!==key/,'reopening while a link is being made must not create a second link')
+ assert.match(read('lib/shared-book.ts'),/has shared this with you on BookLog/)
+ for(const p of ['app/s/[token]/page.tsx','app/[bookSlug]/[shareCode]/page.tsx'])assert.match(read(p),/description: ?shareSenderLine\(book.display_name\)/)
 })

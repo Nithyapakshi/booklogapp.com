@@ -4,6 +4,8 @@ import { searchBooks, getBookById } from "@/lib/google-books-api"
 // Public snapshot only. Never attach a library Book (it may contain notes/rating).
 export type SharedSnapshot = { display_name: string; title: string; author: string; cover: string }
 export type SharedCatalog = { description: string; cover: string }
+// The one sender line every shared-link preview uses (agreed wording, no pronoun).
+export const shareSenderLine = (name: string) => `${name} has shared this with you on BookLog`
 export const isShareToken = (token: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)
 export function safeCover(value: string | undefined): string {
   if (!value) return ""
