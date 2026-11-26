@@ -34,7 +34,9 @@ import { fetchDiscoverCandidates } from "@/app/actions/discover-rows"
 import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
-import { ShareControls } from "@/components/share-controls"
+import { ShareButton } from "@/components/share-button"
+import { CollectionSharePopup } from "@/components/collection-share-popup"
+import { FULL_LIBRARY, type ShareSource } from "@/lib/collection-share"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
 import { FirstRunSurvey } from "@/components/first-run-survey"
 import { EmailPreferencePrompt } from "@/components/email-preference-prompt"
@@ -656,6 +658,8 @@ function BooksLibraryContent() {
   }, [books])
   const [shareUsername, setShareUsername] = useState("")
   const [sharingOn, setSharingOn]         = useState(false)
+  const [shareMode, setShareMode]         = useState<"recommendations" | "full_library">("recommendations")
+  const [collectionShareOpen, setCollectionShareOpen] = useState(false)
   const router = useRouter()
   const { user } = useAuth()
   const nextRead = useNextRead(user?.id)
@@ -779,24 +783,28 @@ function BooksLibraryContent() {
       const supabase = createClientSupabaseClient()
       const { data } = await supabase
         .from("profiles")
-        .select("username, profile_visibility")
+        .select("username, profile_visibility, share_mode")
         .eq("user_id", user.id)
         .single()
       if (data) {
         setShareUsername(data.username || "")
         setSharingOn(data.profile_visibility === "public")
+        setShareMode(data.share_mode === "full_library" ? "full_library" : "recommendations")
       }
     }
     fetchShareProfile()
   }, [user])
 
-  const profileShareUrl = async () => {
-    if (!sharingOn || !shareUsername) {
-      router.push("/settings")
-      throw new Error("Set up profile sharing in Settings first. Your profile stays private until you choose to publish it.")
-    }
-    return `${window.location.origin}/u/${encodeURIComponent(shareUsername)}`
-  }
+  // Share opens one popup (boards 3 and 9). Existing sharers see their saved choice first;
+  // their old profile link is left exactly as it is (decision D2).
+  const TAB_SOURCE: Record<string, ShareSource> = { Reading: "reading", Queued: "queued", Completed: "completed" }
+  const shareInitialSources: ShareSource[] = sharingOn
+    ? (shareMode === "full_library" ? [...FULL_LIBRARY] : ["recommended"])
+    : sidebarTab === "recommended" ? ["recommended"] : [TAB_SOURCE[activeTab] || "recommended"]
+  const savedShareChoice = sharingOn
+    ? { label: shareMode === "full_library" ? "Full library" : "Recommendations", showsOnHold: shareMode === "full_library" && (books.onHold?.length || 0) > 0 }
+    : null
+
 
 
   const filteredBooks = React.useMemo(() => {
@@ -1030,6 +1038,7 @@ function BooksLibraryContent() {
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
       {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} emailChoice={surveyShowsEmailChoice(marketingPref, user)} />}
       {emailPrompt && !surveyOpen && <EmailPreferencePrompt variant={emailPrompt} onFinished={() => setEmailPrompt(null)} />}
+      {collectionShareOpen && <CollectionSharePopup open={collectionShareOpen} onClose={() => setCollectionShareOpen(false)} books={books} initialSources={shareInitialSources} savedChoice={savedShareChoice} />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "var(--bl-f7f4ef)" }}>
@@ -1045,7 +1054,7 @@ function BooksLibraryContent() {
             <h1 className="text-2xl font-bold" style={{ ...serif, color: "var(--bl-2d2416)" }}>
               {pageTitle}
             </h1>
-            {sidebarTab !== "discover" && sidebarTab !== "stats" && <ShareControls getUrl={profileShareUrl} label="profile"/>}
+            {sidebarTab !== "discover" && sidebarTab !== "stats" && <ShareButton onClick={() => setCollectionShareOpen(true)} />}
           </div>
 
           {/* MY BOOKS */}

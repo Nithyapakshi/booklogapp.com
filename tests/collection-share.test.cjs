@@ -1,0 +1,51 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),ts=require('typescript')
+const read=p=>fs.readFileSync(p,'utf8')
+function load(p,req){const m={exports:{}};new Function('require','module','exports',ts.transpileModule(read(p),{compilerOptions:{module:'commonjs',target:'es2020'}}).outputText)(req,m,m.exports);return m.exports}
+const identity=load('lib/book-identity.ts',()=>({}))
+const path=load('lib/public-share-path.ts',()=>({}))
+const cs=load('lib/collection-share.ts',p=>p.includes('book-identity')?identity:path)
+const auth=load('lib/auth-return.ts',()=>path)
+const token='12345678-1234-4234-9234-123456789abc'
+test('preview titles follow board 1: library only for full library with nothing left out',()=>{
+ assert.equal(cs.collectionTitle('Pakshiraj',['recommended'],false),"Pakshiraj's recommendations")
+ assert.equal(cs.collectionTitle('Pakshiraj',['queued'],false),"Pakshiraj's queued books")
+ assert.equal(cs.collectionTitle('Pakshiraj',['queued','recommended'],false),'Books from Pakshiraj')
+ assert.equal(cs.collectionTitle('Pakshiraj',['reading','queued','completed','recommended'],false),'Books from Pakshiraj')
+ assert.equal(cs.collectionTitle('Pakshiraj',['reading','queued','completed','recommended'],true),"Pakshiraj's library")
+})
+test('On Hold is never a share source; headings and labels match the boards',()=>{
+ assert.deepEqual(cs.SHARE_SOURCES.map(s=>s.value).sort(),['completed','queued','reading','recommended'])
+ assert.equal(cs.isShareSource('onHold'),false)
+ assert.equal(cs.sourceHeading('Pakshiraj','recommended'),'Pakshiraj recommends')
+ assert.equal(cs.pageTitle('Pakshiraj',['queued','recommended']),"Pakshiraj's books")
+ assert.equal(cs.addButtonLabel(0),'Add to my BookLog');assert.equal(cs.addButtonLabel(1),'Add 1 book to my BookLog');assert.equal(cs.addButtonLabel(3),'Add 3 books to my BookLog')
+ assert.equal(cs.keepBrowsingLabel('Pakshiraj',['recommended']),"Keep browsing Pakshiraj's recommendations")
+ assert.equal(cs.keepBrowsingLabel('Pakshiraj',['queued','recommended']),"Keep browsing Pakshiraj's books")
+})
+test('a book in two tabs is one unique key; selection survives a day, then expires',()=>{
+ assert.equal(cs.bookKey({title:' Educated ',author:'Tara  Westover'}),cs.bookKey({title:'educated',author:'tara westover'}))
+ const now=1_000_000_000_000;const raw=cs.encodeSelection(['a','b'],now)
+ assert.deepEqual(cs.decodeSelection(raw,now+60_000),['a','b'])
+ assert.deepEqual(cs.decodeSelection(raw,now+25*3600_000),[])
+ for(const bad of [null,'','{',JSON.stringify({at:'x',keys:[]}),JSON.stringify({at:now,keys:'a'})])assert.deepEqual(cs.decodeSelection(bad,now),[])
+})
+test('collection links live under the reserved /s route and survive sign-in exactly',()=>{
+ const p=cs.collectionPath(token);assert.match(p,/^\/s\/books\/[A-Za-z0-9_-]{22}$/);assert.equal(cs.tokenFromCollectionCode(p.split('/').pop()),token)
+ const good=p+'?save=1';assert.equal(auth.safeAuthReturn(good),good)
+ for(const bad of [p,p+'?save=1&x=1',p+'?save=1#x','//evil.test'+good,'https://evil.test'+good,good.replace('/s/books/','/s/book/'),'/s/books/'+'A'.repeat(23)+'?save=1'])assert.equal(auth.safeAuthReturn(bad),'/books',bad)
+})
+test('shared page and popup never expose notes, ratings or ids; adds re-check the library and skip prompts',()=>{
+ const view=read('components/shared-collection.tsx'),popup=read('components/collection-share-popup.tsx'),data=read('lib/shared-collection.ts')
+ for(const s of [view,data])assert.doesNotMatch(s,/notes|self_rating|selfRating|owner_id|book_id/)
+ assert.match(popup,/rpc\("create_collection_share"/);assert.doesNotMatch(popup,/\.from\("collection_share/)
+ assert.match(view,/rpc\("read_collection_share"/);assert.match(view,/library\.some\(b=>sameBook/);assert.match(view,/\{skipPrompts:true\}/)
+ assert.match(view,/Try again for \$\{countBooks\(outcome\.failed\.length\)\}/)
+ assert.match(read('lib/book-context.tsx'),/if \(opts\?\.skipPrompts\) \{ \/\* no prompts \*\/ \}/)
+ assert.match(read('app/s/books/[code]/page.tsx'),/collectionTitle\(c\.display_name, c\.sources, c\.full_library\)/)
+})
+
+test("review subtitle lists only the tabs of the books being added", () => {
+  const src = require("node:fs").readFileSync(require("node:path").join(__dirname, "../components/shared-collection.tsx"), "utf8")
+  assert.ok(src.includes("data.sources.filter(src=>toAdd.some("), "subtitle must filter sources by the selected books")
+  assert.ok(!src.includes('`From ${data.sources.map(sourceLabel).join(" and ")}`'), "subtitle must not list every shared tab")
+})
