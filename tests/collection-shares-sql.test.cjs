@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs')
-const sql=fs.readFileSync('supabase/migrations/20261126_collection_shares.sql','utf8')
+const sql=fs.readFileSync('supabase/migrations/20261126b_collection_shares.sql','utf8')
 test('collection shares migration is additive and changes nothing that exists',()=>{
  assert.doesNotMatch(sql,/\b(drop|alter table public\.books|update public\.|delete from public\.)/i)
  assert.match(sql,/^begin;/m);assert.match(sql,/^commit;/m)

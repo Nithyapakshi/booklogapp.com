@@ -25,7 +25,7 @@ create table public.collection_share_items (
   title text not null check (length(trim(title)) between 1 and 500),
   author text not null default '' check (length(author) <= 500),
   cover text not null default '' check (length(cover) <= 2000 and (cover = '' or cover like 'https://%')),
-  position integer not null check (position >= 1),
+  sort_order integer not null check (sort_order >= 1),
   primary key (token, source, book_id)
 );
 
@@ -64,7 +64,7 @@ begin
   values (v_uid, left(v_name, 80), p_sources, coalesce(p_full_library, false))
   returning token into v_token;
 
-  insert into public.collection_share_items (token, source, book_id, title, author, cover, position)
+  insert into public.collection_share_items (token, source, book_id, title, author, cover, sort_order)
   select v_token, lower(b.status), b.id, b.title, left(coalesce(b.author, ''), 500),
          case when b.cover_url like 'https://%' and length(b.cover_url) <= 2000 then b.cover_url else '' end,
          x.ord
@@ -95,16 +95,16 @@ end $$;
 -- are left out (decision D1). Books added later never appear. No book ids, owner id,
 -- notes, ratings or dates are returned.
 create function public.read_collection_share(p_token uuid)
-returns table (display_name text, full_library boolean, sources text[], source text, title text, author text, cover text, position integer)
+returns table (display_name text, full_library boolean, sources text[], source text, title text, author text, cover text, sort_order integer)
 language sql stable security definer set search_path = '' as $$
-  select s.display_name, s.full_library, s.sources, i.source, i.title, i.author, i.cover, i.position
+  select s.display_name, s.full_library, s.sources, i.source, i.title, i.author, i.cover, i.sort_order
   from public.collection_shares s
   left join public.collection_share_items i
     on i.token = s.token
    and exists (select 1 from public.books b
                 where b.user_id = s.owner_id and b.id = i.book_id and lower(b.status) = i.source)
   where s.token = p_token
-  order by i.source, i.position;
+  order by i.source, i.sort_order;
 $$;
 
 revoke all on function public.create_collection_share(text[], boolean, jsonb) from public, anon, authenticated;
