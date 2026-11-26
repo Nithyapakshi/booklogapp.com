@@ -1,5 +1,6 @@
 "use client"
 import { useRef, useState } from "react"
+import Link from "next/link"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { codedSharePath } from "@/lib/public-share-path"
 import { safeCover, shareSenderLine } from "@/lib/shared-book"
@@ -62,9 +63,9 @@ export function BookShareControls({book}:{book:ShareBook}) {
           </div>
         </div>
         <p className="text-[12.5px] leading-relaxed" style={{color:"var(--bl-6b5c42)"}}>Anyone with the link sees your name and this book. Your private notes and rating are never shared.</p>
-        {error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
+        {error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}{/display name/i.test(error)&&<> <Link href="/settings" className="underline">Go to Settings</Link></>}</p>}
         <div className="flex min-w-0 gap-2.5">
-          <button type="button" disabled={!ready} onClick={()=>void copy()} style={{...actionStyle,border:0,background:"var(--bl-c17f3e)",color:"var(--bl-primary-ink)",opacity:ready?1:.6,cursor:ready?"pointer":"default"}}>{copied?"✓ Link copied":ready?"Copy link":"Preparing..."}</button>
+          <button type="button" disabled={!ready} onClick={()=>void copy()} style={{...actionStyle,border:0,background:"var(--bl-c17f3e)",color:"var(--bl-primary-ink)",opacity:ready?1:.6,cursor:ready?"pointer":"default"}}>{copied?"✓ Link copied":ready||error?"Copy link":"Preparing..."}</button>
           {ready
             ? <a href={`https://wa.me/?text=${encodeURIComponent(ready.url)}`} target="_blank" rel="noopener noreferrer" onClick={()=>track("share.book_whatsapp")} style={{...actionStyle,border:"1px solid var(--bl-e0d5c4)",background:"var(--bl-fff)",color:"var(--bl-1a1208)"}}>WhatsApp</a>
             : <button type="button" disabled style={{...actionStyle,border:"1px solid var(--bl-e0d5c4)",background:"var(--bl-fff)",color:"var(--bl-8a7560)",opacity:.6}}>WhatsApp</button>}
