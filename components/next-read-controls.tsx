@@ -5,6 +5,7 @@ import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import type { Book } from "@/types"
 import { track } from "@/lib/usage"
+import { ConfirmRemoveBook } from "@/components/confirm-remove-book"
 
 const quiet = {color:"var(--bl-c17f3e)",textDecoration:"underline",textUnderlineOffset:3,minHeight:44}
 export function NextReadHeader({choosing,hasChoice,disabled,onChoose,onCancel}:{choosing:boolean;hasChoice:boolean;disabled:boolean;onChoose:()=>void;onCancel:()=>void}) {
@@ -26,6 +27,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
   const [menuOpen,setMenuOpen] = useState(false)
   const [error,setError] = useState("")
   const [working,setWorking] = useState(false)
+  const [confirmRemove,setConfirmRemove] = useState(false)
   const {moveBook,removeBook} = useBooks()
   const amazonUrl = useAmazonUrl(book.title,book.author)
   const act = async (status?:BookStatus) => {
@@ -45,11 +47,11 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
         <button className="block w-full text-left p-2" disabled={busy||working} onClick={()=>{setEditing(true);setDetailsOpen(true);setMenuOpen(false)}}>Edit details</button>
         {([['reading','Reading'],['completed','Completed'],['recommended','Recommendations'],['onHold','On Hold']] as const).map(([status,label])=><button key={status} disabled={busy||working} className="block w-full text-left p-2" onClick={()=>void act(status)}>Move to {label}</button>)}
         <a href={amazonUrl} target="_blank" rel="noopener noreferrer" className="block p-2" onClick={()=>track("amazon.clicked",{from:"next_read"},book.id)}>Find on Amazon</a>
-        <button disabled={busy||working} className="block w-full text-left p-2 text-red-600 dark:text-red-300" onClick={()=>void act()}>Remove</button>
+        <button disabled={busy||working} className="block w-full text-left p-2 text-red-600 dark:text-red-300" onClick={()=>{setMenuOpen(false);setConfirmRemove(true)}}>Remove</button>
         <button className="block w-full text-left p-2" onClick={()=>setMenuOpen(false)}>Close</button>
       </div>}
     </div>
-  </section>{error&&<p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/></>
+  </section>{error&&<p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/><ConfirmRemoveBook open={confirmRemove} title={book.title} from="up_next" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void act()}}/></>
 }
 export function NextReadConfirmation({selected,busy,onSave}:{selected:boolean;busy:boolean;onSave:()=>void}) {
   const anchor = useRef<HTMLDivElement>(null)

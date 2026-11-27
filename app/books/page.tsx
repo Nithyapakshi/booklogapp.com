@@ -35,6 +35,7 @@ import { getFreeSpiritCandidates } from "@/app/actions/free-spirit"
 import { buildRowSpecs, assembleRows, takeTopPick, specsSignature, loadDismissals, bookKey, type Candidate, type Dismissed } from "@/lib/discover-rows"
 import { mergeRefreshCandidates, refreshStatus } from "@/lib/discover-refresh"
 import { ShareButton } from "@/components/share-button"
+import { ConfirmRemoveBook } from "@/components/confirm-remove-book"
 import { CollectionSharePopup } from "@/components/collection-share-popup"
 import { FULL_LIBRARY, type ShareSource } from "@/lib/collection-share"
 import { DiscoverRowView, TopPickCard } from "@/components/discover-carousel"
@@ -50,6 +51,7 @@ const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
 function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string, status: BookStatus, rowId?: string) => void }) {
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -173,9 +175,10 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
                 style={{ color: "var(--bl-c17f3e)" }}
                 onClick={(e) => { e.stopPropagation(); track("amazon.clicked", { from: "list_menu" }, book.id); window.open(amazonUrl, "_blank", "noopener,noreferrer"); setDropdownOpen(false) }}
               >Find on Amazon</div>
-              <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer text-red-500" onClick={async () => { setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId); setDropdownOpen(false) } catch { setWriteError("Book was not removed. Please try again.") } }}>Remove</div>
+              <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer text-red-500" onClick={() => { setDropdownOpen(false); setConfirmRemove(true) }}>Remove</div>
             </div>
           )}
+          <ConfirmRemoveBook open={confirmRemove} title={book.title} from="list_menu" onCancel={() => setConfirmRemove(false)} onConfirm={async () => { setConfirmRemove(false); setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId) } catch { setWriteError("Book was not removed. Please try again.") } }} />
         </div>
       </div>
       <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />
@@ -795,15 +798,12 @@ function BooksLibraryContent() {
     fetchShareProfile()
   }, [user])
 
-  // Share opens one popup (boards 3 and 9). Existing sharers see their saved choice first;
-  // their old profile link is left exactly as it is (decision D2).
+  // Share opens one popup (boards 3 and 9). Existing sharers start from their saved choice;
+  // their old profile link is left exactly as it is (decision D2), explained in Settings.
   const TAB_SOURCE: Record<string, ShareSource> = { Reading: "reading", Queued: "queued", Completed: "completed" }
   const shareInitialSources: ShareSource[] = sharingOn
     ? (shareMode === "full_library" ? [...FULL_LIBRARY] : ["recommended"])
     : sidebarTab === "recommended" ? ["recommended"] : [TAB_SOURCE[activeTab] || "recommended"]
-  const savedShareChoice = sharingOn
-    ? { label: shareMode === "full_library" ? "Full library" : "Recommendations", showsOnHold: shareMode === "full_library" && (books.onHold?.length || 0) > 0 }
-    : null
 
 
 
@@ -1038,7 +1038,7 @@ function BooksLibraryContent() {
       {linkedBook && <BookDetailsDialog book={linkedBook} open={true} onClose={() => {setLinkedBookId(null); window.history.replaceState(null, "", "/books")}} mode="view" />}
       {surveyOpen && user && <FirstRunSurvey userId={user.id} onFinished={() => setSurveyOpen(false)} emailChoice={surveyShowsEmailChoice(marketingPref, user)} />}
       {emailPrompt && !surveyOpen && <EmailPreferencePrompt variant={emailPrompt} onFinished={() => setEmailPrompt(null)} />}
-      {collectionShareOpen && <CollectionSharePopup open={collectionShareOpen} onClose={() => setCollectionShareOpen(false)} books={books} initialSources={shareInitialSources} savedChoice={savedShareChoice} />}
+      {collectionShareOpen && <CollectionSharePopup open={collectionShareOpen} onClose={() => setCollectionShareOpen(false)} books={books} initialSources={shareInitialSources} />}
       <Sidebar activeTab={sidebarTab} onTabChange={handleSidebarTab} />
 
       <main className="flex-1 overflow-auto pb-20 md:pb-0" style={{ background: "var(--bl-f7f4ef)" }}>
