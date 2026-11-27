@@ -178,7 +178,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
               <div className="px-4 py-2 text-sm hover:bg-accent cursor-pointer text-red-500" onClick={() => { setDropdownOpen(false); setConfirmRemove(true) }}>Remove</div>
             </div>
           )}
-          <ConfirmRemoveBook open={confirmRemove} title={book.title} from="list_menu" onCancel={() => setConfirmRemove(false)} onConfirm={async () => { setConfirmRemove(false); setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId) } catch { setWriteError("Book was not removed. Please try again.") } }} />
+          <ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="list_menu" onCancel={() => setConfirmRemove(false)} onConfirm={async () => { setConfirmRemove(false); setWriteError(null); try { await removeBook(book.id, book.status as BookStatus, book.rowId) } catch { setWriteError("Book was not removed. Please try again.") } }} />
         </div>
       </div>
       <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />

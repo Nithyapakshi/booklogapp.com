@@ -19,8 +19,10 @@ test('old profile link On Hold note lives in Settings, only for full-library pub
 test('Settings Sign out waits for sign-out, then goes to login; cached user is cleared', () => {
   const s = read('app/settings/page.tsx')
   assert.ok(s.includes('await signOut(); window.location.href = "/login"'))
-  for (const p of ['components/auth-provider.tsx', 'components/auth-provider-fix.tsx'])
-    assert.ok(read(p).includes('localStorage.removeItem("booklog-user")'), p)
+  const a = read('components/auth/auth-provider.tsx')
+  assert.ok(read('app/layout.tsx').includes('from "@/components/auth/auth-provider"'), 'the live provider is the one that clears')
+  assert.ok(a.includes('k === "booklog-user" || k.startsWith("booklog.heal:")'))
+  assert.ok(/finally \{\s*clearLocalAccountData\(\)/.test(a), 'cleared even if sign-out errors')
 })
 
 test('phone account tab has a static Settings label; the name shows on the Settings page', () => {
@@ -32,6 +34,8 @@ test('phone account tab has a static Settings label; the name shows on the Setti
 
 test('every Remove path asks first', () => {
   const c = read('components/confirm-remove-book.tsx')
+  assert.ok(c.includes('Remove from recommendations?') && c.includes('will be taken off your recommendations.'))
+  assert.equal((read('app/books/page.tsx')+read('components/book-card.tsx')+read('components/next-read-controls.tsx')).match(/ConfirmRemoveBook open=\{confirmRemove\} title=\{book\.title\} status=\{book\.status\}/g).length, 3)
   assert.ok(c.includes('Remove this book?') && c.includes('Keep book') && c.includes('track("book.remove_cancelled"'))
   const page = read('app/books/page.tsx'), card = read('components/book-card.tsx'), next = read('components/next-read-controls.tsx')
   assert.ok(page.includes('from="list_menu"') && card.includes('from="grid_card"') && next.includes('from="up_next"'))

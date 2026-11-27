@@ -40,6 +40,20 @@ const defaultContextValue: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultContextValue)
 
+// Device-side copies of the signed-in account: the cached user (with email) and the per-book
+// cover-repair markers. Removed on sign-out so nothing identifying stays on a shared device.
+export function clearLocalAccountData() {
+  try {
+    const store = window.localStorage
+    const keys: string[] = []
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i)
+      if (k && (k === "booklog-user" || k.startsWith("booklog.heal:"))) keys.push(k)
+    }
+    for (const k of keys) store.removeItem(k)
+  } catch {}
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -141,8 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
+    try {
+      if (supabase) await supabase.auth.signOut()
+    } finally {
+      clearLocalAccountData()
+    }
   }
 
   const value = {

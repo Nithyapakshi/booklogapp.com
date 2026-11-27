@@ -272,7 +272,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
 
       {/* Book details dialog */}
       <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />
-      <ConfirmRemoveBook open={confirmRemove} title={book.title} from="grid_card" onCancel={() => setConfirmRemove(false)} onConfirm={() => void confirmedRemove()} />
+      <ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="grid_card" onCancel={() => setConfirmRemove(false)} onConfirm={() => void confirmedRemove()} />
     </>
   )
 }

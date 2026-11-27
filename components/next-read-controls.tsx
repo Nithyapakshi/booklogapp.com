@@ -51,7 +51,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
         <button className="block w-full text-left p-2" onClick={()=>setMenuOpen(false)}>Close</button>
       </div>}
     </div>
-  </section>{error&&<p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/><ConfirmRemoveBook open={confirmRemove} title={book.title} from="up_next" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void act()}}/></>
+  </section>{error&&<p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/><ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="up_next" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void act()}}/></>
 }
 export function NextReadConfirmation({selected,busy,onSave}:{selected:boolean;busy:boolean;onSave:()=>void}) {
   const anchor = useRef<HTMLDivElement>(null)
