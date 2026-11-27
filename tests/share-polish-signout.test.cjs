@@ -27,7 +27,7 @@ test('phone account tab has a static Settings label; the name shows on the Setti
   const s = read('components/sidebar.tsx')
   assert.ok(s.includes('<span>Settings</span>'))
   assert.ok(!s.includes('firstName : "Loading..."'))
-  assert.ok(read('app/settings/page.tsx').includes('Signed in as'))
+  const st = read('app/settings/page.tsx'); assert.ok(st.includes('>{signedInAs}</p>')); assert.ok(!st.includes('Signed in as'))
 })
 
 test('every Remove path asks first', () => {

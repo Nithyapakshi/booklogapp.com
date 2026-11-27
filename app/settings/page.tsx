@@ -176,7 +176,7 @@ export default function SettingsPage() {
           </Link>
         </div>
         <p style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "var(--bl-1a1208)", fontWeight: "400", margin: "0 0 4px" }}>Settings</p>
-        <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", margin: "0 0 20px" }}>{signedInAs ? <>Signed in as <b style={{ color: "var(--bl-1a1208)", fontWeight: 600 }}>{signedInAs}</b></> : "Manage your profile and sharing preferences"}</p>
+        <p style={{ fontSize: "15px", color: "var(--bl-6b5c42)", fontWeight: 600, margin: "0 0 20px", minHeight: "20px" }}>{signedInAs}</p>
 
         <ThemePreference />
 
