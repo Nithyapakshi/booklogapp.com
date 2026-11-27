@@ -2,7 +2,7 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 27 November 2026 (sharing parts 1 to 3 live: Share button, tab and full-library links, recipients choose the shelf; Remove asks first; phone Sign out fix). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 27 November 2026 (sharing parts 1 to 3 live: Share button, tab and full-library links, recipients choose the shelf; Remove asks first; phone Sign out fix; desktop list view wraps into card columns). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
@@ -73,7 +73,7 @@ booklogapp.com  ·  Last updated: 27 November 2026
 | Feature | Description | Status | Notes |
 | --- | --- | --- | --- |
 | Grid view | Visual grid with prominent book cover images | ✅  DONE |  |
-| List / table view | Compact list view for a quick overview | ✅  DONE | Live 30 Oct: long genres wrap in mobile list rows; stars stay right and book details remain readable. Desktop unchanged. |
+| List / table view | Compact list view for a quick overview | ✅  DONE | Live 30 Oct: long genres wrap in mobile list rows; stars stay right and book details remain readable. Live 27 Nov (#106): on screens 900px and wider the list wraps into columns of compact cards (menu next to the title, full titles); on Queued, Up next is the first highlighted card. Phones and grid view unchanged. |
 | Toggle between views | Switch grid ↔ list with a single click | ✅  DONE |  |
 | Dark mode | Switch between light and dark mode | ✅  DONE | Live: selectable light and dark themes. Warm theme remains the default. |
 
