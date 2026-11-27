@@ -12,3 +12,21 @@
   .bl-list-amazon { grid-column: 2 / 4; grid-row: 5; }
   .bl-list-menu { position: absolute; top: 8px; right: 12px; }
 }
+
+/* Wide screens: the list wraps into columns of compact cards (same card layout as phones).
+   Scoped to .bl-list-grid so only the My Books list view changes. Title and author wrap instead of truncating. */
+@media (min-width: 900px) {
+  .bl-list-grid .bl-list-row { position: relative; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-content: start; align-items: start; }
+  .bl-list-grid .bl-list-row > :first-child { grid-column: 1; grid-row: 1 / 6; }
+  .bl-list-grid .bl-list-details { display: contents; }
+  .bl-list-grid .bl-list-title { grid-column: 2 / 4; grid-row: 1; padding-right: 32px; min-width: 0; }
+  .bl-list-grid .bl-list-author { grid-column: 2 / 4; grid-row: 2; }
+  .bl-list-grid .bl-list-date { grid-column: 2 / 4; grid-row: 3; }
+  .bl-list-grid .bl-list-genre { grid-column: 2 / 4; grid-row: 4; justify-self: start; }
+  .bl-list-grid .bl-list-row-rated .bl-list-genre { grid-column: 2; }
+  .bl-list-grid .bl-list-stars { grid-column: 3; grid-row: 4; justify-self: end; }
+  .bl-list-grid .bl-list-amazon { grid-column: 2 / 4; grid-row: 5; }
+  .bl-list-grid .bl-list-menu { position: absolute; top: 8px; right: 12px; }
+  .bl-list-grid .bl-list-row .bl-list-title,
+  .bl-list-grid .bl-list-row .bl-list-author { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+}

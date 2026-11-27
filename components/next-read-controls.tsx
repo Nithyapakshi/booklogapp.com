@@ -8,9 +8,9 @@ import { track } from "@/lib/usage"
 import { ConfirmRemoveBook } from "@/components/confirm-remove-book"
 
 const quiet = {color:"var(--bl-c17f3e)",textDecoration:"underline",textUnderlineOffset:3,minHeight:44}
-export function NextReadHeader({choosing,hasChoice,disabled,onChoose,onCancel}:{choosing:boolean;hasChoice:boolean;disabled:boolean;onChoose:()=>void;onCancel:()=>void}) {
+export function NextReadHeader({choosing,hasChoice,upNextBelow,disabled,onChoose,onCancel}:{choosing:boolean;hasChoice:boolean;upNextBelow?:boolean;disabled:boolean;onChoose:()=>void;onCancel:()=>void}) {
   return <div className="flex items-center justify-between gap-3 mt-5 border-t border-border pt-3">
-    <h2 className="text-sm font-semibold text-muted-foreground">{choosing?"Choose next read":hasChoice?"Other queued books":"Queued books"}</h2>
+    <h2 className="text-sm font-semibold text-muted-foreground">{choosing?"Choose next read":hasChoice&&!upNextBelow?"Other queued books":"Queued books"}</h2>
     {choosing?<button type="button" style={quiet} onClick={onCancel}>Cancel</button>:!hasChoice&&<button type="button" style={quiet} disabled={disabled} onClick={onChoose}>Choose next read</button>}
   </div>
 }
@@ -21,7 +21,8 @@ export function NextReadChoice({book,checked,onSelect}:{book:Book;checked:boolea
     <span className="min-w-0"><span className="block text-sm font-semibold break-words">{book.title}</span><span className="block text-xs text-muted-foreground mt-1 break-words">{book.author}</span>{book.genre&&<span className="block text-xs text-muted-foreground mt-2">{book.genre}</span>}</span>
   </label>
 }
-export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onStart:()=>void;onChange:()=>void}) {
+// card: shown as the first card of the wide list view (highlighted box) instead of a full-width row.
+export function UpNext({book,busy,onStart,onChange,card}:{book:Book;busy:boolean;onStart:()=>void;onChange:()=>void;card?:boolean}) {
   const [detailsOpen,setDetailsOpen] = useState(false)
   const [editing,setEditing] = useState(false)
   const [menuOpen,setMenuOpen] = useState(false)
@@ -37,7 +38,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
     catch {setError("Book was not changed. Please try again.")}
     finally {setWorking(false)}
   }
-  return <><section data-book-id={book.id} aria-label="Up next" className="flex gap-3 items-start border-y border-border py-4 mt-5">
+  return <><section data-book-id={book.id} aria-label="Up next" className={card?"flex gap-3 items-start rounded-lg border p-4":"flex gap-3 items-start border-y border-border py-4 mt-5"} style={card?{background:"var(--bl-fdf3e7)",borderColor:"var(--bl-e8c9a0)"}:undefined}>
     {book.cover&&<button type="button" aria-label={`Open details for ${book.title}`} disabled={busy||working} onClick={()=>setDetailsOpen(true)}><img src={book.cover} alt="" style={{width:52,height:78,objectFit:"contain",flexShrink:0}}/></button>}
     <div className="min-w-0 flex-1"><h2 className="text-xs text-muted-foreground uppercase mb-1">Up next</h2><button type="button" disabled={busy||working} onClick={()=>setDetailsOpen(true)} className="text-sm font-semibold break-words text-left hover:underline">{book.title}</button>
       <div className="flex flex-wrap items-center gap-4 mt-2"><button type="button" disabled={busy||working} onClick={onStart} className="text-sm font-semibold rounded border border-border px-3 min-h-11" style={{color:"var(--bl-c17f3e)"}}>{busy?"Starting...":working?"Updating...":"Start reading"}</button><button type="button" disabled={busy||working} onClick={onChange} style={quiet}>Change</button></div>
@@ -51,7 +52,7 @@ export function UpNext({book,busy,onStart,onChange}:{book:Book;busy:boolean;onSt
         <button className="block w-full text-left p-2" onClick={()=>setMenuOpen(false)}>Close</button>
       </div>}
     </div>
-  </section>{error&&<p role="alert" className="text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/><ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="up_next" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void act()}}/></>
+  </section>{error&&<p role="alert" className="col-span-full text-sm text-red-600 dark:text-red-300">{error}</p>}<BookDetailsDialog book={book} open={detailsOpen} onClose={()=>{setDetailsOpen(false);setEditing(false)}} mode="view" initialEdit={editing}/><ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="up_next" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void act()}}/></>
 }
 export function NextReadConfirmation({selected,busy,onSave}:{selected:boolean;busy:boolean;onSave:()=>void}) {
   const anchor = useRef<HTMLDivElement>(null)

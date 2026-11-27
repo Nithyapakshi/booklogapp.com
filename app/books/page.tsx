@@ -82,7 +82,7 @@ function BookListRow({ book, removeBook }: { book: Book; removeBook: (id: string
 
   return (
     <>
-      {writeError && <p role="alert" className="text-sm text-red-600 dark:text-red-300">{writeError}</p>}
+      {writeError && <p role="alert" className="col-span-full text-sm text-red-600 dark:text-red-300">{writeError}</p>}
       <div
         data-book-id={book.id}
         className={`bl-list-row flex items-center gap-4 bg-card rounded-lg shadow-sm px-4 py-3 cursor-pointer hover:shadow-md transition-shadow ${(book.status === "completed" || book.status === "recommended") ? "bl-list-row-rated" : ""}`}
@@ -604,6 +604,22 @@ function GenreFilterRow({ selected, onSelect, expanded, onToggleExpand, genres }
   )
 }
 
+// True when the viewport is at least `px` wide. Starts false on the server and first render.
+function useMinWidth(px: number) {
+  const [matches, setMatches] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia(`(min-width: ${px}px)`)
+    const update = () => setMatches(query.matches)
+    update()
+    query.addEventListener("change", update)
+    return () => query.removeEventListener("change", update)
+  }, [px])
+  return matches
+}
+
+// Width at which the list view wraps into columns of cards (keep in step with list-row.css).
+const LIST_WRAP_MIN_WIDTH = 900
+
 function BooksLibraryContent() {
   const [activeTab, setActiveTab]   = useState("Reading")
   const [sidebarTab, setSidebarTab] = useState("my-books")
@@ -704,6 +720,10 @@ function BooksLibraryContent() {
     } catch { setNextError("Book was not started. Try again. Your next-read choice is unchanged.") }
     finally { setNextBusy(false) }
   }
+  // Wide list view: Up next becomes the first card in the wrapping list instead of a full-width row above it.
+  const wideList = useMinWidth(LIST_WRAP_MIN_WIDTH)
+  const upNextInList = wideList && viewMode === "list" && queuedTab && !!pinnedNext && !choosingNext
+  const upNextCard = upNextInList && pinnedNext ? <UpNext card book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/> : undefined
 
   // "What's next?": shown once on the Reading tab after a book is finished from its progress line.
   // Reuses Up next, the queue shuffle, the Queued tab and Discover. Nothing here changes how books move.
@@ -1025,10 +1045,11 @@ function BooksLibraryContent() {
     </div>
   )
 
-  const listView = (books: Book[]) => (
-    <div className="flex flex-col gap-2 mt-4">
+  const listView = (books: Book[], lead?: React.ReactNode) => (
+    <div className="bl-list-grid flex flex-col gap-2 mt-4 min-[900px]:grid min-[900px]:grid-cols-[repeat(auto-fill,minmax(340px,1fr))] min-[900px]:gap-4">
+      {lead}
       {books.map((book) => <BookListRow key={book.id} book={book} removeBook={removeBook} />)}
-      {!loading && !loadError && books.length === 0 && (libraryEmpty ? firstBookPrompt(false) : <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
+      {!loading && !loadError && books.length === 0 && !lead && (libraryEmpty ? firstBookPrompt(false) : <div className="text-gray-400 text-center py-12" style={sans}>No books here yet.</div>)}
     </div>
   )
 
@@ -1105,16 +1126,16 @@ function BooksLibraryContent() {
               {whatsNextBox}
               {queuedTab && <>
                 {!choosingNext && !loading && !loadError && !nextRead.loading && !nextRead.error && shouldShowShuffle(books.queued.length,!!pinnedNext) && <QueueShuffle books={books.queued} busy={nextBusy} onMakeNext={book => void makeNextFromShuffle(book)}/>}
-                {!choosingNext && pinnedNext && <UpNext book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/>}
-                <NextReadHeader choosing={choosingNext} hasChoice={!!pinnedNext} disabled={loading||loadError||nextRead.loading||nextRead.error||nextBusy||!books.queued.length} onChoose={beginNextChoice} onCancel={() => {if (!nextBusy) {setChoosingNext(false);setNextError("")}}}/>
+                {!choosingNext && pinnedNext && !upNextInList && <UpNext book={pinnedNext} busy={nextBusy} onStart={() => void startNext()} onChange={beginNextChoice}/>}
+                <NextReadHeader choosing={choosingNext} hasChoice={!!pinnedNext} upNextBelow={upNextInList} disabled={loading||loadError||nextRead.loading||nextRead.error||nextBusy||!books.queued.length} onChoose={beginNextChoice} onCancel={() => {if (!nextBusy) {setChoosingNext(false);setNextError("")}}}/>
                 {nextRead.error && <p role="alert" className="text-sm mt-2">Could not load your next read. <button type="button" className="underline" onClick={() => void nextRead.read()}>Try again</button></p>}
                 {nextError && <p role="alert" className="text-sm mt-2 text-red-600 dark:text-red-300">{nextError}</p>}
               </>}
               {queuedTab && pinnedNext && !choosingNext && (listSearch.trim() || myBooksGenreFilter!=="All") && <p className="text-xs text-muted-foreground mt-2">Up next stays pinned. Filters apply to other queued books.</p>}
-              {queuedTab && !choosingNext && pinnedNext && !filteredBooks.length ? <p className="text-sm text-muted-foreground py-8">{books.queued.length===1?"No other queued books.":"No other queued books match these filters."}</p> : queuedTab && choosingNext ? <div role="radiogroup" aria-label="Choose next read" className="flex flex-col gap-2 mt-4">
+              {queuedTab && !choosingNext && pinnedNext && !filteredBooks.length ? <>{upNextInList && listView([], upNextCard)}<p className="text-sm text-muted-foreground py-8">{books.queued.length===1?"No other queued books.":"No other queued books match these filters."}</p></> : queuedTab && choosingNext ? <div role="radiogroup" aria-label="Choose next read" className="flex flex-col gap-2 mt-4">
                 {paginatedBooks.map(book => <NextReadChoice key={book.id} book={book} checked={pendingNext===book.id} onSelect={() => {if(!nextBusy)setPendingNext(book.id)}}/>)}
                 {!paginatedBooks.length && <p className="text-sm text-muted-foreground py-8">No queued books match these filters.</p>}
-              </div> : (viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks))}
+              </div> : (viewMode === "grid" ? gridView(paginatedBooks) : listView(paginatedBooks, upNextInList ? upNextCard : undefined))}
               <PaginationBar />
               {queuedTab && choosingNext && <div aria-hidden="true" className="h-28 shrink-0"/>}
               {queuedTab && choosingNext && <NextReadConfirmation selected={!!pendingNext&&books.queued.some(b=>b.id===pendingNext)} busy={nextBusy} onSave={() => void saveNextChoice()}/>}
