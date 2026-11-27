@@ -2,13 +2,13 @@
 
 Synced from the canonical [BookLog roadmap](https://docs.google.com/document/d/1zfv9pcx0q24nD5AR_fSGH3q-RNXN3l3sNcoXgZyyPfo/edit).
 
-Last synced: 25 November 2026 (AlternativeTo listing live; Goodreads-alternative page live). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
+Last synced: 27 November 2026 (sharing parts 1 to 3 live: Share button, tab and full-library links, recipients choose the shelf; Remove asks first; phone Sign out fix). This is the reviewer-readable copy. Keep it aligned with the Google Doc in the same change whenever roadmap content or status changes. The Google Doc remains the canonical feature table. No automated sync is installed.
 
 BookLog
 
 User Stories & Product Roadmap
 
-booklogapp.com  ·  Last updated: 23 November 2026
+booklogapp.com  ·  Last updated: 27 November 2026
 
 ## Part 1 — Live Features
 
@@ -18,7 +18,7 @@ booklogapp.com  ·  Last updated: 23 November 2026
 | --- | --- | --- | --- |
 | Sign up | Create an account with email and one password; names optional | ✅  DONE |  |
 | Log in | Sign in securely; reading data loads automatically on login | ✅  DONE |  |
-| Sign out | Securely log out from the navigation bar | ✅  DONE |  |
+| Sign out | Securely log out from the navigation bar | ✅  DONE | 27 Nov (#104): Sign out in Settings on phones now goes to the login page; signing out clears saved account details from the device. |
 | Forgot password | Request a password reset link via email | ✅  DONE |  |
 | Reset password | Set a new password via the reset link | ✅  DONE |  |
 | Sign in with Google | Google sign-in alongside email/password | ✅  DONE | Existing library preserved. |
@@ -45,7 +45,7 @@ booklogapp.com  ·  Last updated: 23 November 2026
 | 5-status library | Reading, Queued, Completed, My Recommendations, On Hold | ✅  DONE |  |
 | Move books between statuses | Three-dot menu to change status on any book | ✅  DONE |  |
 | Completed + Recommendations overlap | Books can exist in both Completed and My Recommendations simultaneously | ✅  DONE |  |
-| Delete books | Remove any book using the trash icon | ✅  DONE |  |
+| Delete books | Remove any book using the trash icon | ✅  DONE | 27 Nov (#104): asks "Remove this book?" first. On Recommendations, Remove only takes the book off that list. |
 | Genre tags + filtering | Tag books with genres; filter library by genre pill | ✅  DONE | Genre filtering live; broader reader-defined tags remain a requirement. |
 | Star ratings | Rate completed/recommended books 1–5 stars; persists across status changes | ✅  DONE |  |
 | Personal notes | Write notes against any book in your library | ✅  DONE | Typed notes live; dictation belongs to planned voice commands. |
@@ -103,9 +103,10 @@ booklogapp.com  ·  Last updated: 23 November 2026
 | Public profile /u/[username] | Shareable reading profile at a public URL | ✅  DONE |  |
 | Profile visibility toggle | Control whether your profile is public or private | ✅  DONE |  |
 | Update name and username | Edit display name and username from settings | ✅  DONE |  |
-| Granular sharing settings | Control which tabs or statuses are visible on public profile | 🟡  PARTIAL | Public/private plus Recommendations-only or full-library sharing live; per-tab controls not built. |
+| Granular sharing settings | Control which tabs or statuses are visible on public profile | 🟡  PARTIAL | Public/private plus Recommendations-only or full-library profile live; per-tab profile controls not built. Share links cover sharing chosen tabs (26 Nov). |
 | Profile picture / avatar | Upload and display a profile avatar | 🔲  NOT STARTED |  |
-| Share individual books | Named snapshot links with quiet sharing controls | ✅  DONE | Display name, title, author and cover only; no notes or ratings. Persistent links without expiry or revoke. |
+| Share individual books | Named snapshot links with quiet sharing controls | ✅  DONE | Live 26 Nov (#101): one Share button in book details; popup with Copy link and WhatsApp; the reader picks the shelf. Display name, title, author and cover only; no notes or ratings. Persistent links without expiry or revoke. |
+| Share tabs or full library | Share chosen tabs or the full library with one link; untick any book | ✅  DONE | Live 26 Nov (#102, #103), simplified 27 Nov (#104). Never includes On Hold, notes or ratings. Readers open it without signing in, tick books, sign up or sign in (Google included) and choose the shelf. Link preview shows the BookLog tile and "[name] has shared this with you on BookLog". |
 | Feedback form | Send feedback with a reply-to address | ✅  DONE |  |
 | Privacy notice | Public notice linked from home, login and signup | ✅  DONE |  |
 | Editable reading preferences | Let readers update taste preferences | NOT STARTED | Broader profile editor not built. |
@@ -242,3 +243,6 @@ booklogapp.com  ·  Last updated: 23 November 2026
 | 23 Nov | Collect explicit email consent in the app: unticked checkbox at signup, one-time card for existing readers, Settings switch. | Signup never asked, so no reader email could be sent. A pre-ticked box or pre-selected Yes is not valid consent (UK GDPR / ICO; UAE PDPL). "Yes, email me" is the main button on the card (owner's call). Closing the card is not consent and it is not shown again; Settings is the way back. |
 | 23 Nov | New Google sign-ups get the email checkbox inside the existing welcome survey, not a separate step. | One popup instead of two. Off by default, so the survey is unchanged for everyone else; answers save first exactly as before. |
 | 23 Nov | Growth plan to 1,000 accounts by 31 Jan 2027: lead with getting signups and reasons to return; no new onboarding screen. Owner time about 1.5 to 2 hours a weekday; at most two time-heavy channels at once; 500 to 600 accounts counts as a win. | New signups adding a book within 7 days (owner and test accounts excluded, full 7-day window): Aug 3 of 17, Sep 4 of 17, Oct 7 of 11, Nov 4 of 5 eligible (7 pending), so activation is no longer the main gap; accounts with no books are mostly older. First-book help and Welcome chooser already cover onboarding. Annual reading goal stays excluded unless reopened. |
+| 26 Nov | Sharing: one Share button for a book, a tab or the whole library (Recommendations, Reading, Queued, Completed; never On Hold). Links are fixed at share time: books removed later drop off, books added later never appear. Old profile links stay as they are; the public/private switch stays in Settings. | Agreed board by board with the owner before building (9 mock-up boards). Fixed links show exactly what was shared. Released in parts; Instinct tested each preview on synthetic accounts, and production database changes ran only on the owner's direct go. |
+| 26 Nov | Readers pick the shelf when adding a shared book, and can add several books from one link after signing up or signing in, Google included. | Owner's decision (board 5): the reader decides which shelf a shared book goes to. Google sign-in from a share link needed one added return address on production (approved 26 Nov). |
+| 27 Nov | Share popup simplified (no saved-choice note, no preview card, one privacy line); phone bottom tab reads Settings; Remove asks first, and on Recommendations only takes the book off that list. Unused share links are kept for now. | Owner's phone review. The saved-choice note could contradict the current choice and the preview card was cut off. The tab sometimes showed the email prefix. A stray tap deleted a book with its notes. Unused links are small rows looked up by their code; revisit only if they grow enough to cost money or slow the app. |
