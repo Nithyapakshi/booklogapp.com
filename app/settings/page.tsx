@@ -12,6 +12,7 @@ import { track } from "@/lib/usage"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
+  const [signedInAs, setSignedInAs] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [username, setUsername]       = useState("")
   const [sharingOn, setSharingOn]     = useState(false)
@@ -75,6 +76,7 @@ export default function SettingsPage() {
           setDisplayName([first, last].filter(Boolean).join(" "))
         }
         setUsername(data.username || "")
+        setSignedInAs(data.name || data.username || "")
         setSharingOn(data.profile_visibility === "public")
         setShareMode(data.share_mode === "full_library" ? "full_library" : "recommendations")
       }
@@ -174,7 +176,7 @@ export default function SettingsPage() {
           </Link>
         </div>
         <p style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "var(--bl-1a1208)", fontWeight: "400", margin: "0 0 4px" }}>Settings</p>
-        <p style={{ fontSize: "13px", color: "var(--bl-8a7560)", margin: "0 0 20px" }}>Manage your profile and sharing preferences</p>
+        <p style={{ fontSize: "15px", color: "var(--bl-6b5c42)", fontWeight: 600, margin: "0 0 20px", minHeight: "20px" }}>{signedInAs}</p>
 
         <ThemePreference />
 
@@ -250,6 +252,9 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+            {sharingOn && shareMode === "full_library" && (
+              <p style={{ fontSize: "11px", color: "var(--bl-8a7560)", margin: "4px 0 0", lineHeight: 1.45 }}>Your profile link also shows On Hold books. Links made with the Share button never include On Hold.</p>
+            )}
             {username && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px", background: "var(--bl-f3ede3)", border: "0.5px solid var(--bl-e0d5c4)", borderRadius: "6px", padding: "8px 12px" }}>
                 <span style={{ fontSize: "12px", color: "var(--bl-6b5c42)", flex: 1 }}>booklogapp.com/u/{username}</span>
@@ -290,7 +295,7 @@ export default function SettingsPage() {
         {/* Sign out — mobile only */}
         <div className="md:hidden" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid var(--bl-e0d5c4)" }}>
           <button
-            onClick={() => signOut()}
+            onClick={async () => { track("account.signed_out", { from: "settings" }); await signOut(); window.location.href = "/login" }}
             style={{ fontSize: "13px", color: "var(--bl-b85c5c)", background: "none", border: "0.5px solid var(--bl-e0c8c8)", borderRadius: "6px", padding: "10px 24px", fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
           >
             Sign out

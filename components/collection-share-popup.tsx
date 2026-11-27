@@ -2,19 +2,18 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { Book } from "@/types"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
-import { safeCover, shareSenderLine } from "@/lib/shared-book"
-import { SHARE_SOURCES, FULL_LIBRARY, orderSources, sourceLabel, chooserSummary, collectionTitle, collectionPath, type ShareSource } from "@/lib/collection-share"
+import { safeCover } from "@/lib/shared-book"
+import { SHARE_SOURCES, FULL_LIBRARY, orderSources, sourceLabel, chooserSummary, collectionPath, type ShareSource } from "@/lib/collection-share"
 import { DisplayNameField } from "@/components/display-name-field"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { track } from "@/lib/usage"
 
 type Ready = { sig: string; url: string }
-export type SavedChoice = { label: string; showsOnHold: boolean } | null
 
 // One compact popup (boards 3 and 9): what to share, which books, preview, Copy link / WhatsApp.
 // Each link is a fixed snapshot of the ticked books (decision D1). On Hold is never offered.
-export function CollectionSharePopup({ open, onClose, books, initialSources, savedChoice }:{
-  open: boolean; onClose: () => void; books: Record<string, Book[]>; initialSources: ShareSource[]; savedChoice: SavedChoice
+export function CollectionSharePopup({ open, onClose, books, initialSources }:{
+  open: boolean; onClose: () => void; books: Record<string, Book[]>; initialSources: ShareSource[]
 }) {
   const [sources,setSources]=useState<ShareSource[]>(initialSources),[chooserOpen,setChooserOpen]=useState(false)
   const [tab,setTab]=useState<ShareSource>(orderSources(initialSources)[0]||"recommended")
@@ -44,7 +43,6 @@ export function CollectionSharePopup({ open, onClose, books, initialSources, sav
   const allFour=FULL_LIBRARY.every(s=>sources.includes(s))
   const fullLibrary=allFour&&unticked.size===0&&payload.length>0
   const sig=JSON.stringify([fullLibrary,payload])
-  const title=name?collectionTitle(name,ordered,fullLibrary):""
 
   function create(): Promise<string> {
     const hit=cache.current.get(sig); if(hit)return hit
@@ -84,7 +82,6 @@ export function CollectionSharePopup({ open, onClose, books, initialSources, sav
   return <Dialog open={open} onOpenChange={v=>{if(!v)onClose()}}>
     <DialogContent className="flex h-[min(94dvh,760px)] w-[calc(100vw-24px)] flex-col gap-3 overflow-y-auto rounded-lg p-5 sm:max-w-[520px] sm:p-6" style={{background:"var(--bl-faf7f2)",color:"var(--bl-1a1208)"}}>
       <DialogHeader><DialogTitle className="font-serif text-2xl font-normal">Share</DialogTitle><DialogDescription className="sr-only">Choose what to share, untick any book, then copy the link or send it on WhatsApp.</DialogDescription></DialogHeader>
-      {savedChoice&&<p className="rounded-lg px-3 py-2 text-[13px] leading-snug" style={{background:"var(--bl-f3ede3)"}}><b>Saved choice:</b> {savedChoice.label}. Your old link still works{savedChoice.showsOnHold?" and also shows On Hold books.":"."}</p>}
       <button type="button" aria-expanded={chooserOpen} onClick={()=>setChooserOpen(v=>!v)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left" style={{border:`1px solid ${chooserOpen?"var(--bl-c17f3e)":"var(--bl-e0d5c4)"}`,background:"var(--bl-fff)"}}>
         <span><span className="block text-[11px] tracking-wider" style={{color:"var(--bl-6b5c42)"}}>SHARE</span><span className="font-semibold">{chooserSummary(ordered,allFour)}</span></span><span aria-hidden="true">{chooserOpen?"⌃":"⌄"}</span>
       </button>
@@ -107,14 +104,8 @@ export function CollectionSharePopup({ open, onClose, books, initialSources, sav
           </label>})}
         </div>
         <div className="border-t pt-3" style={{borderColor:"var(--bl-efe7da, #efe7da)"}}>
-          {needsName?<DisplayNameField onSaved={n=>{setName(n);setNeedsName(false);setError("")}}/>:<>
-            <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider" style={{color:"var(--bl-6b5c42)"}}>What they will see</p>
-            <div className="flex items-center gap-2 rounded-md p-1.5" style={{background:"#d9fdd3",color:"#1a1208"}}>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded font-serif font-bold" style={{background:"#c17f3e",color:"#fff"}}>B</span>
-              <span className="min-w-0 text-[12.5px] leading-snug"><span className="block truncate font-bold">{title||"Preparing..."}</span><span className="block truncate" style={{color:"#3d4a3b"}}>{name?shareSenderLine(name):""}</span></span>
-            </div>
-          </>}
-          <p className="my-2 text-[11.5px] leading-snug" style={{color:"var(--bl-6b5c42)"}}>Your private notes, ratings and any book you untick are never shared.</p>
+          {needsName&&<DisplayNameField onSaved={n=>{setName(n);setNeedsName(false);setError("")}}/>}
+          <p className="mb-2 text-[12px] leading-snug" style={{color:"var(--bl-6b5c42)"}}>Private notes and ratings aren't shared.</p>
           {payload.length===0&&<p className="mb-2 text-sm" style={{color:"var(--bl-8a7560)"}}>Tick at least one book to share.</p>}
           {error&&!needsName&&<p role="alert" className="mb-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
           <div className="flex min-w-0 gap-2.5">

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
-import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight, MessageSquare, BarChart3 } from "lucide-react"
+import { BookOpen, Sparkles, Heart, ChevronLeft, ChevronRight, MessageSquare, BarChart3, Settings } from "lucide-react"
 
 interface SidebarProps {
   activeTab: string
@@ -392,23 +392,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             textDecoration: "none",
           }}
         >
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              borderRadius: "50%",
-              background: "var(--bl-c17f3e)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "9px",
-              fontWeight: "700",
-              color: "var(--bl-primary-ink)",
-            }}
-          >
-            {mounted && firstName ? firstName[0].toUpperCase() : "…"}
-          </div>
-          <span>{mounted && firstName ? firstName : "Loading..."}</span>
+          <Settings size={20} aria-hidden="true" />
+          <span>Settings</span>
         </Link>
       </nav>
     </>

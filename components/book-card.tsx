@@ -12,6 +12,7 @@ import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { useAmazonUrl } from "@/hooks/use-amazon-url"
 import { track } from "@/lib/usage"
 import { ProgressLine } from "@/components/reading-progress"
+import { ConfirmRemoveBook } from "@/components/confirm-remove-book"
 
 interface BookCardProps {
   book: Book
@@ -34,6 +35,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const [rating, setRating] = useState<number>(book.selfRating || 0)
   useEffect(() => { setRating(book.selfRating || 0) }, [book.selfRating])
 
@@ -70,8 +72,12 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
     }
   }, [dropdownOpen])
 
-  const handleRemove = async (e: React.MouseEvent) => {
+  const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation()
+    setConfirmRemove(true)
+  }
+  const confirmedRemove = async () => {
+    setConfirmRemove(false)
     setWriteError(null)
     try { await removeBook(book.id, book.status as BookStatus, book.rowId) }
     catch { setWriteError("Book was not removed. Please try again.") }
@@ -266,6 +272,7 @@ export default function BookCard({ book, removeBook }: BookCardProps) {
 
       {/* Book details dialog */}
       <BookDetailsDialog book={book} open={dialogOpen} onClose={() => {setDialogOpen(false); setEditOpen(false)}} mode="view" initialEdit={editOpen} />
+      <ConfirmRemoveBook open={confirmRemove} title={book.title} status={book.status} from="grid_card" onCancel={() => setConfirmRemove(false)} onConfirm={() => void confirmedRemove()} />
     </>
   )
 }
