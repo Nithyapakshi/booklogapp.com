@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { getAIBookRecommendations } from "@/app/actions/ai-recommendations"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { AI_MAX_QUERY_CHARS } from "@/lib/ai-bounds"
 import type { BookSearchResult } from "@/types"
 import { BookDetailsDialog } from "@/components/book-details-dialog"
 import { OpenAISetupInstructions } from "@/components/openai-setup-instructions"
@@ -51,7 +53,8 @@ export default function AiRecommendationsPage() {
     setError(null)
 
     try {
-      const results = await getAIBookRecommendations(prompt)
+      const { data: sessionData } = await createClientSupabaseClient().auth.getSession()
+      const results = await getAIBookRecommendations(sessionData.session?.access_token || "", prompt)
       setRecommendations(results)
     } catch (err) {
       console.error("Error getting recommendations:", err)
@@ -123,6 +126,7 @@ export default function AiRecommendationsPage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="I enjoy science fiction with strong character development, especially books like Dune and The Three-Body Problem..."
+                maxLength={AI_MAX_QUERY_CHARS}
                 className="min-h-[150px] mb-4"
                 style={{ fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)" }}
               />
