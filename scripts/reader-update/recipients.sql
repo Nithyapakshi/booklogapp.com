@@ -30,4 +30,5 @@ left join counts c on c.user_id = u.id
 where u.email_confirmed_at is not null
   and ep.marketing_opt_in is true
   and ep.unsubscribed_at is null
+  and not exists (select 1 from public.demo_accounts d where d.user_id = u.id)  -- never email demo libraries
 order by version, u.created_at;
