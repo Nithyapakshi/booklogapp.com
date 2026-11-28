@@ -9,8 +9,8 @@ const demo = load("lib/demo.ts")
 const source = load("lib/signup-source.ts", () => ({ trackWithCountry: () => {} }))
 
 // ---- Ask AI action with a counting fake SDK and a configurable fake Supabase ----
-function loadAction({ user = { id: "u" }, userError = null, cap = { data: true, error: null }, env = {} } = {}) {
-  const calls = { constructed: 0, created: 0, getUser: 0, rpc: 0 }
+function loadAction({ user = { id: "u" }, userError = null, cap = { data: true, error: null }, marker = { data: [], error: { code: "42501" } }, env = {} } = {}) {
+  const calls = { constructed: 0, created: 0, getUser: 0, rpc: 0, marker: 0 }
   const js = ts.transpileModule(read("app/actions/ai-recommendations.ts"), { compilerOptions: { module: "commonjs", target: "es2020" } }).outputText
   const m = new Module("ai-demo"); m.paths = Module._nodeModulePaths(__dirname)
   const orig = Module._load
@@ -20,6 +20,7 @@ function loadAction({ user = { id: "u" }, userError = null, cap = { data: true, 
     if (req === "@supabase/supabase-js") return { createClient: () => ({
       auth: { getUser: async () => { calls.getUser++; return { data: { user: userError ? null : user }, error: userError } } },
       rpc: async (name) => { calls.rpc++; calls.rpcName = name; return cap },
+      from: (t) => ({ select: () => ({ limit: async () => { calls.marker++; calls.markerTable = t; return marker } }) }),
     }) }
     return orig(req, ...r)
   }
@@ -43,30 +44,45 @@ async function refuses(opts, args) {
 }
 
 test("Ask AI refuses a missing or invalid sign-in before any model call", async () => {
-  await refuses({}, ["", "uplifting fiction", [], 8])
-  await refuses({}, [undefined, "uplifting fiction", [], 8])
-  await refuses({}, ["x".repeat(10001), "uplifting fiction", [], 8])
-  const c = await refuses({ userError: { message: "invalid JWT" } }, ["bad", "uplifting fiction", [], 8])
-  assert.equal(c.getUser, 1)
-  assert.equal(c.rpc, 0, "cap is not even counted for an invalid token")
+  for (const t of ["", undefined, "x".repeat(10001)]) {
+    const c = await refuses({}, [t, "uplifting fiction", [], 8])
+    assert.equal(c.rpc, 0, "nothing is called for a missing token")
+  }
+  // Expired / badly signed token: PostgREST rejects the gate call and the marker probe alike.
+  const c = await refuses({ cap: { data: null, error: { code: "PGRST301" } }, marker: { data: null, error: { code: "PGRST301" } } }, ["bad", "uplifting fiction", [], 8])
+  assert.equal(c.getUser, 0, "no Auth-server fallback while the demo tables exist or the token is rejected")
 })
 
-test("Ask AI refuses an oversized or empty request before sign-in checks or any model call", async () => {
+test("Ask AI refuses an oversized or empty request before any check or model call", async () => {
   const c = await refuses({}, ["tok", "a".repeat(1001), [], 8])
-  assert.equal(c.getUser, 0)
+  assert.equal(c.rpc, 0)
   await refuses({}, ["tok", "   ", [], 8])
   await refuses({}, ["tok", 42, [], 8])
 })
 
-test("Ask AI refuses when the demo cap or a switched-off demo says no, and when the cap check fails", async () => {
+test("Ask AI refuses when the gate says no (revoked session, banned, demo cap, demo switched off)", async () => {
   const c = await refuses({ cap: { data: false, error: null } }, ["tok", "uplifting fiction", [], 8])
-  assert.equal(c.rpcName, "demo_ai_allow")
-  await refuses({ cap: { data: null, error: { code: "57014", message: "timeout" } } }, ["tok", "uplifting fiction", [], 8])
+  assert.equal(c.rpcName, "ask_ai_allow")
+  assert.equal(c.getUser, 0, "no Auth-server call on the normal path")
 })
 
-test("before the demo migration exists (no cap function), real readers can still ask", async () => {
-  const { mod, calls, restore } = loadAction({ cap: { data: null, error: { code: "PGRST202", message: "not found" } } })
-  try { await mod.getAIBookRecommendations("tok", "uplifting fiction", [], 8); assert.equal(calls.created, 1) } finally { restore() }
+test("fail closed: demo tables exist but the gate function is missing or errors -> denied", async () => {
+  for (const code of ["PGRST202", "42883", "57014"]) {
+    const c = await refuses({ cap: { data: null, error: { code } }, marker: { data: [], error: { code: "42501" } } }, ["tok", "uplifting fiction", [], 8])
+    assert.equal(c.marker, 1)
+    assert.equal(c.markerTable, "demo_accounts")
+    assert.equal(c.getUser, 0)
+  }
+  // Marker probe itself succeeding (table readable) also means the tables exist: denied.
+  await refuses({ cap: { data: null, error: { code: "PGRST202" } }, marker: { data: [], error: null } }, ["tok", "uplifting fiction", [], 8])
+})
+
+test("only when the demo_accounts table does not exist (code before migration): old sign-in check, real readers can ask", async () => {
+  for (const code of ["PGRST205", "42P01"]) {
+    const { mod, calls, restore } = loadAction({ cap: { data: null, error: { code: "PGRST202" } }, marker: { data: null, error: { code } } })
+    try { await mod.getAIBookRecommendations("tok", "uplifting fiction", [], 8); assert.equal(calls.created, 1); assert.equal(calls.getUser, 1) } finally { restore() }
+  }
+  await refuses({ cap: { data: null, error: { code: "PGRST202" } }, marker: { data: null, error: { code: "PGRST205" } }, userError: { message: "invalid" } }, ["tok", "uplifting fiction", [], 8])
 })
 
 test("the real client is built with retries fixed in code", async () => {
@@ -128,12 +144,18 @@ test("database: cap is atomic and per day, sign-ins are bounded, nothing stores 
   const sql = read("supabase/migrations/20261128_demo_accounts.sql")
   assert.match(sql, /on conflict \(user_id, day\) do update set calls = c\.calls \+ 1 where c\.calls < 15/)
   assert.match(sql, /if not found then return true; end if;\s+-- a real reader/)
+  assert.match(sql, /from auth\.sessions s where s\.id = sid and s\.user_id = uid/)
+  assert.match(sql, /u\.banned_until > now\(\)/)
   assert.match(sql, /if not is_active then return false; end if;/)
   assert.match(sql, /where s\.signins < 20/)
   assert.match(sql, /grant execute on function public\.demo_signin_slot\(text\) to anon, authenticated;/)
   assert.doesNotMatch(sql, /grant execute on function[^;]*reset_demo/)
-  assert.doesNotMatch(sql.replace(/--[^\n]*/g, ""), /password|auth\.sessions|update auth\./i, "no password or auth change outside comments")
+  assert.doesNotMatch(sql.replace(/--[^\n]*/g, ""), /password|(insert|update|delete)[^;]*auth\./i, "no password and no write to auth outside comments")
   assert.doesNotMatch(sql, /cron\./, "no schedule in the main migration")
+  // Reset keeps analytics: the only usage_events delete is limited to rows written by the reset's own transaction.
+  const reset = sql.slice(sql.indexOf("create function public.reset_demo"), sql.indexOf("$$;", sql.indexOf("create function public.reset_demo")))
+  const deletes = reset.match(/delete from public\.usage_events[^;]*;/g) || []
+  assert.deepEqual(deletes, ["delete from public.usage_events where user_id = p_user and source = 'db' and txid = txid_current();"])
   const cron = read("supabase/migrations/20261128b_demo_reset_schedule_PREVIEW_ONLY.sql")
   assert.match(cron, /PREVIEW ONLY/)
   assert.match(cron, /'0 23 \* \* \*'/)
