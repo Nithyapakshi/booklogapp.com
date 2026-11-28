@@ -1,6 +1,8 @@
 "use server"
 
 import Anthropic from "@anthropic-ai/sdk"
+import { createClient } from "@supabase/supabase-js"
+import { AI_MAX_RETRIES, AI_MAX_TOKENS_LARGE, AI_MAX_TOKENS_SMALL, boundExclude, checkQuery, previewStubText } from "@/lib/ai-bounds"
 
 // Function to get a book cover image URL and Google Books ID
 async function googleBookCover(title: string, author: string): Promise<{ cover: string; googleId: string }> {
@@ -124,19 +126,52 @@ async function getBookCoverUrl(title: string, author: string): Promise<{ cover: 
   return { cover: await openLibraryCover(title, author), googleId: g.googleId }
 }
 
-export async function getAIBookRecommendations(query: string, exclude: string[] = [], count: number = 5) {
+type MessagesClient = { messages: { create: (args: any) => Promise<{ content: { type: string; text?: string }[] }> } }
+
+// Preview never reaches the paid API: it gets a stand-in client that returns a fixed, valid model reply, so the
+// whole flow (parse, filters, covers, rendering) can be tested with zero spend. The real client is built only
+// outside preview, with retries fixed in code.
+function aiClient(): MessagesClient {
+  if (process.env.VERCEL_ENV === "preview") {
+    return { messages: { create: async () => ({ content: [{ type: "text", text: previewStubText() }] }) } }
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
+  }
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: AI_MAX_RETRIES }) as unknown as MessagesClient
+}
+
+// Every check that can refuse runs BEFORE the model is called: input bounds, a sign-in validated by Supabase Auth
+// on every call (no caching), then the demo cap (demo_ai_allow: real readers are never capped).
+async function allowedToAsk(accessToken: unknown): Promise<boolean> {
+  if (typeof accessToken !== "string" || !accessToken || accessToken.length > 10000) return false
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !anon) return false
+  const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } })
+  const { data: auth, error: authError } = await db.auth.getUser(accessToken)
+  if (authError || !auth?.user) return false
+  const { data: allowed, error: capError } = await db.rpc("demo_ai_allow")
+  if (capError) {
+    // Before the demo migration exists there is no cap function and no demo account, so real readers carry on.
+    // Any other failure refuses.
+    return capError.code === "PGRST202" || capError.code === "42883"
+  }
+  return allowed === true
+}
+
+export async function getAIBookRecommendations(accessToken: string, query: string, exclude: string[] = [], count: number = 5) {
   const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
-    if (process.env.VERCEL_ENV === "preview") throw new Error("AI recommendations are disabled in the test preview.")
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error("Anthropic API key is missing. Please add it to your environment variables.")
-    }
+    const request = checkQuery(query)
+    if (request === null) throw new Error("Ask AI request is empty or too long.")
+    if (!(await allowedToAsk(accessToken))) throw new Error("Sign in to use Ask AI.")
+    exclude = boundExclude(exclude)
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const client = aiClient()
 
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: howMany > 5 ? 4096 : 1024,
+      max_tokens: howMany > 5 ? AI_MAX_TOKENS_LARGE : AI_MAX_TOKENS_SMALL,
       system: "You are a literary expert who creates accurate book recommendations. You never pad a list with loosely related books.",
       messages: [
         {
@@ -156,8 +191,8 @@ For each book give:
 - genre
 - on_topic: true only if the book is directly about the named subject, or genuinely matches the described taste; otherwise false
 
-Request: ${query}
-${exclude.length ? `\nDo not recommend any of these books, the user has already seen them: ${exclude.slice(0, 60).map((t) => String(t).slice(0, 120)).join('; ')}\n` : ''}
+Request: ${request}
+${exclude.length ? `\nDo not recommend any of these books, the user has already seen them: ${exclude.join('; ')}\n` : ''}
 
 Format the response as a JSON array of objects with title, author, description, genre and on_topic.
 Do not include any text outside the JSON array.`,
@@ -165,7 +200,7 @@ Do not include any text outside the JSON array.`,
       ],
     })
 
-    const responseText = message.content[0]?.type === "text" ? message.content[0].text : ""
+    const responseText = message.content[0]?.type === "text" ? message.content[0].text || "" : ""
 
     // Parse the JSON response
     try {
@@ -178,7 +213,7 @@ Do not include any text outside the JSON array.`,
       if (!Array.isArray(parsed)) throw new Error("AI response is not a list")
       // An explicit "about X" request must mention X in title or description as well.
       // Taste/mood queries do not use this subject gate.
-      const requestText = query.split(/[.!?]\s+(?=(?:give|include|exclude|avoid|do not|don't|return|show|provide|explain|list|limit|use|please)\b)/i)[0].trim()
+      const requestText = request.split(/[.!?]\s+(?=(?:give|include|exclude|avoid|do not|don't|return|show|provide|explain|list|limit|use|please)\b)/i)[0].trim()
       const subject = requestText.match(/\b(?:books?\s+)?(?:about|on)\s+(.+?)[.!?]*$/i)?.[1]?.trim()
       // Genre and mood requests remain taste even when phrased "books about ...".
       // Explicit subject requests still need a literal mention; this is a conservative guard.
