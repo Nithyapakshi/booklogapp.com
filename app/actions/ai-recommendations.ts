@@ -162,12 +162,27 @@ async function allowedToAsk(accessToken: unknown): Promise<boolean> {
   return !authError && !!auth?.user
 }
 
+// A refused demo account gets the daily-cap message; anyone else is asked to sign in. The token
+// already failed the gate, so this only chooses the wording. A revoked session fails the RPC too.
+async function refusedAsDemo(accessToken: unknown): Promise<boolean> {
+  if (typeof accessToken !== "string" || !accessToken || accessToken.length > 10000) return false
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !anon) return false
+    const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } })
+    const { data, error } = await db.rpc("is_demo_account")
+    return !error && data === true
+  } catch {
+    return false
+  }
+}
+
 export async function getAIBookRecommendations(accessToken: string, query: string, exclude: string[] = [], count: number = 5) {
   const howMany = Math.min(Math.max(Math.floor(Number(count)) || 5, 1), 15)
   try {
     const request = checkQuery(query)
     if (request === null) throw new Error("Ask AI request is empty or too long.")
-    if (!(await allowedToAsk(accessToken))) throw new Error("Sign in to use Ask AI.")
+    if (!(await allowedToAsk(accessToken))) throw new Error((await refusedAsDemo(accessToken)) ? "DEMO_LIMIT_REACHED" : "Sign in to use Ask AI.")
     exclude = boundExclude(exclude)
 
     const client = aiClient()
