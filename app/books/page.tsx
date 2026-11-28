@@ -51,6 +51,17 @@ import { DemoBanner } from "@/components/demo-banner"
 import { AI_MAX_QUERY_CHARS } from "@/lib/ai-bounds"
 
 const DEMO_LIMIT_MSG = "This demo has used its 15 AI requests for today. They reset daily. Create your own free BookLog account to keep exploring."
+// Production builds hide server error text from the browser, so after a failed Ask AI request a demo account asks
+// the database whether today's cap is used up. Any problem with that check keeps the normal error text.
+async function demoFailureMessage(isDemo: boolean | null, normal: string): Promise<string> {
+  if (isDemo !== true) return normal
+  try {
+    const { data, error } = await createClientSupabaseClient().rpc("demo_ai_left")
+    return !error && data === 0 ? DEMO_LIMIT_MSG : normal
+  } catch {
+    return normal
+  }
+}
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
@@ -401,7 +412,7 @@ function DiscoverTab() {
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
-      setError(err instanceof Error && err.message === "DEMO_LIMIT_REACHED" ? DEMO_LIMIT_MSG : "Sorry, we couldn't generate recommendations. Please try again.")
+      setError(await demoFailureMessage(isDemo, "Sorry, we couldn't generate recommendations. Please try again."))
     } finally {
       setIsLoading(false)
     }
@@ -421,7 +432,7 @@ function DiscoverTab() {
       setRecommendations(merged)
       saveDiscover(prompt, merged)
     } catch (err) {
-      setError(err instanceof Error && err.message === "DEMO_LIMIT_REACHED" ? DEMO_LIMIT_MSG : "Sorry, we couldn't load more recommendations. Please try again.")
+      setError(await demoFailureMessage(isDemo, "Sorry, we couldn't load more recommendations. Please try again."))
     } finally {
       setIsLoadingMore(false)
     }
@@ -1236,4 +1247,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-                         }
+                     }
