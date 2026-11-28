@@ -10,7 +10,7 @@ function load(fetchImpl, modelJson, seen) {
   const orig = Module._load
   Module._load = (req, ...r) => req === "@anthropic-ai/sdk" ? { default: class { messages = { create: async (a) => { seen && seen.push(a); return { content: [{ type: "text", text: modelJson }] } } } } }
     : req === "@/lib/ai-bounds" ? boundsMod.exports
-    : req === "@supabase/supabase-js" ? { createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: "u" } }, error: null }) }, rpc: async () => ({ data: true, error: null }) }) }
+    : req === "@supabase/supabase-js" ? { createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: "u" } }, error: null }) }, rpc: async () => ({ data: true, error: null }), from: () => ({ select: () => ({ limit: async () => ({ data: [], error: null }) }) }) }) }
     : orig(req, ...r)
   const realFetch = global.fetch; global.fetch = fetchImpl
   process.env.ANTHROPIC_API_KEY = "x"; process.env.NEXT_PUBLIC_SUPABASE_URL = "http://sb"; process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon"; delete process.env.VERCEL_ENV
