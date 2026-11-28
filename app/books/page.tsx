@@ -46,6 +46,9 @@ import { StatsTab } from "@/components/stats-tab"
 import { shouldShowSurvey, isSurveyEligibleUser, latestAnswers, provenanceLine, buildSurveySpecs, type SurveyEvent, type SurveyAnswers } from "@/lib/survey"
 import { track, trackDailyOpen } from "@/lib/usage"
 import { recordSignupSource } from "@/lib/signup-source"
+import { useDemoAccount } from "@/hooks/use-demo-account"
+import { DemoBanner } from "@/components/demo-banner"
+import { AI_MAX_QUERY_CHARS } from "@/lib/ai-bounds"
 
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
@@ -192,6 +195,16 @@ function generateBookColor(title: string): string {
     hash = title.charCodeAt(i) + ((hash << 5) - hash)
   }
   return `hsl(${Math.abs(hash) % 360}, 70%, 80%)`
+}
+
+// Ask AI needs the reader's current sign-in, read at click time (refreshed by the client when needed).
+async function aiToken(): Promise<string> {
+  try {
+    const { data } = await createClientSupabaseClient().auth.getSession()
+    return data.session?.access_token || ""
+  } catch {
+    return ""
+  }
 }
 
 function DiscoverTab() {
@@ -382,7 +395,7 @@ function DiscoverTab() {
     setError(null)
     track("discover.ask_ai")
     try {
-      const results = await getAIBookRecommendations(prompt, [], 8)
+      const results = await getAIBookRecommendations(await aiToken(), prompt, [], 8)
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
@@ -399,7 +412,7 @@ function DiscoverTab() {
     try {
       const seen = recommendations.map(r => `${r.title} by ${r.author}`)
       track("discover.ask_ai_more")
-      const more = await getAIBookRecommendations(prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
+      const more = await getAIBookRecommendations(await aiToken(), prompt, [...seen, ...dismissed.slice(-40).map(d => d.key.split("|")[0])], 8)
       const have = new Set(recommendations.map(r => `${r.title}|${r.author}`.toLowerCase()))
       const fresh = more.filter((r: BookSearchResult) => !have.has(`${r.title}|${r.author}`.toLowerCase()))
       const merged = [...recommendations, ...fresh]
@@ -438,6 +451,7 @@ function DiscoverTab() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="I enjoy literary fiction with strong character development..."
+              maxLength={AI_MAX_QUERY_CHARS}
               style={{ width: "100%", minHeight: "70px", maxHeight: "70px", fontSize: "13px", border: "0.5px solid var(--bl-d4c5a9)", borderRadius: "7px", background: "var(--bl-faf7f2)", color: "var(--bl-1a1208)", resize: "none", marginBottom: "0.625rem" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end" }}>{submitBtn("Get Recommendations")}</div>
@@ -682,8 +696,11 @@ function BooksLibraryContent() {
   const router = useRouter()
   const { user } = useAuth()
   const nextRead = useNextRead(user?.id)
+  // Demo libraries (booklogapp.com/demo/<slug>): banner on My Books; no welcome survey, email prompt or signup-source
+  // record. The signup-source record would also clear the visitor's stored demo source before they sign up.
+  const isDemo = useDemoAccount(user?.id)
   // New accounts only: record once which link or site brought them (lib/signup-source.ts).
-  useEffect(() => { if (user) recordSignupSource(user) }, [user?.id])
+  useEffect(() => { if (user && isDemo === false) recordSignupSource(user) }, [user?.id, isDemo])
   const [choosingNext, setChoosingNext] = useState(false)
   const [pendingNext, setPendingNext] = useState<string | null>(null)
   const [nextBusy, setNextBusy] = useState(false)
@@ -773,9 +790,9 @@ function BooksLibraryContent() {
       .then(({ data, error: surveyReadError }) => { if (!surveyReadError) setSurveyEvents((data || []) as SurveyEvent[]); setSurveyChecked(true) }, () => setSurveyChecked(true))
   }, [user])
   useEffect(() => {
-    if (surveyAskedRef.current || surveyEvents === null) return
+    if (surveyAskedRef.current || surveyEvents === null || isDemo !== false) return
     if (sidebarTab === "my-books" && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)) { surveyAskedRef.current = true; setSurveyOpen(true) }
-  }, [surveyEvents, sidebarTab])
+  }, [surveyEvents, sidebarTab, isDemo])
 
   // One-time email preference card (lib/marketing-consent.ts). Over My Books only, once per page load,
   // and never in the same visit as the welcome survey or a shared-book dialog: it waits for a later visit.
@@ -794,11 +811,11 @@ function BooksLibraryContent() {
     const surveyWillShow = surveyEvents !== null && isSurveyEligibleUser(user?.created_at) && shouldShowSurvey(surveyEvents)
     const variant = promptToShow({
       pref: marketingPref, user, onMyBooks: sidebarTab === "my-books",
-      otherPopupPending: !surveyChecked || surveyOpen || surveyWillShow || surveyAskedRef.current || !!linkedBook,
+      otherPopupPending: !surveyChecked || surveyOpen || surveyWillShow || surveyAskedRef.current || !!linkedBook || isDemo !== false,
     })
     // Counted here, where it can only run once per page load, so yes / no / closed rates read true.
     if (variant) { emailPromptAskedRef.current = true; setEmailPrompt(variant); track("email.prompt_shown", { source: variant }) }
-  }, [marketingPref, surveyChecked, surveyEvents, surveyOpen, sidebarTab, user, linkedBook])
+  }, [marketingPref, surveyChecked, surveyEvents, surveyOpen, sidebarTab, user, linkedBook, isDemo])
 
   useEffect(() => {
     async function fetchShareProfile() {
@@ -1081,6 +1098,7 @@ function BooksLibraryContent() {
           {/* MY BOOKS */}
           {sidebarTab === "my-books" && (
             <>
+              {isDemo === true && <DemoBanner />}
               <div className="mb-5">
                 <BookSearch />
               </div>
@@ -1212,4 +1230,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-                                                                     }
+  }
