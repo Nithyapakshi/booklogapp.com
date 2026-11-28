@@ -10,6 +10,7 @@ import { catalogForShare, type SharedSnapshot } from "@/lib/shared-book"
 import { BookDescription } from "@/components/book-description"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { track } from "@/lib/usage"
+import { rememberShareOpen } from "@/lib/signup-source"
 type Snapshot = SharedSnapshot & { description?: string }
 type Shelf = "reading" | "queued" | "completed" | "onHold" | "recommended"
 // The reader chooses where the book goes in their own library (any shelf, On Hold included).
@@ -23,6 +24,10 @@ export function SharedBook({token,initialBook,coded=false}:{token:string;initial
   const {user,isLoading}=useAuth(),{books,loading,loadError,createBook,reloadBooks}=useBooks(),auto=useRef(false),saveLock=useRef(false)
   const cleanPath=coded&&initialBook?codedSharePath(initialBook.title,token):`/s/${token}`
   const path=`${cleanPath}?save=1`
+  // Signup credit for this link (lib/signup-source.ts), and one view per signed-in reader per page load.
+  useEffect(()=>{rememberShareOpen("book",token)},[token])
+  const viewed=useRef(false)
+  useEffect(()=>{if(!user||viewed.current)return;viewed.current=true;track("share.book_viewed",{share:token})},[user?.id,token]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(initialBook)return;let cancelled=false;(async()=>{
     try {
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)){setState("This sharing link is not available.");return}
@@ -62,7 +67,7 @@ export function SharedBook({token,initialBook,coded=false}:{token:string;initial
     }
     const existing=Object.values(books).flat().find(b=>sameBook(b,{title:book.title,author:book.author}))
     if(existing){setLibraryId(existing.id);setState("Already in your library. Your shelf is unchanged.");setDone(true);window.history.replaceState(null,"",cleanPath);return}
-    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},shelf);setLibraryId(result.books.find(b=>sameBook(b,book))?.id||null);setDone(true);setStep("idle");if(result.outcome!=="duplicate")track("book.added_from",{source:"shared_book",shelf});setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":`Added to your ${shelfLabel(shelf)}.`);window.history.replaceState(null,"",cleanPath)
+    const result=await createBook({id:crypto.randomUUID(),title:book.title,author:book.author,cover:book.cover},shelf);setLibraryId(result.books.find(b=>sameBook(b,book))?.id||null);setDone(true);setStep("idle");if(result.outcome!=="duplicate")track("book.added_from",{source:"shared_book",shelf,share:token});setState(result.outcome==="duplicate"?"Already in your library. Your shelf is unchanged.":`Added to your ${shelfLabel(shelf)}.`);window.history.replaceState(null,"",cleanPath)
     } catch{setState("The book was not saved. Please try again.")}
     finally{saveLock.current=false;setBusy(false)}
   }

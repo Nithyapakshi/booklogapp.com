@@ -29,12 +29,19 @@ test("track never throws, never waits and ignores bad event names", () => {
   assert.doesNotThrow(() => usage.track("stats.opened"))
 })
 
-test("app.opened is recorded once per day per browser, and blocked storage is fine", () => {
+test("app.opened is recorded once per day per browser, and blocked storage is fine", async () => {
   const events = []
   const client = { from: () => ({ insert: row => { events.push(row.event); return Promise.resolve({}) } }) }
   const usage = load("lib/usage.ts", { "@/lib/supabase/client": { createClientSupabaseClient: () => client } })
   const store = memoryStorage()
-  withWindow(store, () => { usage.trackDailyOpen(); usage.trackDailyOpen() })
+  const oldFetch = global.fetch
+  global.fetch = () => Promise.reject(new Error("offline"))
+  const oldWindow = global.window
+  global.window = { localStorage: store }
+  try {
+    usage.trackDailyOpen(); usage.trackDailyOpen()
+    await new Promise(r => setTimeout(r, 20))
+  } finally { global.fetch = oldFetch; global.window = oldWindow }
   assert.deepEqual(events, ["app.opened"])
   const blocked = { getItem: () => { throw new Error("blocked") }, setItem: () => { throw new Error("blocked") } }
   withWindow(blocked, () => assert.doesNotThrow(() => usage.trackDailyOpen()))

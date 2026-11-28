@@ -23,14 +23,49 @@ export function track(event: string, detail?: UsageDetail, bookId?: string): voi
   }
 }
 
-// Once per local day per browser: lets us count daily and weekly active readers.
+// Country: a two-letter code only (for example "AE"). Anything else counts as no country.
+export function cleanCountry(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined
+  const c = v.trim().toUpperCase()
+  return /^[A-Z]{2}$/.test(c) && c !== "XX" ? c : undefined
+}
+
+// Asks BookLog's own server (app/api/country) for the country of this browser's request. The browser
+// calls it directly, so the country is the reader's own connection, never a server-to-server call.
+// Only the code comes back; no IP address is stored. Gives up after 3 seconds.
+export async function visitorCountry(): Promise<string | undefined> {
+  try {
+    const ctl = typeof AbortController === "undefined" ? null : new AbortController()
+    const timer = ctl ? setTimeout(() => ctl.abort(), 3000) : null
+    const res = await fetch("/api/country", { cache: "no-store", signal: ctl?.signal })
+    if (timer) clearTimeout(timer)
+    if (!res.ok) return undefined
+    return cleanCountry((await res.json())?.country)
+  } catch {
+    return undefined
+  }
+}
+
+// Same as track, with the reader's country added when it is known. The event is recorded either way.
+export function trackWithCountry(event: string, detail: UsageDetail = {}, bookId?: string): void {
+  try {
+    visitorCountry().then(
+      country => track(event, country ? { ...detail, country } : detail, bookId),
+      () => track(event, detail, bookId),
+    )
+  } catch {
+    // Recording must never get in the reader's way.
+  }
+}
+
+// Once per local day per browser: lets us count daily and weekly active readers, and their country.
 export function trackDailyOpen(): void {
   try {
     const d = new Date()
     const key = `bl-opened-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
     if (window.localStorage.getItem(key)) return
     window.localStorage.setItem(key, "1")
-    track("app.opened")
+    trackWithCountry("app.opened")
   } catch {
     // Storage can be blocked; skip quietly.
   }
