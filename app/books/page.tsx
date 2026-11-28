@@ -50,6 +50,7 @@ import { useDemoAccount } from "@/hooks/use-demo-account"
 import { DemoBanner } from "@/components/demo-banner"
 import { AI_MAX_QUERY_CHARS } from "@/lib/ai-bounds"
 
+const DEMO_LIMIT_MSG = "This demo has used its 15 AI requests for today. They reset daily. Create your own free BookLog account to keep exploring."
 const serif = { fontFamily: "Georgia, 'Times New Roman', serif" }
 const sans  = { fontFamily: "'DM Sans', sans-serif" }
 
@@ -217,6 +218,7 @@ function DiscoverTab() {
   const [error, setError] = React.useState<string | null>(null)
   const [isLoadingMore, setIsLoadingMore] = React.useState(false)
   const { user: discoverUser } = useAuth()
+  const isDemo = useDemoAccount(discoverUser?.id)
   const discoverKey = discoverUser?.id ? `booklog.discover:${discoverUser.id}` : ""
   const restoredRef = React.useRef("")
 
@@ -399,7 +401,7 @@ function DiscoverTab() {
       setRecommendations(results)
       saveDiscover(prompt, results)
     } catch (err) {
-      setError("Sorry, we couldn't generate recommendations. Please try again.")
+      setError(err instanceof Error && err.message === "DEMO_LIMIT_REACHED" ? DEMO_LIMIT_MSG : "Sorry, we couldn't generate recommendations. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -419,7 +421,7 @@ function DiscoverTab() {
       setRecommendations(merged)
       saveDiscover(prompt, merged)
     } catch (err) {
-      setError("Sorry, we couldn't load more recommendations. Please try again.")
+      setError(err instanceof Error && err.message === "DEMO_LIMIT_REACHED" ? DEMO_LIMIT_MSG : "Sorry, we couldn't load more recommendations. Please try again.")
     } finally {
       setIsLoadingMore(false)
     }
@@ -463,6 +465,10 @@ function DiscoverTab() {
           <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask for something specific..." style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 13, color: "var(--bl-1a1208)", fontFamily: "'DM Sans', sans-serif" }} />
           {submitBtn("Ask AI")}
         </form>
+      )}
+
+      {isDemo === true && (
+        <p style={{ fontSize: 11, color: "var(--bl-8a7560)", fontFamily: "'DM Sans', sans-serif", margin: "0.25rem 0 0" }}>15 AI requests a day, shared across this demo.</p>
       )}
 
       {isLoading && (
@@ -1230,4 +1236,4 @@ export default function BooksPage() {
     </main>
   )
   return <BooksLibrary />
-  }
+                         }
