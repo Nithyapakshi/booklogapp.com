@@ -17,6 +17,18 @@ function visitorId(): string | undefined {
 // so the new account is the visitor's own and the demo source (bookclub / demo / <slug>) stays in this browser.
 export function DemoBanner() {
   const [busy, setBusy] = useState(false)
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => {
+    const db = createClientSupabaseClient()
+    void (async () => {
+      try {
+        const { data: slug } = await db.rpc("my_demo_slug")
+        if (typeof slug !== "string" || !slug) return
+        const { data } = await db.rpc("demo_display_name", { p_slug: slug })
+        if (typeof data === "string" && data.trim()) setName(data.trim().slice(0, 60))
+      } catch {}
+    })()
+  }, [])
   useEffect(() => {
     const v = visitorId()
     track("demo.banner_seen", v ? { visitor: v } : {})
@@ -47,7 +59,7 @@ export function DemoBanner() {
       style={{ background: "var(--bl-fdf3e7)", borderColor: "var(--bl-e8c9a0)", fontFamily: "'DM Sans', sans-serif" }}
     >
       <p style={{ fontSize: "13px", color: "var(--bl-6b4a1f)", margin: 0 }}>
-        You are exploring a demo library. Create your own free BookLog account.
+        {name ? `A BookLog demo for ${name}. ` : "You are exploring a demo library. "}Create your own free BookLog account.
       </p>
       <button
         type="button"
