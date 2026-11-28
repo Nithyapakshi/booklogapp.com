@@ -238,3 +238,26 @@ export function recordSignupSource(user: UserLike): void {
     // Recording must never get in the reader's way.
   }
 }
+
+// ---- Demo links (booklogapp.com/demo/<slug>) ----
+
+// The demo link carries no UTM tags, so its source is written here: bookclub / demo / <slug>.
+// First visit wins, as everywhere else. The one exception: a referrer-only value stored by this same page load
+// (SourceCapture can run a moment earlier) gives way to the demo source.
+export function nextDemoStored(existing: StoredSource | null, demo: StoredSource | null, now: number): StoredSource | null {
+  if (!demo) return null
+  if (!existing) return demo
+  if (!existing.s && existing.t >= now - SAME_VISIT_MS) return demo
+  return null
+}
+
+export function captureDemoSource(demo: StoredSource | null): void {
+  try {
+    if (typeof window === "undefined") return
+    const now = Date.now()
+    const next = nextDemoStored(parseStored(window.localStorage.getItem(SOURCE_KEY), now), demo, now)
+    if (next) window.localStorage.setItem(SOURCE_KEY, JSON.stringify(next))
+  } catch {
+    // Storage can be blocked; skip quietly.
+  }
+}
