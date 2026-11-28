@@ -62,7 +62,7 @@ test("Ask AI refuses an oversized or empty request before any check or model cal
 
 test("Ask AI refuses when the gate says no (revoked session, banned, demo cap, demo switched off)", async () => {
   const c = await refuses({ cap: { data: false, error: null } }, ["tok", "uplifting fiction", [], 8])
-  assert.ok(["ask_ai_allow", "is_demo_account"].includes(c.rpcName), "gate first; is_demo_account only afterwards, to pick the refusal wording")
+  assert.equal(c.rpcName, "ask_ai_allow")
   assert.equal(c.getUser, 0, "no Auth-server call on the normal path")
 })
 
@@ -151,8 +151,12 @@ test("demo display name: migration is additive, active-slug only, anon-readable;
   assert.ok(read("components/demo-banner.tsx").includes("A BookLog demo for"))
   const page = read("app/books/page.tsx")
   assert.ok(page.includes("15 AI requests a day, shared across this demo."))
-  assert.ok(page.includes("DEMO_LIMIT_MSG") && page.includes("DEMO_LIMIT_REACHED"))
-  assert.ok(read("app/actions/ai-recommendations.ts").includes("DEMO_LIMIT_REACHED"))
+  assert.ok(page.includes("DEMO_LIMIT_MSG") && page.includes('rpc("demo_ai_left")'))
+  assert.ok(!read("app/actions/ai-recommendations.ts").includes("is_demo_account"), "the reviewed gate is unchanged")
+  const left = read("supabase/migrations/20261128d_demo_ai_left.sql")
+  assert.match(left, /stable security definer set search_path = ''/)
+  assert.match(left, /grant execute on function public\.demo_ai_left\(\) to authenticated/)
+  assert.ok(!/insert |update |delete |drop /i.test(left.replace(/--.*$/gm, "")), "read-only")
 })
 
 test("database: cap is atomic and per day, sign-ins are bounded, nothing stores a password", () => {
