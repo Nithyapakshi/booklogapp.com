@@ -141,22 +141,25 @@ function aiClient(): MessagesClient {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: AI_MAX_RETRIES }) as unknown as MessagesClient
 }
 
-// Every check that can refuse runs BEFORE the model is called: input bounds, a sign-in validated by Supabase Auth
-// on every call (no caching), then the demo cap (demo_ai_allow: real readers are never capped).
+// Every check that can refuse runs BEFORE the model is called: input bounds, then ask_ai_allow through the
+// database. PostgREST checks the token's signature and expiry; the function checks the token's session still exists
+// (revoked or signed-out sessions are refused at once), that the user is not banned, and the demo cap (real readers
+// are never capped). Nothing is cached. No Auth-server call, so the server's /auth/v1/user rate-limit bucket is
+// not used by Ask AI.
+// If the gate function cannot be called: fail closed, except when the demo_accounts table itself does not exist
+// (code released before its migration). Only then is the old Auth-server check used, and no demo account can exist.
+const MISSING_TABLE = new Set(["42P01", "PGRST205"])
 async function allowedToAsk(accessToken: unknown): Promise<boolean> {
   if (typeof accessToken !== "string" || !accessToken || accessToken.length > 10000) return false
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !anon) return false
   const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } })
+  const { data: allowed, error: gateError } = await db.rpc("ask_ai_allow")
+  if (!gateError) return allowed === true
+  const { error: markerError } = await db.from("demo_accounts").select("user_id").limit(1)
+  if (!markerError || !MISSING_TABLE.has(String(markerError.code))) return false
   const { data: auth, error: authError } = await db.auth.getUser(accessToken)
-  if (authError || !auth?.user) return false
-  const { data: allowed, error: capError } = await db.rpc("demo_ai_allow")
-  if (capError) {
-    // Before the demo migration exists there is no cap function and no demo account, so real readers carry on.
-    // Any other failure refuses.
-    return capError.code === "PGRST202" || capError.code === "42883"
-  }
-  return allowed === true
+  return !authError && !!auth?.user
 }
 
 export async function getAIBookRecommendations(accessToken: string, query: string, exclude: string[] = [], count: number = 5) {
