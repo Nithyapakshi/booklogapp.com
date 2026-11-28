@@ -44,6 +44,14 @@ export default function DemoPage() {
   const [stage, setStage] = useState<Stage>("starting")
   const ran = useRef(false)
   const visitor = useRef<string | undefined>(undefined)
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isDemoSlug(slug)) return
+    createClientSupabaseClient().rpc("demo_display_name", { p_slug: slug }).then(
+      ({ data, error }) => { if (!error && typeof data === "string" && data.trim()) setName(data.trim().slice(0, 60)) },
+      () => {},
+    )
+  }, [slug])
 
   const signInFresh = async () => {
     setStage("starting")
@@ -89,7 +97,8 @@ export default function DemoPage() {
   const card = (children: ReactNode) => (
     <main className="flex min-h-screen items-center justify-center px-4" style={{ background: "var(--bl-faf7f2)" }}>
       <div className="w-full max-w-sm rounded-lg border px-6 py-8 text-center" style={{ background: "var(--bl-fff)", borderColor: "var(--bl-e0d5c4)" }}>
-        <p style={{ ...serif, fontSize: "22px", color: "var(--bl-2d2416)", marginBottom: "12px" }}>BookLog</p>
+        <p style={{ ...serif, fontSize: "22px", color: "var(--bl-2d2416)", marginBottom: name ? "4px" : "12px" }}>BookLog</p>
+        {name && <p style={{ ...serif, fontSize: "17px", color: "var(--bl-c17f3e)", marginBottom: "14px" }}>A demo for {name}</p>}
         {children}
       </div>
     </main>
