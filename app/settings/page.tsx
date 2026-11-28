@@ -9,9 +9,12 @@ import { EmailPreferenceSetting } from "@/components/email-preference-setting"
 import { buildLibraryCsv, csvFileName } from "@/lib/csv-export"
 import { GoodreadsImport } from "@/components/goodreads-import"
 import { track } from "@/lib/usage"
+import { useDemoAccount } from "@/hooks/use-demo-account"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
+  // Demo libraries share one login, so the password stays as set (real readers always see the button).
+  const isDemo = useDemoAccount(user?.id)
   const [signedInAs, setSignedInAs] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [username, setUsername]       = useState("")
@@ -301,12 +304,12 @@ export default function SettingsPage() {
             Sign out
           </button>
         </div>
-        <button
+        {isDemo !== true && <button
           onClick={async () => { const supabase = createClientSupabaseClient(); await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }); alert("Password reset email sent!") }}
           style={{ display: "block", marginTop: "12px", fontSize: "12px", color: "var(--bl-c17f3e)", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", padding: 0 }}
         >
           Change password
-        </button>
+        </button>}
       </main>
     </div>
   )
