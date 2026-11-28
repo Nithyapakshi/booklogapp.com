@@ -62,7 +62,7 @@ test("Ask AI refuses an oversized or empty request before any check or model cal
 
 test("Ask AI refuses when the gate says no (revoked session, banned, demo cap, demo switched off)", async () => {
   const c = await refuses({ cap: { data: false, error: null } }, ["tok", "uplifting fiction", [], 8])
-  assert.equal(c.rpcName, "ask_ai_allow")
+  assert.ok(["ask_ai_allow", "is_demo_account"].includes(c.rpcName), "gate first; is_demo_account only afterwards, to pick the refusal wording")
   assert.equal(c.getUser, 0, "no Auth-server call on the normal path")
 })
 
@@ -131,13 +131,28 @@ test("demo helpers: slugs, env names, source, visitor ids", () => {
   assert.ok(!demo.isVisitorId("user@example.com"))
 })
 
-test("demo source: first visit wins, except a referrer-only value from this same page load", () => {
+test("demo source: an explicit demo link takes the credit over any older stored visit", () => {
   const now = Date.parse("2026-11-28T15:00:00Z")
   const d = demo.demoSourceVisit("safar", now)
   assert.deepEqual(source.nextDemoStored(null, d, now), d)
-  assert.equal(source.nextDemoStored({ s: "linkedin", t: now - 86400e3 }, d, now), null)
-  assert.deepEqual(source.nextDemoStored({ r: "mail.google.com", t: now - 1000 }, d, now), d)
-  assert.equal(source.nextDemoStored({ r: "mail.google.com", t: now - 86400e3 }, d, now), null)
+  assert.deepEqual(source.nextDemoStored({ s: "linkedin", t: now - 86400e3 }, d, now), d)
+  assert.deepEqual(source.nextDemoStored({ r: "bing.com", t: now - 20 * 86400e3 }, d, now), d)
+  assert.equal(source.nextDemoStored({ r: "bing.com", t: now }, null, now), null)
+})
+
+test("demo display name: migration is additive, active-slug only, anon-readable; UI shows it and the cap message", () => {
+  const sql = read("supabase/migrations/20261128c_demo_display_name.sql")
+  assert.match(sql, /add column if not exists display_name text/)
+  assert.match(sql, /security definer set search_path = ''/)
+  assert.match(sql, /where slug = p_slug and active/)
+  assert.match(sql, /grant execute on function public\.demo_display_name\(text\) to anon, authenticated/)
+  assert.ok(!/drop |delete |truncate /i.test(sql))
+  assert.ok(read("app/demo/[slug]/page.tsx").includes("A demo for {name}"))
+  assert.ok(read("components/demo-banner.tsx").includes("A BookLog demo for"))
+  const page = read("app/books/page.tsx")
+  assert.ok(page.includes("15 AI requests a day, shared across this demo."))
+  assert.ok(page.includes("DEMO_LIMIT_MSG") && page.includes("DEMO_LIMIT_REACHED"))
+  assert.ok(read("app/actions/ai-recommendations.ts").includes("DEMO_LIMIT_REACHED"))
 })
 
 test("database: cap is atomic and per day, sign-ins are bounded, nothing stores a password", () => {
@@ -169,7 +184,8 @@ test("app: banner only for demo accounts; survey, email prompt and signup-source
   assert.match(page, /!!linkedBook \|\| isDemo !== false,/)
   assert.match(page, /maxLength=\{AI_MAX_QUERY_CHARS\}/)
   const banner = read("components/demo-banner.tsx")
-  assert.match(banner, /You are exploring a demo library\. Create your own free BookLog account\./)
+  assert.match(banner, /You are exploring a demo library\. /)
+  assert.match(banner, /Create your own free BookLog account\./)
   assert.match(banner, /auth\.signOut\(\)[\s\S]*window\.location\.href = "\/signup"/)
   const settings = read("app/settings/page.tsx")
   assert.match(settings, /\{isDemo !== true && <button/)
