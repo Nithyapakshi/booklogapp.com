@@ -242,13 +242,11 @@ export function recordSignupSource(user: UserLike): void {
 // ---- Demo links (booklogapp.com/demo/<slug>) ----
 
 // The demo link carries no UTM tags, so its source is written here: bookclub / demo / <slug>.
-// First visit wins, as everywhere else. The one exception: a referrer-only value stored by this same page load
-// (SourceCapture can run a moment earlier) gives way to the demo source.
+// An explicit demo link always takes the credit, even over an older stored visit: the organiser
+// shared that link, and the signup it produces belongs to the demo.
 export function nextDemoStored(existing: StoredSource | null, demo: StoredSource | null, now: number): StoredSource | null {
   if (!demo) return null
-  if (!existing) return demo
-  if (!existing.s && existing.t >= now - SAME_VISIT_MS) return demo
-  return null
+  return demo
 }
 
 export function captureDemoSource(demo: StoredSource | null): void {
