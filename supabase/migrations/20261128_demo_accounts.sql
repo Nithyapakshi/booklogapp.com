@@ -5,8 +5,9 @@
 -- What it does:
 -- - demo_accounts: which auth users are demo accounts, by organiser slug (for example "safar").
 -- - is_demo_account() / my_demo_slug(): the signed-in reader asks about their own account only.
--- - demo_ai_allow(): the Ask AI gate. Real readers: always true (no cap, unchanged). Demo accounts: atomic
---   count of today's attempts, refuses the 16th and refuses when the demo is switched off.
+-- - ask_ai_allow(): the Ask AI gate for every reader: the token's session must still exist and the user must not be
+--   banned. Real readers: no cap, nothing recorded. Demo accounts: atomic count of today's attempts, refuses the
+--   16th and refuses when the demo is switched off.
 -- - demo_signin_slot(slug): the only thing the anonymous demo link may call. 'ok' only for an active slug and
 --   while fewer than 20 demo sign-ins happened in the current 5-minute window (all demos together), so the
 --   demo link can never push the server's sign-ins into Supabase's auth rate limits.
@@ -73,16 +74,33 @@ language sql stable security definer set search_path = '' as $$
   select slug from public.demo_accounts where user_id = auth.uid() and active;
 $$;
 
--- Atomic: the insert-or-increment holds the row lock on (user_id, day), so two clicks at the same time are
--- counted one after the other. No row back means the cap is reached: refuse.
-create function public.demo_ai_allow() returns boolean
+-- The Ask AI gate, for every reader. Runs through PostgREST, which has already checked the token's signature and
+-- expiry. Here: the token's session must still exist (signed out / revoked sessions are refused at once) and the
+-- user must not be banned. Real readers: nothing else, nothing recorded. Demo accounts: refused when switched
+-- off, then an atomic count of today's attempts (the insert-or-increment holds the row lock on (user_id, day), so
+-- two clicks at the same time are counted one after the other; no row back = the 16th: refuse).
+-- No call to the Auth server, so Ask AI does not use the server's /auth/v1/user rate-limit bucket.
+create function public.ask_ai_allow() returns boolean
 language plpgsql security definer set search_path = '' as $$
 declare
   uid uuid := auth.uid();
+  sid uuid;
   is_active boolean;
   n integer;
 begin
   if uid is null then return false; end if;
+  begin
+    sid := (auth.jwt() ->> 'session_id')::uuid;
+  exception when others then
+    return false;
+  end;
+  if sid is null then return false; end if;
+  if not exists (select 1 from auth.sessions s where s.id = sid and s.user_id = uid and (s.not_after is null or s.not_after > now())) then
+    return false;
+  end if;
+  if exists (select 1 from auth.users u where u.id = uid and u.banned_until is not null and u.banned_until > now()) then
+    return false;
+  end if;
   select active into is_active from public.demo_accounts where user_id = uid;
   if not found then return true; end if;          -- a real reader: no cap, nothing recorded
   if not is_active then return false; end if;
@@ -155,7 +173,9 @@ begin
   insert into public.next_read (user_id, book_id)
   select p_user, s.id from public.demo_seed_books s where s.is_next and s.status = 'queued' limit 1;
 
-  -- The usage triggers logged this reset as reader actions. It is not one: remove what this transaction logged.
+  -- The usage triggers logged this reset's own deletes and inserts as reader actions. They are not, so only the
+  -- rows written by THIS transaction (txid_current) are removed. Every earlier usage_events row of the demo account
+  -- (demo.opened, visitor ids, signup clicks, real visitor actions) is kept.
   delete from public.usage_events where user_id = p_user and source = 'db' and txid = txid_current();
   return n;
 end $$;
@@ -169,9 +189,9 @@ create view public.usage_book_actions_real with (security_invoker = true) as
   where not exists (select 1 from public.demo_accounts d where d.user_id = a.user_id);
 revoke all on public.usage_events_real, public.usage_book_actions_real from public, anon, authenticated;
 
-revoke all on function public.is_demo_account(), public.my_demo_slug(), public.demo_ai_allow(),
+revoke all on function public.is_demo_account(), public.my_demo_slug(), public.ask_ai_allow(),
   public.demo_signin_slot(text), public.reset_demo(uuid) from public, anon, authenticated;
-grant execute on function public.is_demo_account(), public.my_demo_slug(), public.demo_ai_allow() to authenticated;
+grant execute on function public.is_demo_account(), public.my_demo_slug(), public.ask_ai_allow() to authenticated;
 grant execute on function public.demo_signin_slot(text) to anon, authenticated;
 -- reset_demo: owner only (SQL editor, connector, or the preview schedule).
 
