@@ -69,7 +69,7 @@ test('wired in: every page captures, email signup sends it, My Books records it 
  assert.match(read('app/signup/page.tsx'),/\.\.\.signupConsentMetadata\(marketingOptIn\), \.\.\.signupSourceMetadata\(readStoredSource\(\)\)/)
  assert.match(read('app/books/page.tsx'),/recordSignupSource\(user\)/)
  const lib=read('lib/signup-source.ts')
- assert.match(lib,/track\("account\.source"/)
+ assert.match(lib,/track(WithCountry)?\("account\.source"/)
  assert.ok(/^[a-z_]+\.[a-z_]+$/.test('account.source'))
 })
 

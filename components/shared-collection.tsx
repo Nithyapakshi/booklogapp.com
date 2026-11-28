@@ -9,6 +9,7 @@ import { catalogForShare } from "@/lib/shared-book"
 import { toCollection, type SharedCollection, type SharedCollectionItem } from "@/lib/shared-collection"
 import { bookKey, sourceLabel, sourceHeading, pageTitle, addButtonLabel, countBooks, keepBrowsingLabel, selectionStorageKey, encodeSelection, decodeSelection, type ShareSource } from "@/lib/collection-share"
 import { track } from "@/lib/usage"
+import { rememberShareOpen } from "@/lib/signup-source"
 
 type Shelf = "reading" | "queued" | "completed" | "onHold" | "recommended"
 const SHELVES: { value: Shelf; label: string }[] = [{value:"reading",label:"Reading"},{value:"queued",label:"Queued"},{value:"completed",label:"Completed"},{value:"onHold",label:"On Hold"},{value:"recommended",label:"Recommendations"}]
@@ -51,7 +52,7 @@ export function SharedCollectionView({ token, code, initial }: { token: string; 
   const chosen=[...selected].filter(k=>unique.has(k)&&!inLibrary(unique.get(k)!))
   const canSelect=!user||libraryReady
 
-  useEffect(()=>{track("share.collection_viewed",{tabs:data.sources.length})},[]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{rememberShareOpen("collection",token);track("share.collection_viewed",{tabs:data.sources.length,share:token})},[]) // eslint-disable-line react-hooks/exhaustive-deps
   // Keep the selection through sign-in, sign-up and the Google round trip (same browser).
   useEffect(()=>{ if(restored.current)return; restored.current=true
     try{const keys=decodeSelection(window.localStorage.getItem(selectionStorageKey(token)));if(keys.length)setSelected(new Set(keys))}catch{} },[token])
@@ -95,7 +96,7 @@ export function SharedCollectionView({ token, code, initial }: { token: string; 
         try{
           const r=await createBook({id:crypto.randomUUID(),title:item.title,author:item.author,cover:item.cover},shelf,{skipPrompts:true})
           if(r.outcome==="duplicate")result.already.push(item)
-          else{result.added.push({item,id:r.books.find(b=>sameBook(b,item))?.id||null});track("book.added_from",{source:"shared_collection",shelf})}
+          else{result.added.push({item,id:r.books.find(b=>sameBook(b,item))?.id||null});track("book.added_from",{source:"shared_collection",shelf,share:token})}
         }catch{result.failed.push(item)}
       }
       const prev=only&&outcome?outcome:null

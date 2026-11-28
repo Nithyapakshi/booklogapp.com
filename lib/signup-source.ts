@@ -8,9 +8,14 @@
 //    "account.source" event: from the account (email signup), else from this browser (Google),
 //    else "unknown". A referring site alone never sets the source: unknown stays unknown.
 //
+// 4. Shared links: the first share page (single book or collection) opened in this browser is kept
+//    separately ("bl-share", 30 days), with whether an earlier tagged visit was already stored. The
+//    signup event carries both, so the dashboard can credit the share either when it came after a
+//    search or other site (rule a) or only when it was the first visit (rule b).
+//
 // Nothing here may block a page, signup or sign-in: every browser step swallows its own errors.
 // No names, email or full addresses are recorded.
-import { track } from "@/lib/usage"
+import { trackWithCountry } from "@/lib/usage"
 
 export const SOURCE_KEY = "bl-source"
 export const SOURCE_TTL_MS = 30 * 24 * 3600e3
@@ -89,6 +94,42 @@ export function nextStored(existing: StoredSource | null, visit: StoredSource | 
   return visit
 }
 
+// ---- Shared links ----
+
+export const SHARE_KEY = "bl-share"
+// An earlier visit only counts as "before the share" when stored a few seconds earlier: the share
+// page and the visit capture can run in either order on the same page load.
+const SAME_VISIT_MS = 5000
+const SHARE_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export interface StoredShare { k: "book" | "collection"; id: string; t: number; first: boolean }
+
+// First share opened keeps the credit: an existing, unexpired share is never replaced.
+export function shareFromOpen(kind: unknown, token: unknown, existingShare: StoredShare | null, existingSource: StoredSource | null, now: number): StoredShare | null {
+  if (existingShare) return null
+  if ((kind !== "book" && kind !== "collection") || typeof token !== "string" || !SHARE_TOKEN.test(token)) return null
+  const earlier = !!existingSource && existingSource.t < now - SAME_VISIT_MS
+  return { k: kind, id: token.toLowerCase(), t: now, first: !earlier }
+}
+
+export function parseShare(raw: string | null, now: number): StoredShare | null {
+  if (!raw) return null
+  try {
+    const v = JSON.parse(raw)
+    if (!v || typeof v !== "object" || typeof v.t !== "number" || now - v.t > SOURCE_TTL_MS || v.t > now + 60e3) return null
+    if ((v.k !== "book" && v.k !== "collection") || typeof v.id !== "string" || !SHARE_TOKEN.test(v.id)) return null
+    return { k: v.k, id: v.id.toLowerCase(), t: v.t, first: v.first !== false }
+  } catch {
+    return null
+  }
+}
+
+// The share part of the signup event, from this browser. The signup form itself is unchanged, so an
+// email signup confirmed in a different browser carries no share.
+export function shareEventDetail(share: StoredShare | null): Record<string, string> {
+  return share ? { share_kind: share.k, share_id: share.id, share_first: share.first ? "yes" : "no" } : {}
+}
+
 // Sent with an email signup. Only the values present; empty when there is nothing to send.
 export function signupSourceMetadata(stored: StoredSource | null): Record<string, string> {
   const out: Record<string, string> = {}
@@ -154,6 +195,27 @@ export function captureSource(): void {
   }
 }
 
+// Called by the share pages when they open. Silent on any failure.
+export function rememberShareOpen(kind: "book" | "collection", token: string): void {
+  try {
+    if (typeof window === "undefined") return
+    const now = Date.now()
+    const next = shareFromOpen(kind, token, parseShare(window.localStorage.getItem(SHARE_KEY), now), parseStored(window.localStorage.getItem(SOURCE_KEY), now), now)
+    if (next) window.localStorage.setItem(SHARE_KEY, JSON.stringify(next))
+  } catch {
+    // Storage can be blocked; skip quietly.
+  }
+}
+
+export function readStoredShare(): StoredShare | null {
+  try {
+    if (typeof window === "undefined") return null
+    return parseShare(window.localStorage.getItem(SHARE_KEY), Date.now())
+  } catch {
+    return null
+  }
+}
+
 export function readStoredSource(): StoredSource | null {
   try {
     if (typeof window === "undefined") return null
@@ -169,8 +231,9 @@ export function recordSignupSource(user: UserLike): void {
     const flag = RECORDED_PREFIX + user.id
     if (window.localStorage.getItem(flag)) return
     window.localStorage.setItem(flag, "1")
-    track("account.source", sourceEventDetail(user, readStoredSource()))
+    trackWithCountry("account.source", { ...sourceEventDetail(user, readStoredSource()), ...shareEventDetail(readStoredShare()) })
     window.localStorage.removeItem(SOURCE_KEY)
+    window.localStorage.removeItem(SHARE_KEY)
   } catch {
     // Recording must never get in the reader's way.
   }

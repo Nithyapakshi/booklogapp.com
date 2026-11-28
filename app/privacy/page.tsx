@@ -31,7 +31,8 @@ const sections = [
     "BookLog uses browser storage to keep you signed in and remember settings such as theme, page size, view mode, dismissed suggestions and cached recommendations. Authentication also uses session-related storage. Clearing browser storage can sign you out and reset these preferences.",
     "The website and its service providers process technical information needed to deliver and secure requests, such as IP address, browser information, request times and error records. BookLog's code also records some account and book identifiers in diagnostic logs. These records are separate from the book details shown on a shared page.",
     "To make BookLog better for you, we look at which features readers use — for example adding, moving or rating a book, importing or exporting, sharing, opening Stats or Discover, or following a link to buy a book. This shows us what's helpful, what needs fixing and what to build next. Each record notes the action and when it happened, linked to your account, and sometimes a book or a simple count. Your notes, searches and Ask AI requests are never included. These records stay in BookLog's database and are never shared with advertisers.",
-    "When you create an account, we also record how you found BookLog: the campaign tag on the link you followed, if it had one, and the name of the website that sent you, never the full page address. Until you sign up, this is kept only in your browser, for up to 30 days."
+    "When you create an account, we also record how you found BookLog: the campaign tag on the link you followed, if it had one, the name of the website that sent you, never the full page address, and, if you opened a link a BookLog member shared with you, which shared link it was. We note the same shared link when you add books from it. Until you sign up, this is kept only in your browser, for up to 30 days. We use it to see how sharing helps BookLog grow, and we never show it to other readers.",
+    "When you sign up, and once a day when you open BookLog, we also note the country your connection comes from, based on your IP address. For this count we keep only the country, not the IP address or a more precise location. We use it to see where readers use BookLog."
   ],
   [
     "Your choices and requests",
@@ -51,7 +52,7 @@ export default function PrivacyPage() {
     <header style={{ borderBottom: "0.5px solid var(--bl-e0d5c4)", padding: "18px 24px" }}><nav aria-label="BookLog"><Link href="/home" style={{ fontFamily: "Georgia, serif", fontSize: 20, color: "var(--bl-c17f3e)" }}>BookLog</Link></nav></header>
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "44px 24px 64px" }}>
       <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 34, lineHeight: 1.2 }}>Privacy notice</h1>
-      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 24 November 2026</p>
+      <p style={{ fontSize: 13, color: "var(--bl-8a7560)", marginTop: 12, marginBottom: 38 }}>Last updated: 28 November 2026</p>
       {sections.map(([heading, ...paragraphs]) => <section key={heading} style={{ marginTop: 32 }} aria-label={heading}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 23, fontWeight: 400, lineHeight: 1.35, marginBottom: 14 }}>{heading}</h2>
         {paragraphs.map((text, index) => <p key={index} style={{ fontSize: 15, lineHeight: 1.85, marginBottom: 16, overflowWrap: "anywhere", color: "var(--bl-6b5c42)" }}>{text}</p>)}
