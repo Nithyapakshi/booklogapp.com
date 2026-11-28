@@ -1,3 +1,5 @@
+import { shortLinkRedirects } from './lib/short-links.mjs'
+
 let userConfig = undefined
 try {
   // try to import ESM first
@@ -26,6 +28,10 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+  },
+  // Short links booklogapp.com/go/<slug> -> /home with UTM tags (lib/short-links.mjs)
+  async redirects() {
+    return shortLinkRedirects()
   },
 }
 
